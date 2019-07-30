@@ -1,3 +1,3 @@
 reddit www.reddit.com www.reddit.com/search?q=
-malusers www.myanimelist.net www.myanimelist.net/users.php?q= --description='Search MyAnimeList users'
-malanime www.myanimelist.net www.myanimelist.net/anime.php?q= --description='Search MyAnimeList anime database'
+malusers myanimelist.net myanimelist.net/users.php?q= --description='Search MyAnimeList users'
+malanime myanimelist.net myanimelist.net/anime.php?q= --description='Search MyAnimeList anime database'
