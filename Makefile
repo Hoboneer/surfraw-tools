@@ -5,7 +5,7 @@ OUTPUTS := $(shell cut -f 1 -d ' ' $(SPEC_FILE))
 
 all: $(OUTPUTS)
 $(OUTPUTS): $(SPEC_FILE)
-	grep $@ $< | xargs ./mkelvis
+	grep '^$@' $< | xargs ./mkelvis
 
 clean:
 	rm -- $(OUTPUTS)
