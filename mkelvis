@@ -20,7 +20,7 @@ import re
 
 TEMPLATE_ELVIS = """\
 #!/bin/sh
-# elvis: @ELVIS_NAME@          -- @ELVIS_DESC@
+# elvis: @ELVIS_NAME@\t-- @ELVIS_DESC@
 . surfraw || exit 1
 
 w3_usage_hook () {
