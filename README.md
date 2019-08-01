@@ -1,10 +1,10 @@
-#mkelvis
+# mkelvis
 
 This is a command line tool to generate
 [surfraw](https://www.techrepublic.com/blog/linux-and-open-source/surfing-the-world-wide-web-raw-style/)
 scripts easily.
 
-##How to use
+## How to use
 
 Specify your elvis to generate with the three positional arguments as shown:
 
@@ -15,7 +15,7 @@ Specify your elvis to generate with the three positional arguments as shown:
 Notice that the final argument has an open query string for the `q` parameter.
 This is intentional; it is where your search terms will be placed.
 
-##Making many elvi at once
+## Making many elvi at once
 
 First, specify the elvi you want by putting the arguments to `mkelvis` for
 each elvis to generate on separate lines. The name should have no whitespace.
