@@ -277,10 +277,30 @@ def make_executable(path):
     os.chmod(path, mode)
 
 
+class AliasResolutionError(Exception):
+    def __init__(self, alias):
+        super().__init__(f"alias '{alias.name}' does not target any existing option")
+        self.alias = alias
+
+
+def resolve_aliases(args):
+    # TODO: What to do about naming conflicts?
+    # Order is important! (Why?)
+    options = [*chain(args.flags, args.bool_options, args.enum_options)]
+    for alias in args.aliases:
+        for option in options:
+            if alias.target == option.name:
+                alias.target = option
+                break
+        else:
+            raise AliasResolutionError(alias)
+
+
 def main(args):
     """Main program to generate surfraw elvi.
 
     Exit codes:
+        33 - Invalid alias
         99 - an internal error occurred
     """
     if args.description is None:
@@ -296,6 +316,12 @@ def main(args):
 
     args.base_url = f"{url_scheme}://{args.base_url}"
     args.search_url = f"{url_scheme}://{args.search_url}"
+
+    try:
+        resolve_aliases(args)
+    except AliasResolutionError as e:
+        print(e, file=sys.stderr)
+        return 33
 
     # Generate the elvis.
     pattern = re.compile("|".join(re.escape(key) for key in VAR_REPLACEMENTS))
