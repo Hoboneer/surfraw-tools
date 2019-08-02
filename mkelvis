@@ -26,7 +26,8 @@ TEMPLATE_ELVIS = """\
 # elvis: @ELVIS_NAME@\t-- @ELVIS_DESC@
 . surfraw || exit 1
 
-w3_usage_hook () {
+w3_usage_hook ()
+{
     cat <<EOF
 Usage: $w3_argv0 [options] [search words]...
 Description:
@@ -173,7 +174,7 @@ def invalid_bool(bool_arg):
 
 # Parsers
 
-FlagOption = namedtuple("FlagOption", ["name", "target", 'value'])
+FlagOption = namedtuple("FlagOption", ["name", "target", "value"])
 
 
 def parse_flag_option(flag_opt):
@@ -213,7 +214,7 @@ def parse_bool_option(bool_opt):
     return BoolOption(name, default)
 
 
-EnumOption = namedtuple("EnumOption", ["name", 'default', "values"])
+EnumOption = namedtuple("EnumOption", ["name", "default", "values"])
 
 
 def parse_enum_option(enum_opt):
@@ -250,7 +251,7 @@ def parse_enum_option(enum_opt):
 AliasOption = namedtuple("AliasOption", ["name", "target"])
 
 
-# NOTE: Aliases are useful since they would result in the the target and its
+# NOTE: Aliases are useful since they would result in the target and its
 # aliases to be displayed together in the help output.
 def parse_alias_option(alias_opt):
     """Make an alias to another option.
