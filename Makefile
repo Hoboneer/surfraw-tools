@@ -6,6 +6,8 @@ SPEC_FILE ?= elvi
 OUTPUTS := $(shell cut -f 1 -d ' ' $(SPEC_FILE))
 ELVI_DIR ?= /usr/lib/surfraw/
 
+REQUIREMENTS_DIR := requirements/
+
 all: $(OUTPUTS)
 $(OUTPUTS): $(SPEC_FILE)
 	grep '^$@' $< | xargs ./mkelvis
@@ -21,3 +23,7 @@ install:
 .PHONY: uninstall
 uninstall:
 	cd $(ELVI_DIR) && rm -- $(OUTPUTS)
+
+.PHONY: requirements
+requirements:
+	cd $(REQUIREMENTS_DIR) && $(MAKE)
