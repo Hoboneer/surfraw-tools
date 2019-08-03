@@ -1,0 +1,91 @@
+#!/bin/sh
+# elvis: {{ name }}	-- {{ description }}
+. surfraw || exit 1
+
+w3_usage_hook ()
+{
+	cat <<EOF
+Usage: $w3_argv0 [options] [search words]...
+Description:
+  {{ description }}
+EOF
+	w3_global_usage
+}
+
+{# Only define the option parsing if any #}
+{# flags, bools, enums, or aliases are defined #}
+{% if any_options_defined() %}
+w3_config_hook ()
+{
+	# Flags don't use any config
+	# Bools
+	{% for bool in bools %}
+	defyn {{ namespace(bool.name) }} {{ bool.default }}
+	{% else %}
+	## No bools
+	{% endfor %}
+	# Enums
+	{% for enum in enums %}
+	def {{ namespace(enum.name) }} {{ enum.default }}
+	{% else %}
+	## No enums
+	{% endfor %}
+	# Aliases don't use any config
+}
+
+w3_parse_option_hook ()
+{
+	opt="$1"
+	optarg="$2"
+	case "$opt" in
+		# Flags
+		{% for flag in flags %}
+		-{{ flag.name }}) setoptyn {{ namespace(flag.target.name) }} {{ flag.value }} ;;
+		{% else %}
+		## No flags
+		{% endfor %}
+		# Bools
+		{% for bool in bools %}
+		-{{ bool.name }}=*) setoptyn {{ namespace(bool.name) }} $optarg ;;
+		{% else %}
+		## No bools
+		{% endfor %}
+		# Enums
+		{% for enum in enums %}
+		-{{ enum.name }}=*) setopt {{ namespace(enum.name) }} $optarg ;;
+		{% else %}
+		## No enums
+		{% endfor %}
+		# Aliases
+		{% for alias in aliases %}
+		{% if isinstance(alias, FlagOption) %}
+		-{{ alias.name }}) setoptyn {{ namespace(alias.target.target) }} {{ alias.target.value }} ;;
+		{% elif isinstance(alias, BoolOption) %}
+		-{{ alias.name }}=*) setoptyn {{ namespace(alias.target.name) }} $optarg ;;
+		{% elif isinstance(alias, FlagOption) %}
+		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
+		{% else %}
+		err "Alias target type unhandled! This should never have been reached. This is a bug!"
+		{% endif %}
+		{% else %}
+		## No aliases
+		{% endfor %}
+		*) return 1 ;;
+	esac
+}
+{% endif %}
+
+w3_config
+w3_parse_args "$@"
+if test -z "$w3_args"; then
+	w3_browse_url "{{ base_url }}"
+else
+	escaped_args=$(w3_url_of_arg $w3_args)
+	{% for enum in enums %}
+	case "${{ namespace(enum.name) }}" in
+		{{ '|'.join(enum.values) }}) echo FILL ME IN ;;
+		*) err "Invalid value for {{ namespace(enum.name) }}" ;;
+	esac
+	{% endfor %}
+	w3_browse_url "{{ search_url }}${escaped_args}"
+fi

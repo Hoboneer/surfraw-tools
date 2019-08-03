@@ -19,6 +19,7 @@ import os
 import re
 from itertools import chain
 from collections import namedtuple
+from jinja2 import Template, FileSystemLoader, Environment
 
 
 TEMPLATE_ELVIS = """\
@@ -301,124 +302,40 @@ def resolve_aliases(args):
             raise AliasResolutionError(alias)
 
 
-def make_case_statement(subject, pairs):
-    CASE_EXPR = f"""\
-case "${subject}" in
-        REPLACE_ME
-        *) err "Invalid value for {subject}" ;;
-    esac"""
-    case_body = []
-    # NOTE: `body` is a single line!
-    for matches, body in pairs:
-        case_body.append(f"{'|'.join(matches)}) {body} ;;")
-    return CASE_EXPR.replace("REPLACE_ME", "\n".join(case_body))
+def make_namespace(prefix):
+    def prefixer(name):
+        return f"{prefix}_{name}"
+
+    return prefixer
 
 
 def generate_elvis(args):
-    pattern = re.compile("|".join(re.escape(key) for key in VAR_REPLACEMENTS))
-    elvis_program = pattern.sub(
-        lambda m: getattr(args, VAR_REPLACEMENTS[m.group(0)]), TEMPLATE_ELVIS
+    options = list(
+        chain(args.flags, args.bool_options, args.enum_options, args.aliases)
     )
-
-    # Add any options
-    if not any(
-        len(option)
-        for option in chain(
-            args.flags, args.bool_options, args.enum_options, args.aliases
+    with open("elvis.in") as f:
+        env = Environment(
+            loader=FileSystemLoader("./"), trim_blocks=True, lstrip_blocks=True
         )
-    ):
-        # There is nothing to do.
-        elvis_program = elvis_program.replace("@ELVIS_OPTIONS_CODE@", "")
-    else:
-        prefix = f"SURFRAW_{args.name}"
-        # Flags
-        flag_code = {"config": [], "parse": []}
-        for flag in args.flags:
-            # TODO: Maybe have option to set a default value for a flag (if undefined).
-            # Really? What if there are no bool options to set the default?
-            # XXX: Maybe every flag should have a corresponding yes-no option?
-            # Flags don't use any config.
-            flag_code["parse"].append(
-                f"-{flag.name}) setoptyn {prefix}_{flag.target} {flag.value} ;;"
-            )
-        # Bools
-        bool_code = {"config": [], "parse": []}
-        for bool_opt in args.bool_options:
-            bool_code["config"].append(
-                f"defyn {prefix}_{bool_opt.name} {bool_opt.default}"
-            )
-            bool_code["parse"].append(
-                f"-{bool_opt.name}=*) setoptyn {prefix}_{bool_opt.name} $optarg ;;"
-            )
-        # Enums
-        enum_code = {"config": [], "parse": []}
-        for enum_opt in args.enum_options:
-            enum_code["config"].append(
-                f"def {prefix}_{enum_opt.name} {enum_opt.default}"
-            )
-            enum_code["parse"].append(
-                f"-{enum_opt.name}=*) setopt {prefix}_{enum_opt.name} $optarg ;;"
-            )
-        # Aliases
-        alias_code = {"config": [], "parse": []}
-        for alias_opt in args.aliases:
-            # Aliases don't use config.
-            if isinstance(alias_opt.target, FlagOption):
-                line = f"-{alias_opt.name}) setoptyn {prefix}_{alias_opt.target.target} {alias_opt.target.value} ;;"
-            elif isinstance(alias_opt.target, BoolOption):
-                line = f"-{alias_opt.name}=*) setoptyn {prefix}_{alias_opt.target.name} $optarg ;;"
-            elif isinstance(alias_opt.target, EnumOption):
-                line = f"-{alias_opt.name}=*) setopt {prefix}_{alias_opt.target.name} $optarg ;;"
-            else:
-                raise RuntimeError(
-                    "Alias target type unhandled! This should never have been reached. This is a bug!"
-                )
-            alias_code["parse"].append(line)
 
-        # Config
-        config_part = """\
-w3_config_hook ()
-{
-    REPLACE_ME
-}"""
-        config_lines = []
+    # Add functions to jinja template
+    env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
+    env.globals["any_options_defined"] = lambda: any(len(option) for option in options)
 
-        # Parse
-        parse_part = """\
-w3_parse_option_hook ()
-{
-    opt="$1"
-    optarg="$2"
-    case "$opt" in
-        REPLACE_ME
-        *) return 1 ;;
-    esac
-}"""
-        parse_lines = []
+    ELVIS_TEMPLATE = env.get_template("elvis.in")
 
-        for option in (flag_code, bool_code, enum_code, alias_code):
-            config_lines.extend(option["config"])
-            parse_lines.extend(option["parse"])
-        config_part = config_part.replace("REPLACE_ME", "\n".join(config_lines))
-        parse_part = parse_part.replace("REPLACE_ME", "\n".join(parse_lines))
-
-        options_part = f"""\
-{config_part}
-
-{parse_part}"""
-        elvis_program = elvis_program.replace("@ELVIS_OPTIONS_CODE@", options_part)
-
-        enum_checks = []
-        # Now generate the enum option checking.
-        for enum_opt in args.enum_options:
-            enum_checks.append(
-                make_case_statement(
-                    f"{prefix}_{enum_opt.name}", [(enum_opt.values, "echo FILL ME IN")]
-                )
-            )
-        elvis_program = elvis_program.replace("@ENUMS_CHECK@", "\n".join(enum_checks))
-
-    return elvis_program
+    return ELVIS_TEMPLATE.render(
+        name=args.name,
+        description=args.description,
+        base_url=args.base_url,
+        search_url=args.search_url,
+        options=options,
+        # Options to generate
+        flags=args.flags,
+        bools=args.bool_options,
+        enums=args.enum_options,
+        aliases=args.aliases,
+    )
 
 
 def main(args):
