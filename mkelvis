@@ -292,14 +292,16 @@ def make_namespace(prefix):
 
 
 def generate_elvis(args):
-    options = list(chain(args.flags, args.bools, args.enums, args.aliases))
+    options = (args.flags, args.bools, args.enums, args.aliases)
     env = Environment(
         loader=FileSystemLoader("./"), trim_blocks=True, lstrip_blocks=True
     )
 
     # Add functions to jinja template
     env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
-    env.globals["any_options_defined"] = lambda: any(len(option) for option in options)
+    env.globals["any_options_defined"] = lambda: any(
+        len(option_container) for option_container in options
+    )
 
     ELVIS_TEMPLATE = env.get_template("elvis.in")
 
