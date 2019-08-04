@@ -62,8 +62,8 @@ def get_parser():
         help="specify a yes or no option for the elvis",
     )
     parser.add_argument(
-        "--arg",
-        "-A",
+        "--enum",
+        "-E",
         action="append",
         default=[],
         type=parse_enum_option,
