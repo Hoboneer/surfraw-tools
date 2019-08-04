@@ -132,7 +132,6 @@ def invalid_bool(bool_arg):
 
 # Parsers
 
-FlagOption = namedtuple("FlagOption", ["name", "target", "value"])
 
 def parse_args(validators):
     """Decorator to validate args of argument spec for generated elvis.
@@ -178,10 +177,21 @@ def no_validation(_):
     pass
 
 
+class FlagOption:
+    def __init__(self, name, target, value):
+        self.name = name
+        self.target = target
+        self.value = value
+
+
 BoolOption = namedtuple("BoolOption", ["name", "default"])
 EnumOption = namedtuple("EnumOption", ["name", "default", "values"])
 
 
+class AliasOption:
+    def __init__(self, name, target):
+        self.name = name
+        self.target = target
 
 
 @parse_args([validate_name, validate_name, validate_bool])
