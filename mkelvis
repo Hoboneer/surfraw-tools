@@ -260,6 +260,20 @@ def resolve_aliases(args):
             raise AliasResolutionError(alias)
 
 
+def resolve_flags(args):
+    # TODO: Allow flags to be shorthand for passing the value of any bool or
+    # enum option.
+    options = args.bools
+    for flag in args.flags:
+        for option in options:
+            if flag.target == option.name:
+                flag.target = option
+                break
+        else:
+            # XXX: Should this be separate from aliases?
+            raise AliasResolutionError(flag)
+
+
 def make_namespace(prefix):
     def prefixer(name):
         return f"{prefix}_{name}"
@@ -316,6 +330,7 @@ def main(args):
 
     try:
         resolve_aliases(args)
+        resolve_flags(args)
     except AliasResolutionError as e:
         print(e, file=sys.stderr)
         return 33
