@@ -19,6 +19,7 @@ import os
 import re
 from itertools import chain
 from collections import namedtuple
+from functools import wraps
 from jinja2 import FileSystemLoader, Environment
 
 
@@ -133,63 +134,76 @@ def invalid_bool(bool_arg):
 
 FlagOption = namedtuple("FlagOption", ["name", "target", "value"])
 
+def parse_args(validators):
+    """Decorator to validate args of argument spec for generated elvis.
 
-def parse_flag_option(flag_opt):
-    """Check a flag option, requiring three colon-delimited parts."""
-    args = flag_opt.split(":")
-    num_required = 3
-    if len(args) < num_required:
-        insufficient_spec_parts(flag_opt, num_required)
+    Raises `argparse.ArgumentTypeError` when invalid, otherwise calls decorated
+    function with validated arguments, returning its value.
+    """
 
-    name, target, value, *_ = args
+    def wrapper(func):
+        # Only takes positional args.
+        @wraps(func)
+        def validate_args_wrapper(raw_arg):
+            args = raw_arg.split(":")
+            valid_args = []
+            for i, valid_or_fail_func in enumerate(validators):
+                try:
+                    arg = args[i]
+                except IndexError:
+                    # Raise `argparse.ArgumentTypeError`
+                    insufficient_spec_parts(raw_arg, num_required=len(validators))
+                else:
+                    # Raise `argparse.ArgumentTypeError` if invalid arg.
+                    valid_or_fail_func(arg)
+                    valid_args.append(arg)
+            return func(*valid_args)
+
+        return validate_args_wrapper
+
+    return wrapper
+
+
+def validate_name(name):
     if not is_valid_name(name):
         invalid_name(name)
-    if not is_valid_name(target):
-        invalid_name(target)
-    if not is_valid_bool(value):
-        invalid_bool(value)
 
-    return FlagOption(name, target, value)
+
+def validate_bool(bool_):
+    if not is_valid_bool(bool_):
+        invalid_bool(bool_)
+
+
+def no_validation(_):
+    pass
 
 
 BoolOption = namedtuple("BoolOption", ["name", "default"])
-
-
-def parse_bool_option(bool_opt):
-    """Check a yes-no option, requiring two colon-delimited parts."""
-    args = bool_opt.split(":")
-    num_required = 2
-    if len(args) < num_required:
-        insufficient_spec_parts(bool_opt, num_required)
-
-    name, default, *_ = args
-    if not is_valid_name(name):
-        invalid_name(name)
-    if not is_valid_bool(default):
-        invalid_bool(default)
-
-    return BoolOption(name, default)
-
-
 EnumOption = namedtuple("EnumOption", ["name", "default", "values"])
 
 
-def parse_enum_option(enum_opt):
+
+
+@parse_args([validate_name, validate_name, validate_bool])
+def parse_flag_option(name, target, value):
+    """Check a flag option, requiring three colon-delimited parts."""
+    return FlagOption(name, target, value)
+
+
+@parse_args([validate_name, validate_bool])
+def parse_bool_option(name, default):
+    """Check a yes-no option, requiring two colon-delimited parts."""
+    return BoolOption(name, default)
+
+
+# Third argument is validated inside the function since it needs access to
+# other arguments.
+@parse_args([validate_name, validate_name, no_validation])
+def parse_enum_option(name, default, orig_values):
     """Check an enum option, requiring three colon-delimited parts.
 
     The default value (part 2) *must* be a value in the third part.
     """
-    args = enum_opt.split(":")
-    num_required = 3
-    if len(args) < num_required:
-        insufficient_spec_parts(enum_opt, num_required)
-
-    name, default, orig_values, *_ = args
-    if not is_valid_name(name):
-        invalid_name(name)
-    if not is_valid_name(default):
-        invalid_name(default)
-
     # Check validity of values.
     values = orig_values.split(",")
     for val in values:
@@ -205,29 +219,16 @@ def parse_enum_option(enum_opt):
     return EnumOption(name, default, values)
 
 
-AliasOption = namedtuple("AliasOption", ["name", "target"])
-
-
 # NOTE: Aliases are useful since they would result in the target and its
 # aliases to be displayed together in the help output.
-def parse_alias_option(alias_opt):
+@parse_args([validate_name, validate_name])
+def parse_alias_option(name, target):
     """Make an alias to another option.
 
     NOTE: This function does *not* check whether the alias points to a valid
     option. It needs to be checked elsewhere since this does not have access to
     the parser.
     """
-    args = alias_opt.split(":")
-    num_required = 2
-    if len(args) < num_required:
-        insufficient_spec_parts(alias_opt, num_required)
-
-    name, target, *_ = args
-    if not is_valid_name(name):
-        invalid_name(name)
-    if not is_valid_name(target):
-        invalid_name(target)
-
     return AliasOption(name, target)
 
 
