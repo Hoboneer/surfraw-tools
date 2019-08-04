@@ -19,51 +19,7 @@ import os
 import re
 from itertools import chain
 from collections import namedtuple
-from jinja2 import Template, FileSystemLoader, Environment
-
-
-TEMPLATE_ELVIS = """\
-#!/bin/sh
-# elvis: @ELVIS_NAME@\t-- @ELVIS_DESC@
-. surfraw || exit 1
-
-w3_usage_hook ()
-{
-    cat <<EOF
-Usage: $w3_argv0 [options] [search words]...
-Description:
-  @ELVIS_DESC@
-EOF
-    w3_global_usage
-}
-
-@ELVIS_OPTIONS_CODE@
-
-w3_config
-w3_parse_args "$@"
-if test -z "$w3_args"; then
-    w3_browse_url "@DEFAULT_URL@"
-else
-    escaped_args=$(w3_url_of_arg $w3_args)
-    @ENUMS_CHECK@
-    w3_browse_url "@SEARCH_URL@${escaped_args}"
-fi
-"""
-# Variables to replace:
-#   ELVIS_NAME
-#   ELVIS_DESC
-#   DEFAULT_URL
-#   SEARCH_URL
-
-# Values correspond to attributes on `args` object in `main`.
-VAR_REPLACEMENTS = {
-    "ELVIS_NAME": "name",
-    "ELVIS_DESC": "description",
-    "DEFAULT_URL": "base_url",
-    "SEARCH_URL": "search_url",
-}
-# Add the sigils.
-VAR_REPLACEMENTS = {f"@{key}@": val for key, val in VAR_REPLACEMENTS.items()}
+from jinja2 import FileSystemLoader, Environment
 
 
 def get_parser():
@@ -286,6 +242,7 @@ def make_executable(path):
 class AliasResolutionError(Exception):
     def __init__(self, alias):
         super().__init__(f"alias '{alias.name}' does not target any existing option")
+        # TODO: Use this for something?
         self.alias = alias
 
 
@@ -313,10 +270,9 @@ def generate_elvis(args):
     options = list(
         chain(args.flags, args.bool_options, args.enum_options, args.aliases)
     )
-    with open("elvis.in") as f:
-        env = Environment(
-            loader=FileSystemLoader("./"), trim_blocks=True, lstrip_blocks=True
-        )
+    env = Environment(
+        loader=FileSystemLoader("./"), trim_blocks=True, lstrip_blocks=True
+    )
 
     # Add functions to jinja template
     env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
