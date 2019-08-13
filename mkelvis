@@ -20,6 +20,7 @@ import re
 from itertools import chain
 from collections import namedtuple
 from functools import wraps
+from os import EX_OK, EX_SOFTWARE, EX_OSERR, EX_USAGE
 from jinja2 import FileSystemLoader, Environment
 
 
@@ -387,9 +388,8 @@ def generate_elvis(args):
 def main(args):
     """Main program to generate surfraw elvi.
 
-    Exit codes:
-        33 - Invalid alias
-        99 - an internal error occurred
+    Exit codes correspond to the distro's `sysexits.h` file, which are the
+    exit codes prefixed "EX_".
     """
     if args.description is None:
         args.description = f"Search {args.name} ({args.base_url})"
@@ -411,7 +411,7 @@ def main(args):
         resolve_mappings(args)
     except OptionResolutionError as e:
         print(e, file=sys.stderr)
-        return 33
+        return EX_USAGE
 
     if len(args.mappings) > 0 and args.query_parameter is None:
         print(
@@ -419,7 +419,7 @@ def main(args):
             file=sys.stderr,
         )
         # TODO: Use proper exit code.
-        return 1
+        return EX_USAGE
 
     # Generate the elvis.
     elvis_program = generate_elvis(args)
@@ -429,8 +429,10 @@ def main(args):
             f.write(elvis_program)
         make_executable(args.name)
     except OSError:
-        return 99
-    return 0
+        # I'm not sure if this is the correct exit code, and if the two
+        # actions above should be separated.
+        return EX_OSERR
+    return EX_OK
 
 
 if __name__ == "__main__":
