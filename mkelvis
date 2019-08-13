@@ -81,6 +81,22 @@ def get_parser():
         metavar="ALIAS_NAME:ALIAS_TARGET",
         help="make an alias to another defined option",
     )
+    parser.add_argument(
+        "--map",
+        "-M",
+        action="append",
+        default=[],
+        type=parse_mapping_option,
+        dest="mappings",
+        metavar="VARIABLE_NAME:PARAMETER",
+        help="map a variable to a URL parameter",
+    )
+    parser.add_argument(
+        "--query-parameter",
+        "-Q",
+        type=parse_query_parameter,
+        help="define the parameter for the query arguments; needed with --map",
+    )
     return parser
 
 
@@ -94,6 +110,14 @@ VALID_SURFRAW_VAR_NAME = re.compile("^[a-z]+$")
 
 def is_valid_name(name):
     return VALID_SURFRAW_VAR_NAME.fullmatch(name)
+
+
+# This seems to be a spec that would satisfy most websites.
+VALID_URL_PARAM = re.compile("^[A-Za-z0-9_]+$")
+
+
+def is_valid_url_parameter(url_param):
+    return VALID_URL_PARAM.fullmatch(url_param)
 
 
 # TODO: Should the yes-no option take the other forms?
@@ -128,6 +152,10 @@ def invalid_bool(bool_arg):
     raise argparse.ArgumentTypeError(
         f"bool '{bool_arg}' must be one of the following: {valid_bools}"
     )
+
+
+def invalid_url_parameter(url_param):
+    raise argparse.ArgumentTypeError(f"'{url_param}' is an invalid URL parameter")
 
 
 # Parsers
@@ -173,6 +201,11 @@ def validate_bool(bool_):
         invalid_bool(bool_)
 
 
+def validate_url_parameter(url_param):
+    if not is_valid_url_parameter(url_param):
+        invalid_url_parameter(url_param)
+
+
 def no_validation(_):
     pass
 
@@ -192,6 +225,9 @@ class AliasOption:
     def __init__(self, name, target):
         self.name = name
         self.target = target
+
+
+MappingOption = namedtuple("MappingOption", ["variable", "parameter"])
 
 
 @parse_args([validate_name, validate_name, validate_bool])
@@ -242,6 +278,16 @@ def parse_alias_option(name, target):
     return AliasOption(name, target)
 
 
+@parse_args([validate_name, validate_url_parameter])
+def parse_mapping_option(variable, parameter):
+    return MappingOption(variable, parameter)
+
+
+@parse_args([validate_url_parameter])
+def parse_query_parameter(param):
+    return param
+
+
 # Taken from this stackoverflow answer:
 #   https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python/30463972#30463972
 def make_executable(path):
@@ -284,6 +330,19 @@ def resolve_flags(args):
             )
 
 
+def resolve_mappings(args):
+    options = list(chain(args.bools, args.enums))
+    for mapping in args.mappings:
+        for option in options:
+            if mapping.variable == option.name:
+                # Mappings don't get modified.
+                break
+        else:
+            raise OptionResolutionError(
+                f"URL parameter '{mapping.parameter}' does not target any existing variable"
+            )
+
+
 def make_namespace(prefix):
     def prefixer(name):
         return f"{prefix}_{name}"
@@ -319,6 +378,9 @@ def generate_elvis(args):
         bools=args.bools,
         enums=args.enums,
         aliases=args.aliases,
+        # URL parameters
+        mappings=args.mappings,
+        query_parameter=args.query_parameter,
     )
 
 
@@ -346,9 +408,18 @@ def main(args):
     try:
         resolve_aliases(args)
         resolve_flags(args)
+        resolve_mappings(args)
     except OptionResolutionError as e:
         print(e, file=sys.stderr)
         return 33
+
+    if len(args.mappings) > 0 and args.query_parameter is None:
+        print(
+            "mapping variables without a defined --query-parameter is forbidden",
+            file=sys.stderr,
+        )
+        # TODO: Use proper exit code.
+        return 1
 
     # Generate the elvis.
     elvis_program = generate_elvis(args)

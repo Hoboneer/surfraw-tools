@@ -82,11 +82,28 @@ if test -z "$w3_args"; then
 	w3_browse_url "{{ base_url }}"
 else
 	escaped_args=$(w3_url_of_arg $w3_args)
+	search_url="{{ search_url }}"
 	{% for enum in enums %}
 	case "${{ namespace(enum.name) }}" in
 		{{ '|'.join(enum.values) }}) echo FILL ME IN ;;
 		*) err "Invalid value for {{ namespace(enum.name) }}" ;;
 	esac
 	{% endfor %}
-	w3_browse_url "{{ search_url }}${escaped_args}"
+
+	# Map variables to parameters
+	{% for map in mappings %}
+	search_url="$search_url&{{ map.parameter }}=${{ namespace(map.variable) }}"
+	{% else %}
+	## No mappings
+	{% endfor %}
+
+	# Add the search to url
+	{# Mappings and a query parameter are necessarily inclusive #}
+	{# `mkelvis` should prevent a situation where only one of the two are true #}
+	{% if mappings|length > 0 and query_parameter is not none %}
+	search_url="$search_url&{{ query_parameter }}=$escaped_args"
+	{% else %}
+	search_url="${search_url}${escaped_args}"
+	{% endif %}
+	w3_browse_url "$search_url"
 fi
