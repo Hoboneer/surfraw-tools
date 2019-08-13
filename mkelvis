@@ -422,7 +422,12 @@ def main(args):
         return EX_USAGE
 
     # Generate the elvis.
-    elvis_program = generate_elvis(args)
+    try:
+        elvis_program = generate_elvis(args)
+    except Exception as e:
+        # Ensure that the correct exit status is returned.
+        print(e, file=sys.stderr)
+        return EX_SOFTWARE
 
     try:
         with open(args.name, "w") as f:
