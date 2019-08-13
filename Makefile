@@ -1,16 +1,20 @@
 # `SPEC_FILE` specifies the args to pass to `./mkelvis`, where newline is the
 # record separator.
 SPEC_FILE ?= elvi
+ELVI_DIR ?= /usr/lib/surfraw/
+REQUIREMENTS_DIR := requirements/
+
 # This relies on elvi having no whitespace in their name (which seems to be
 # the case for all of them anyway).
 OUTPUTS := $(shell cut -f 1 -d ' ' $(SPEC_FILE))
-ELVI_DIR ?= /usr/lib/surfraw/
 
-REQUIREMENTS_DIR := requirements/
 
-all: $(OUTPUTS)
+all: $(OUTPUTS) $(OUTPUTS_MULTILINE)
 $(OUTPUTS): $(SPEC_FILE)
 	grep '^$@' $< | xargs ./mkelvis
+
+savannah: savannah.in
+	cat $< | xargs ./mkelvis
 
 .PHONY: clean
 clean:

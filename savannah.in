@@ -1,0 +1,8 @@
+savannah
+savannah.gnu.org
+savannah.gnu.org/search/?
+--enum=type:soft:soft,people,cookbook,support,bugs,task,patch
+--yes-no=exact:yes
+--map=type:type_of_search
+--map=exact:exact
+--query-parameter=words

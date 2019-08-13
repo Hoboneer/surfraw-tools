@@ -1,0 +1,30 @@
+#!/bin/sh
+# elvis: malanime	-- Search MyAnimeList anime database (myanimelist.net)
+. surfraw || exit 1
+
+w3_usage_hook ()
+{
+	cat <<EOF
+Usage: $w3_argv0 [options] [search words]...
+Description:
+  Search MyAnimeList anime database (myanimelist.net)
+EOF
+	w3_global_usage
+}
+
+
+w3_config
+w3_parse_args "$@"
+if test -z "$w3_args"; then
+	w3_browse_url "https://myanimelist.net"
+else
+	escaped_args=$(w3_url_of_arg $w3_args)
+	search_url="https://myanimelist.net/anime.php?q="
+
+	# Map variables to parameters
+	## No mappings
+
+	# Add the search to url
+	search_url="${search_url}${escaped_args}"
+	w3_browse_url "$search_url"
+fi

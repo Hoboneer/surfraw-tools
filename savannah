@@ -1,0 +1,67 @@
+#!/bin/sh
+# elvis: savannah	-- Search savannah (savannah.gnu.org)
+. surfraw || exit 1
+
+w3_usage_hook ()
+{
+	cat <<EOF
+Usage: $w3_argv0 [options] [search words]...
+Description:
+  Search savannah (savannah.gnu.org)
+EOF
+	w3_global_usage
+}
+
+w3_config_hook ()
+{
+	# Flags don't use any config
+	# Bools
+	defyn SURFRAW_savannah_exact yes
+	# Enums
+	def SURFRAW_savannah_type soft
+	# Aliases don't use any config
+}
+
+w3_parse_option_hook ()
+{
+	opt="$1"
+	optarg="$2"
+	case "$opt" in
+		# Flags
+		## No flags
+		# Bools
+		-exact=*) setoptyn SURFRAW_savannah_exact $optarg ;;
+		# Enums
+		-type=*) setopt SURFRAW_savannah_type $optarg ;;
+		# Aliases
+		## No aliases
+		*) return 1 ;;
+	esac
+	return 0
+}
+
+w3_config
+w3_parse_args "$@"
+if test -z "$w3_args"; then
+	w3_browse_url "https://savannah.gnu.org"
+else
+	escaped_args=$(w3_url_of_arg $w3_args)
+	search_url="https://savannah.gnu.org/search/?"
+	case "$SURFRAW_savannah_type" in
+		soft|people|cookbook|support|bugs|task|patch) ;;
+		*) err "Invalid value for SURFRAW_savannah_type" ;;
+	esac
+	# It seems that savannah needs it to be 0 or 1.
+	case "$SURFRAW_savannah_exact" in
+		yes|on) setoptyn SURFRAW_savannah_exact 1 ;;
+		no|off) setoptyn SURFRAW_savannah_exact 0 ;;
+	esac
+
+	# Map variables to parameters
+	search_url="$search_url&type_of_search=$SURFRAW_savannah_type"
+	search_url="$search_url&exact=$SURFRAW_savannah_exact"
+
+	# Add the search to url
+	search_url="$search_url&words=$escaped_args"
+	w3_browse_url "$search_url"
+fi
