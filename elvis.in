@@ -58,11 +58,11 @@ w3_parse_option_hook ()
 		{% endfor %}
 		# Aliases
 		{% for alias in aliases %}
-		{% if isinstance(alias, FlagOption) %}
+		{% if alias.target is flag_option %}
 		-{{ alias.name }}) setoptyn {{ namespace(alias.target.target) }} {{ alias.target.value }} ;;
-		{% elif isinstance(alias, BoolOption) %}
+		{% elif alias.target is bool_option %}
 		-{{ alias.name }}=*) setoptyn {{ namespace(alias.target.name) }} $optarg ;;
-		{% elif isinstance(alias, FlagOption) %}
+		{% elif alias.target is enum_option %}
 		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
 		{% else %}
 		err "Alias target type unhandled! This should never have been reached. This is a bug!"

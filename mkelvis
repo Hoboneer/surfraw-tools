@@ -302,6 +302,9 @@ def generate_elvis(args):
     env.globals["any_options_defined"] = lambda: any(
         len(option_container) for option_container in options
     )
+    env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
+    env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
+    env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
 
     ELVIS_TEMPLATE = env.get_template("elvis.in")
 
