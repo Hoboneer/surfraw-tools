@@ -250,11 +250,8 @@ def make_executable(path):
     os.chmod(path, mode)
 
 
-class AliasResolutionError(Exception):
-    def __init__(self, alias):
-        super().__init__(f"alias '{alias.name}' does not target any existing option")
-        # TODO: Use this for something?
-        self.alias = alias
+class OptionResolutionError(Exception):
+    pass
 
 
 def resolve_aliases(args):
@@ -267,7 +264,9 @@ def resolve_aliases(args):
                 alias.target = option
                 break
         else:
-            raise AliasResolutionError(alias)
+            raise OptionResolutionError(
+                f"alias '{alias.name}' does not target any existing option"
+            )
 
 
 def resolve_flags(args):
@@ -280,8 +279,9 @@ def resolve_flags(args):
                 flag.target = option
                 break
         else:
-            # XXX: Should this be separate from aliases?
-            raise AliasResolutionError(flag)
+            raise OptionResolutionError(
+                f"flag '{flag.name}' does not target any existing option"
+            )
 
 
 def make_namespace(prefix):
@@ -346,7 +346,7 @@ def main(args):
     try:
         resolve_aliases(args)
         resolve_flags(args)
-    except AliasResolutionError as e:
+    except OptionResolutionError as e:
         print(e, file=sys.stderr)
         return 33
 
