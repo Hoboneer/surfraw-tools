@@ -1,0 +1,6 @@
+# Vim stuff
+*.swp
+*.vim
+
+env/
+tags
