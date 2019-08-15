@@ -2,5 +2,12 @@
 *.swp
 *.vim
 
+# Distribution stuff
+__pycache__/
+*.pyc
+dist/
+*.egg-info
+*.egg
+
 env/
 tags
