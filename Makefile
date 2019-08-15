@@ -1,33 +1,19 @@
-# `SPEC_FILE` specifies the args to pass to `./mkelvis`, where newline is the
-# record separator.
-SPEC_FILE ?= elvi
-ELVI_DIR ?= /usr/lib/surfraw/
-REQUIREMENTS_DIR := requirements/
+REQUIREMENTS_DIR := requirements
 
-# This relies on elvi having no whitespace in their name (which seems to be
-# the case for all of them anyway).
-OUTPUTS := $(shell cut -f 1 -d ' ' $(SPEC_FILE))
+PACKAGE_DIR := surfraw_tools
+SOURCE_FILES := $(shell find "$(PACKAGE_DIR)" -type f -name '*.py')
 
+# Do nothing.
+.PHONY: all
+all:
 
-all: $(OUTPUTS) $(OUTPUTS_MULTILINE)
-$(OUTPUTS): $(SPEC_FILE)
-	grep '^$@' $< | xargs ./mkelvis
-
-savannah: savannah.in
-	cat $< | xargs ./mkelvis
-
-.PHONY: clean
-clean:
-	rm -- $(OUTPUTS)
-
-.PHONY: install
-install:
-	echo $(OUTPUTS) | xargs cp --no-clobber --target=$(ELVI_DIR) --
-
-.PHONY: uninstall
-uninstall:
-	cd $(ELVI_DIR) && rm -- $(OUTPUTS)
+.PHONY: init
+init:
+	pip install -r $(REQUIREMENTS_DIR)/base.txt
 
 .PHONY: requirements
 requirements:
 	cd $(REQUIREMENTS_DIR) && $(MAKE)
+
+tags: $(SOURCE_FILES)
+	ctags $(SOURCE_FILES)
