@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # Copyright 2019 Gabriel Lisaca
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +20,7 @@ from itertools import chain
 from collections import namedtuple
 from functools import wraps
 from os import EX_OK, EX_SOFTWARE, EX_OSERR, EX_USAGE
-from jinja2 import FileSystemLoader, Environment
+from jinja2 import PackageLoader, Environment
 
 
 def get_parser():
@@ -354,7 +353,7 @@ def make_namespace(prefix):
 def generate_elvis(args):
     options = (args.flags, args.bools, args.enums, args.aliases)
     env = Environment(
-        loader=FileSystemLoader("./"), trim_blocks=True, lstrip_blocks=True
+        loader=PackageLoader("surfraw_tools"), trim_blocks=True, lstrip_blocks=True
     )
 
     # Add functions to jinja template
@@ -385,12 +384,15 @@ def generate_elvis(args):
     )
 
 
-def main(args):
+def main(args=None):
     """Main program to generate surfraw elvi.
 
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
     """
+    if args is None:
+        args = get_parser().parse_args()
+
     if args.description is None:
         args.description = f"Search {args.name} ({args.base_url})"
     else:
@@ -438,7 +440,3 @@ def main(args):
         # actions above should be separated.
         return EX_OSERR
     return EX_OK
-
-
-if __name__ == "__main__":
-    sys.exit(main(get_parser().parse_args()))
