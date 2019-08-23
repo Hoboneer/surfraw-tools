@@ -14,16 +14,15 @@
 
 import argparse
 import os
-import re
 import sys
-from collections import namedtuple
-from functools import wraps
-from itertools import chain
-from os import EX_OK, EX_OSERR, EX_SOFTWARE, EX_USAGE
+from os import EX_OK, EX_OSERR, EX_USAGE
 
 from jinja2 import Environment, PackageLoader
 
 from .options import (
+    BoolOption,
+    EnumOption,
+    FlagOption,
     OptionResolutionError,
     resolve_aliases,
     resolve_flags,

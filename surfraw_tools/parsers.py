@@ -8,7 +8,7 @@ from .options import (
     FlagOption,
     MappingOption,
 )
-from .parse import insufficient_spec_parts, parse_args
+from .parse import parse_args
 from .validation import (
     invalid_name,
     is_valid_name,
