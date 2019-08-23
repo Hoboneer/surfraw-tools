@@ -10,8 +10,7 @@ from .options import (
 )
 from .parse import parse_args
 from .validation import (
-    invalid_name,
-    is_valid_name,
+    list_of,
     no_validation,
     validate_bool,
     validate_name,
@@ -33,22 +32,16 @@ def parse_bool_option(name, default):
 
 # Third argument is validated inside the function since it needs access to
 # other arguments.
-@parse_args([validate_name, validate_name, no_validation])
-def parse_enum_option(name, default, orig_values):
+@parse_args([validate_name, validate_name, list_of(validate_name)])
+def parse_enum_option(name, default, values):
     """Check an enum option, requiring three colon-delimited parts.
 
     The default value (part 2) *must* be a value in the third part.
     """
-    # Check validity of values.
-    values = orig_values.split(",")
-    for val in values:
-        if not is_valid_name(val):
-            invalid_name(val)
-
     # Ensure `default` is among `values`.
     if default not in values:
         raise argparse.ArgumentTypeError(
-            f"default value '{default}' must be within '{orig_values}'"
+            f"default value '{default}' must be within '{values}'"
         )
 
     return EnumOption(name, default, values)

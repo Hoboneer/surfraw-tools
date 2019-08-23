@@ -78,3 +78,13 @@ def validate_bool(bool_):
 
 def no_validation(_):
     pass
+
+
+def list_of(validator):
+    def list_validator(arg):
+        values = arg.split(",")
+        for value in values:
+            validator(value)
+        return values
+
+    return list_validator
