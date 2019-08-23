@@ -8,7 +8,6 @@ def insufficient_spec_parts(arg, num_required):
     )
 
 
-
 def parse_args(validators):
     """Decorator to validate args of argument spec for generated elvis.
 
@@ -27,7 +26,9 @@ def parse_args(validators):
                     arg = args[i]
                 except IndexError:
                     # Raise `argparse.ArgumentTypeError`
-                    insufficient_spec_parts(raw_arg, num_required=len(validators))
+                    insufficient_spec_parts(
+                        raw_arg, num_required=len(validators)
+                    )
                 else:
                     # Raise `argparse.ArgumentTypeError` if invalid arg.
                     valid_or_fail_func(arg)

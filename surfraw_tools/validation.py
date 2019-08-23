@@ -34,7 +34,9 @@ def is_valid_url_parameter(url_param):
 
 
 def invalid_url_parameter(url_param):
-    raise argparse.ArgumentTypeError(f"'{url_param}' is an invalid URL parameter")
+    raise argparse.ArgumentTypeError(
+        f"'{url_param}' is an invalid URL parameter"
+    )
 
 
 def validate_url_parameter(url_param):

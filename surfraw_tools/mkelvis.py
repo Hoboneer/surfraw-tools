@@ -13,34 +13,37 @@
 # limitations under the License.
 
 import argparse
-import sys
 import os
 import re
-from itertools import chain
+import sys
 from collections import namedtuple
 from functools import wraps
-from os import EX_OK, EX_SOFTWARE, EX_OSERR, EX_USAGE
-from jinja2 import PackageLoader, Environment
+from itertools import chain
+from os import EX_OK, EX_OSERR, EX_SOFTWARE, EX_USAGE
+
+from jinja2 import Environment, PackageLoader
 
 from .options import (
+    OptionResolutionError,
     resolve_aliases,
     resolve_flags,
     resolve_mappings,
-    OptionResolutionError,
 )
 from .parsers import (
-    parse_flag_option,
+    parse_alias_option,
+    parse_anything_option,
     parse_bool_option,
     parse_enum_option,
-    parse_anything_option,
-    parse_alias_option,
+    parse_flag_option,
     parse_mapping_option,
     parse_query_parameter,
 )
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description="generate an elvis for surfraw")
+    parser = argparse.ArgumentParser(
+        description="generate an elvis for surfraw"
+    )
     parser.add_argument("name", help="name for the elvis")
     parser.add_argument(
         "base_url",
@@ -144,7 +147,9 @@ def make_namespace(prefix):
 def generate_elvis(args):
     options = (args.flags, args.bools, args.enums, args.aliases)
     env = Environment(
-        loader=PackageLoader("surfraw_tools"), trim_blocks=True, lstrip_blocks=True
+        loader=PackageLoader("surfraw_tools"),
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
 
     # Add functions to jinja template
