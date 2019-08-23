@@ -106,7 +106,12 @@ else
 
 	# Map variables to parameters
 	{% for map in mappings %}
+	{# The first iteration is special #}
+	{% if loop.first %}
+	search_url="${search_url}{{ map.parameter }}=${{ namespace(map.variable) }}"
+	{% else %}
 	search_url="$search_url&{{ map.parameter }}=${{ namespace(map.variable) }}"
+	{% endif %}
 	{% else %}
 	## No mappings
 	{% endfor %}
