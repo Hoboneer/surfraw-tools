@@ -4,6 +4,7 @@ from .options import (
     AliasOption,
     AnythingOption,
     BoolOption,
+    CollapseOption,
     EnumOption,
     FlagOption,
     MappingOption,
@@ -68,6 +69,11 @@ def parse_alias_option(name, target):
 @parse_args([validate_name, validate_url_parameter])
 def parse_mapping_option(variable, parameter):
     return MappingOption(variable, parameter)
+
+
+@parse_args([validate_name, list_of(no_validation)], last_is_unlimited=True)
+def parse_collapse(variable, *collapses_list):
+    return CollapseOption(variable, collapses_list)
 
 
 @parse_args([validate_url_parameter])

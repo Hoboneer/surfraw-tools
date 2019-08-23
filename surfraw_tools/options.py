@@ -21,6 +21,7 @@ class AliasOption:
 
 
 MappingOption = namedtuple("MappingOption", ["variable", "parameter"])
+CollapseOption = namedtuple("CollapseOption", ["variable", "collapses"])
 
 
 class OptionResolutionError(Exception):
@@ -67,4 +68,16 @@ def resolve_mappings(args):
         else:
             raise OptionResolutionError(
                 f"URL parameter '{mapping.parameter}' does not target any existing variable"
+            )
+
+
+def resolve_collapses(args):
+    options = list(chain(args.bools, args.enums, args.anythings))
+    for collapse in args.collapses:
+        for option in options:
+            if collapse.variable == option.name:
+                break
+        else:
+            raise OptionResolutionError(
+                f"'{collapse.variable}' is a non-existent variable so it cannot be collapsed"
             )

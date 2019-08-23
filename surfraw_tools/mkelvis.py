@@ -26,6 +26,7 @@ from .options import (
     FlagOption,
     OptionResolutionError,
     resolve_aliases,
+    resolve_collapses,
     resolve_flags,
     resolve_mappings,
 )
@@ -33,6 +34,7 @@ from .parsers import (
     parse_alias_option,
     parse_anything_option,
     parse_bool_option,
+    parse_collapse,
     parse_enum_option,
     parse_flag_option,
     parse_mapping_option,
@@ -121,6 +123,15 @@ def get_parser():
         help="map a variable to a URL parameter",
     )
     parser.add_argument(
+        "--collapse",
+        action="append",
+        default=[],
+        type=parse_collapse,
+        dest="collapses",
+        metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
+        help="change groups of values of a variable to a single value",
+    )
+    parser.add_argument(
         "--query-parameter",
         "-Q",
         type=parse_query_parameter,
@@ -178,6 +189,7 @@ def generate_elvis(args):
         aliases=args.aliases,
         # URL parameters
         mappings=args.mappings,
+        collapses=args.collapses,
         query_parameter=args.query_parameter,
     )
 
@@ -209,6 +221,7 @@ def main(args=None):
         resolve_aliases(args)
         resolve_flags(args)
         resolve_mappings(args)
+        resolve_collapses(args)
     except OptionResolutionError as e:
         print(e, file=sys.stderr)
         return EX_USAGE
