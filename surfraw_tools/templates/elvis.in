@@ -99,7 +99,7 @@ else
 	search_url="{{ search_url }}"
 	{% for enum in enums %}
 	case "${{ namespace(enum.name) }}" in
-		{{ '|'.join(enum.values) }}) echo FILL ME IN ;;
+		{{ '|'.join(enum.values) }}) ;;
 		*) err "Invalid value for {{ namespace(enum.name) }}" ;;
 	esac
 	{% endfor %}
