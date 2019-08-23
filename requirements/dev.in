@@ -2,3 +2,4 @@
 pip-tools
 black
 isort
+flake8

@@ -31,3 +31,7 @@ tags: $(SOURCE_FILES)
 
 .PHONY: format
 format: .formatted
+
+.PHONY: lint
+lint:
+	flake8 $(SOURCE_FILES)
