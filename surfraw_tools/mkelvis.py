@@ -73,6 +73,16 @@ def get_parser():
         help="specify an option with an argument from a range of values",
     )
     parser.add_argument(
+        "--anything",
+        "-A",
+        action="append",
+        default=[],
+        dest="anythings",
+        type=parse_anything_option,
+        metavar="VARIABLE_NAME:DEFAULT_VALUE",
+        help="specify an option that is not checked",
+    )
+    parser.add_argument(
         "--alias",
         action="append",
         default=[],
@@ -219,6 +229,7 @@ class FlagOption:
 
 BoolOption = namedtuple("BoolOption", ["name", "default"])
 EnumOption = namedtuple("EnumOption", ["name", "default", "values"])
+AnythingOption = namedtuple("AnythingOption", ["name", "default"])
 
 
 class AliasOption:
@@ -265,6 +276,11 @@ def parse_enum_option(name, default, orig_values):
     return EnumOption(name, default, values)
 
 
+@parse_args([validate_name, no_validation])
+def parse_anything_option(name, default):
+    return AnythingOption(name, default)
+
+
 # NOTE: Aliases are useful since they would result in the target and its
 # aliases to be displayed together in the help output.
 @parse_args([validate_name, validate_name])
@@ -303,7 +319,7 @@ class OptionResolutionError(Exception):
 def resolve_aliases(args):
     # TODO: What to do about naming conflicts?
     # Order is important! (Why?)
-    options = [*chain(args.flags, args.bools, args.enums)]
+    options = [*chain(args.flags, args.bools, args.enums, args.anythings)]
     for alias in args.aliases:
         for option in options:
             if alias.target == option.name:
@@ -331,7 +347,7 @@ def resolve_flags(args):
 
 
 def resolve_mappings(args):
-    options = list(chain(args.bools, args.enums))
+    options = list(chain(args.bools, args.enums, args.anythings))
     for mapping in args.mappings:
         for option in options:
             if mapping.variable == option.name:
@@ -377,6 +393,7 @@ def generate_elvis(args):
         flags=args.flags,
         bools=args.bools,
         enums=args.enums,
+        anythings=args.anythings,
         aliases=args.aliases,
         # URL parameters
         mappings=args.mappings,

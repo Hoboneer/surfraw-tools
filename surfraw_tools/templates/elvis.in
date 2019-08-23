@@ -30,6 +30,12 @@ w3_config_hook ()
 	{% else %}
 	## No enums
 	{% endfor %}
+	# 'Anythings'
+	{% for anything in anythings %}
+	def {{ namespace(anything.name) }} {{ anything.default }}
+	{% else %}
+	## No 'anythings'
+	{% endfor %}
 	# Aliases don't use any config
 }
 
@@ -55,6 +61,12 @@ w3_parse_option_hook ()
 		-{{ enum.name }}=*) setopt {{ namespace(enum.name) }} $optarg ;;
 		{% else %}
 		## No enums
+		{% endfor %}
+		# 'Anythings'
+		{% for anything in anythings %}
+		-{{ anything.name }}=*) setopt {{ namespace(anything.name) }} $optarg ;;
+		{% else %}
+		## No 'anythings'
 		{% endfor %}
 		# Aliases
 		{% for alias in aliases %}
