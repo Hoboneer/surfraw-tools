@@ -3,6 +3,10 @@ REQUIREMENTS_DIR := requirements
 PACKAGE_DIR := surfraw_tools
 SOURCE_FILES := $(shell find "$(PACKAGE_DIR)" -type f -name '*.py')
 
+BLACK_FLAGS := --line-length=79 --target-version=py36
+# Prevent `black` from unnecessarily reformatting `isort` output.
+ISORT_FLAGS := --trailing-comma --use-parentheses --atomic --line-width=79 --multi-line=3
+
 # Do nothing.
 .PHONY: all
 all:
@@ -17,3 +21,13 @@ requirements:
 
 tags: $(SOURCE_FILES)
 	ctags $(SOURCE_FILES)
+
+# Ensure that `isort` and `black` are not run unnecessarily.
+.formatted: $(SOURCE_FILES)
+	isort $(ISORT_FLAGS) $(SOURCE_FILES)
+	black $(BLACK_FLAGS) $(SOURCE_FILES)
+	$(MAKE) tags
+	touch .formatted
+
+.PHONY: format
+format: .formatted
