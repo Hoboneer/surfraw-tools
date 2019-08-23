@@ -31,8 +31,8 @@ def parse_args(validators):
                     )
                 else:
                     # Raise `argparse.ArgumentTypeError` if invalid arg.
-                    valid_or_fail_func(arg)
-                    valid_args.append(arg)
+                    result = valid_or_fail_func(arg)
+                    valid_args.append(result)
             return func(*valid_args)
 
         return validate_args_wrapper

@@ -22,6 +22,7 @@ def invalid_name(name):
 def validate_name(name):
     if not is_valid_name(name):
         invalid_name(name)
+    return name
 
 
 # URL PARAMETER
@@ -42,6 +43,7 @@ def invalid_url_parameter(url_param):
 def validate_url_parameter(url_param):
     if not is_valid_url_parameter(url_param):
         invalid_url_parameter(url_param)
+    return url_param
 
 
 # YES-NO
@@ -68,6 +70,7 @@ def invalid_bool(bool_arg):
 def validate_bool(bool_):
     if not is_valid_bool(bool_):
         invalid_bool(bool_)
+    return bool_
 
 
 # MISC.
