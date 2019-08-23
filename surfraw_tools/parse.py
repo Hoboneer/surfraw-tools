@@ -8,7 +8,7 @@ def insufficient_spec_parts(arg, num_required):
     )
 
 
-def parse_args(validators):
+def parse_args(validators, last_is_unlimited=False):
     """Decorator to validate args of argument spec for generated elvis.
 
     Raises `argparse.ArgumentTypeError` when invalid, otherwise calls decorated
@@ -16,7 +16,6 @@ def parse_args(validators):
     """
 
     def wrapper(func):
-        # Only takes positional args.
         @wraps(func)
         def validate_args_wrapper(raw_arg):
             args = raw_arg.split(":")
@@ -33,6 +32,16 @@ def parse_args(validators):
                     # Raise `argparse.ArgumentTypeError` if invalid arg.
                     result = valid_or_fail_func(arg)
                     valid_args.append(result)
+
+            # Continue until args exhausted.
+            if last_is_unlimited:
+                i += 1
+                while i < len(args):
+                    # Raise `argparse.ArgumentTypeError` if invalid arg.
+                    result = valid_or_fail_func(args[i])
+                    valid_args.append(result)
+                    i += 1
+
             return func(*valid_args)
 
         return validate_args_wrapper
