@@ -20,6 +20,7 @@ from os import EX_OK, EX_OSERR, EX_USAGE
 from jinja2 import Environment, PackageLoader
 
 from .options import (
+    AnythingOption,
     BoolOption,
     EnumOption,
     FlagOption,
@@ -159,6 +160,7 @@ def generate_elvis(args):
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
     env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
+    env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
 
     ELVIS_TEMPLATE = env.get_template("elvis.in")
 

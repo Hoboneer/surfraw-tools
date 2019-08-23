@@ -76,6 +76,8 @@ w3_parse_option_hook ()
 		-{{ alias.name }}=*) setoptyn {{ namespace(alias.target.name) }} $optarg ;;
 		{% elif alias.target is enum_option %}
 		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
+		{% elif alias.target is anything_option %}
+		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
 		{% else %}
 		err "Alias target type unhandled! This should never have been reached. This is a bug!"
 		{% endif %}
