@@ -1,11 +1,29 @@
+import os
+import re
+
 from setuptools import setup
+
+
+# The package isn't installed yet, so need to get it by regex.
+def get_package_attribute(attr, package):
+    with open(os.path.join(package, "__init__.py")) as f:
+        results = re.search(
+            r"{}\s*=\s*[\"']([^\"']*)[\"']".format(attr), f.read()
+        )
+    if results is None:
+        raise RuntimeError(
+            f"Could not find property {attr} in package {package}'s `__init__.py` file."
+        )
+    return results.group(1)
+
 
 with open("README.md", "r") as f:
     long_description = f.read()
 
+PACKAGE_NAME = "surfraw_tools"
 setup(
     name="surfraw-tools",
-    version="0.1.0",
+    version=get_package_attribute("__version__", PACKAGE_NAME),
     author="Gabriel Lisaca",
     author_email="gabriel.lisaca@gmail.com",
     description="Python tools to generate surfraw scripts",
