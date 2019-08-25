@@ -1,5 +1,0 @@
-reddit www.reddit.com www.reddit.com/search?q=
-subsearch www.reddit.com www.reddit.com/subreddits/search?q= --description='Search for a subreddit'
-subreddit www.reddit.com www.reddit.com/r/ --description='Visit a subreddit'
-malusers myanimelist.net myanimelist.net/users.php?q= --description='Search MyAnimeList users'
-malanime myanimelist.net myanimelist.net/anime.php?q= --description='Search MyAnimeList anime database'
