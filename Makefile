@@ -23,9 +23,9 @@ tags: $(SOURCE_FILES)
 	ctags $(SOURCE_FILES)
 
 # Ensure that `isort` and `black` are not run unnecessarily.
-.formatted: $(SOURCE_FILES)
-	isort $(ISORT_FLAGS) $(SOURCE_FILES)
-	black $(BLACK_FLAGS) $(SOURCE_FILES)
+.formatted: $(SOURCE_FILES) setup.py
+	isort $(ISORT_FLAGS) $(SOURCE_FILES) setup.py
+	black $(BLACK_FLAGS) $(SOURCE_FILES) setup.py
 	$(MAKE) tags
 	touch .formatted
 
