@@ -1,6 +1,6 @@
 import argparse
 import sys
-from os import EX_USAGE
+from os import EX_OK, EX_USAGE
 
 from ._package import __version__
 from .options import (
@@ -151,3 +151,5 @@ def process_args(args):
         )
         # TODO: Use proper exit code.
         return EX_USAGE
+
+    return EX_OK
