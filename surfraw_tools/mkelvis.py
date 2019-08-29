@@ -14,130 +14,12 @@
 
 import argparse
 import os
-import sys
-from os import EX_OK, EX_OSERR, EX_USAGE
+from os import EX_OK, EX_OSERR
 
 from jinja2 import Environment, PackageLoader
 
-from .options import (
-    AnythingOption,
-    BoolOption,
-    EnumOption,
-    FlagOption,
-    OptionResolutionError,
-    resolve_aliases,
-    resolve_collapses,
-    resolve_flags,
-    resolve_mappings,
-)
-from .parsers import (
-    parse_alias_option,
-    parse_anything_option,
-    parse_bool_option,
-    parse_collapse,
-    parse_enum_option,
-    parse_flag_option,
-    parse_mapping_option,
-    parse_query_parameter,
-)
-
-
-def get_parser():
-    parser = argparse.ArgumentParser(
-        description="generate an elvis for surfraw"
-    )
-    parser.add_argument("name", help="name for the elvis")
-    parser.add_argument(
-        "base_url",
-        help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",
-    )
-    parser.add_argument(
-        "search_url",
-        help="the url to append arguments to, with the query parameters opened and no protocol (automatically set to 'https')",
-    )
-    parser.add_argument(
-        "--description",
-        help="description for the elvis, excluding the domain name in parentheses",
-    )
-    parser.add_argument(
-        "--insecure", action="store_true", help="use 'http' instead of 'https'"
-    )
-    # Option generation
-    parser.add_argument(
-        "--flag",
-        "-F",
-        action="append",
-        default=[],
-        type=parse_flag_option,
-        dest="flags",
-        metavar="FLAG_NAME:FLAG_TARGET:YES_OR_NO",
-        help="specify a flag for the elvis",
-    )
-    parser.add_argument(
-        "--yes-no",
-        "-Y",
-        action="append",
-        default=[],
-        type=parse_bool_option,
-        dest="bools",
-        metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
-        help="specify a yes or no option for the elvis",
-    )
-    parser.add_argument(
-        "--enum",
-        "-E",
-        action="append",
-        default=[],
-        type=parse_enum_option,
-        dest="enums",
-        metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
-        help="specify an option with an argument from a range of values",
-    )
-    parser.add_argument(
-        "--anything",
-        "-A",
-        action="append",
-        default=[],
-        dest="anythings",
-        type=parse_anything_option,
-        metavar="VARIABLE_NAME:DEFAULT_VALUE",
-        help="specify an option that is not checked",
-    )
-    parser.add_argument(
-        "--alias",
-        action="append",
-        default=[],
-        type=parse_alias_option,
-        dest="aliases",
-        metavar="ALIAS_NAME:ALIAS_TARGET",
-        help="make an alias to another defined option",
-    )
-    parser.add_argument(
-        "--map",
-        "-M",
-        action="append",
-        default=[],
-        type=parse_mapping_option,
-        dest="mappings",
-        metavar="VARIABLE_NAME:PARAMETER",
-        help="map a variable to a URL parameter",
-    )
-    parser.add_argument(
-        "--collapse",
-        action="append",
-        default=[],
-        type=parse_collapse,
-        dest="collapses",
-        metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
-        help="change groups of values of a variable to a single value",
-    )
-    parser.add_argument(
-        "--query-parameter",
-        "-Q",
-        type=parse_query_parameter,
-        help="define the parameter for the query arguments; needed with --map",
-    )
-    return parser
+from .common import BASE_PARSER, process_args
+from .options import AnythingOption, BoolOption, EnumOption, FlagOption
 
 
 # Taken from this stackoverflow answer:
@@ -200,39 +82,16 @@ def main(args=None):
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
     """
-    if args is None:
-        args = get_parser().parse_args()
+    parser = argparse.ArgumentParser(
+        "mkelvis",
+        description="generate an elvis for surfraw",
+        parents=[BASE_PARSER],
+    )
+    args = parser.parse_args(args)
 
-    if args.description is None:
-        args.description = f"Search {args.name} ({args.base_url})"
-    else:
-        args.description += f" ({args.base_url})"
-
-    if args.insecure:
-        # Is this the right term?
-        url_scheme = "http"
-    else:
-        url_scheme = "https"
-
-    args.base_url = f"{url_scheme}://{args.base_url}"
-    args.search_url = f"{url_scheme}://{args.search_url}"
-
-    try:
-        resolve_aliases(args)
-        resolve_flags(args)
-        resolve_mappings(args)
-        resolve_collapses(args)
-    except OptionResolutionError as e:
-        print(e, file=sys.stderr)
-        return EX_USAGE
-
-    if len(args.mappings) > 0 and args.query_parameter is None:
-        print(
-            "mapping variables without a defined --query-parameter is forbidden",
-            file=sys.stderr,
-        )
-        # TODO: Use proper exit code.
-        return EX_USAGE
+    exit_code = process_args(args)
+    if exit_code != EX_OK:
+        return exit_code
 
     # Generate the elvis.
     elvis_program = generate_elvis(args)
