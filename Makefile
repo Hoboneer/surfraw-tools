@@ -24,8 +24,8 @@ tags: $(SOURCE_FILES)
 
 # Ensure that `isort` and `black` are not run unnecessarily.
 .formatted: $(SOURCE_FILES) setup.py
-	isort $(ISORT_FLAGS) $(SOURCE_FILES) setup.py
-	black $(BLACK_FLAGS) $(SOURCE_FILES) setup.py
+	isort $(ISORT_FLAGS) $?
+	black $(BLACK_FLAGS) $?
 	$(MAKE) tags
 	touch .formatted
 
