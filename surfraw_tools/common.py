@@ -22,11 +22,12 @@ from .parsers import (
 )
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
-BASE_PARSER.add_argument(
+_VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
     "--version",
     action="version",
     version=f"%(prog)s (surfraw-tools) {__version__}",
 )
+VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
 BASE_PARSER.add_argument("name", help="name for the elvis")
 BASE_PARSER.add_argument(
     "base_url",

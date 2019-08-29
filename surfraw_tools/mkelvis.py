@@ -18,8 +18,10 @@ from os import EX_OK, EX_OSERR
 
 from jinja2 import Environment, PackageLoader
 
-from .common import BASE_PARSER, process_args
+from .common import BASE_PARSER, VERSION_FORMAT_STRING, process_args
 from .options import AnythingOption, BoolOption, EnumOption, FlagOption
+
+PROGRAM_NAME = "mkelvis"
 
 
 # Taken from this stackoverflow answer:
@@ -58,6 +60,7 @@ def generate_elvis(args):
     ELVIS_TEMPLATE = env.get_template("elvis.in")
 
     return ELVIS_TEMPLATE.render(
+        GENERATOR_PROGRAM=VERSION_FORMAT_STRING % {"prog": PROGRAM_NAME},
         name=args.name,
         description=args.description,
         base_url=args.base_url,
@@ -83,7 +86,7 @@ def main(args=None):
     exit codes prefixed "EX_".
     """
     parser = argparse.ArgumentParser(
-        "mkelvis",
+        PROGRAM_NAME,
         description="generate an elvis for surfraw",
         parents=[BASE_PARSER],
     )
