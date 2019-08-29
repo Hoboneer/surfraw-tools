@@ -35,3 +35,9 @@ format: .formatted
 .PHONY: lint
 lint:
 	flake8 $(SOURCE_FILES)
+
+.PHONY: clean
+clean:
+	-rm -fr *.egg-info/
+	-rm -fr build/
+	-rm -fr dist/
