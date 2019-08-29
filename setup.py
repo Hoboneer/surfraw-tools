@@ -5,14 +5,14 @@ from setuptools import setup
 
 
 # The package isn't installed yet, so need to get it by regex.
-def get_package_attribute(attr, package):
-    with open(os.path.join(package, "__init__.py")) as f:
+def get_package_attribute(attr, package, module="_package.py"):
+    with open(os.path.join(package, module)) as f:
         results = re.search(
             r"{}\s*=\s*[\"']([^\"']*)[\"']".format(attr), f.read()
         )
     if results is None:
         raise RuntimeError(
-            f"Could not find property {attr} in package {package}'s `__init__.py` file."
+            f"Could not find property {attr} in package {package}'s `{module}` file."
         )
     return results.group(1)
 
