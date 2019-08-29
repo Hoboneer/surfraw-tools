@@ -1,3 +1,6 @@
+# Project-specific stuff
+.formatted
+
 # Vim stuff
 *.swp
 *.vim
