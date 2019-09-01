@@ -15,7 +15,7 @@ EOF
 
 {# Only define the option parsing if any #}
 {# flags, bools, enums, or aliases are defined #}
-{% if any_options_defined() %}
+{% if any_options_defined %}
 w3_config_hook ()
 {
 	# Flags don't use any config
