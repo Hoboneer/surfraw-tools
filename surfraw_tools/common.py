@@ -2,8 +2,14 @@ import argparse
 import sys
 from os import EX_OK, EX_USAGE
 
+from jinja2 import Environment, PackageLoader
+
 from ._package import __version__
 from .options import (
+    AnythingOption,
+    BoolOption,
+    EnumOption,
+    FlagOption,
     OptionResolutionError,
     resolve_aliases,
     resolve_collapses,
@@ -154,3 +160,56 @@ def process_args(args):
         return EX_USAGE
 
     return EX_OK
+
+
+def make_namespace(prefix):
+    def prefixer(name):
+        return f"{prefix}_{name}"
+
+    return prefixer
+
+
+def get_env(args):
+    """Get a Jinja `Environment` and a dict of variables to base the code
+    generator on.
+
+    The calling code should add entries to the `template_variables` dict and
+    simply render get a template and render it like so:
+    `template.render(variables)` for simple uses.
+    """
+    options = (args.flags, args.bools, args.enums, args.aliases)
+    env = Environment(
+        loader=PackageLoader("surfraw_tools"),
+        trim_blocks=True,
+        lstrip_blocks=True,
+    )
+
+    # Add functions to jinja template
+    env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
+    env.globals["any_options_defined"] = lambda: any(
+        len(option_container) for option_container in options
+    )
+    env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
+    env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
+    env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
+    env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
+
+    template_variables = {
+        "name": args.name,
+        "description": args.description,
+        "base_url": args.base_url,
+        "search_url": args.search_url,
+        "options": options,
+        # Options to generate
+        "flags": args.flags,
+        "bools": args.bools,
+        "enums": args.enums,
+        "anythings": args.anythings,
+        "aliases": args.aliases,
+        # URL parameters
+        "mappings": args.mappings,
+        "collapses": args.collapses,
+        "query_parameter": args.query_parameter,
+    }
+
+    return (env, template_variables)

@@ -16,10 +16,7 @@ import argparse
 import os
 from os import EX_OK, EX_OSERR
 
-from jinja2 import Environment, PackageLoader
-
-from .common import BASE_PARSER, VERSION_FORMAT_STRING, process_args
-from .options import AnythingOption, BoolOption, EnumOption, FlagOption
+from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
 
 PROGRAM_NAME = "mkelvis"
 
@@ -30,53 +27,6 @@ def make_executable(path):
     mode = os.stat(path).st_mode
     mode |= (mode & 0o444) >> 2  # copy R bits to X
     os.chmod(path, mode)
-
-
-def make_namespace(prefix):
-    def prefixer(name):
-        return f"{prefix}_{name}"
-
-    return prefixer
-
-
-def generate_elvis(args):
-    options = (args.flags, args.bools, args.enums, args.aliases)
-    env = Environment(
-        loader=PackageLoader("surfraw_tools"),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
-
-    # Add functions to jinja template
-    env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
-    env.globals["any_options_defined"] = lambda: any(
-        len(option_container) for option_container in options
-    )
-    env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
-    env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
-    env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
-    env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
-
-    ELVIS_TEMPLATE = env.get_template("elvis.in")
-
-    return ELVIS_TEMPLATE.render(
-        GENERATOR_PROGRAM=VERSION_FORMAT_STRING % {"prog": PROGRAM_NAME},
-        name=args.name,
-        description=args.description,
-        base_url=args.base_url,
-        search_url=args.search_url,
-        options=options,
-        # Options to generate
-        flags=args.flags,
-        bools=args.bools,
-        enums=args.enums,
-        anythings=args.anythings,
-        aliases=args.aliases,
-        # URL parameters
-        mappings=args.mappings,
-        collapses=args.collapses,
-        query_parameter=args.query_parameter,
-    )
 
 
 def main(args=None):
@@ -97,7 +47,12 @@ def main(args=None):
         return exit_code
 
     # Generate the elvis.
-    elvis_program = generate_elvis(args)
+    env, template_vars = get_env(args)
+    template_vars["GENERATOR_PROGRAM"] = VERSION_FORMAT_STRING % {
+        "prog": PROGRAM_NAME
+    }
+    elvis_template = env.get_template("elvis.in")
+    elvis_program = elvis_template.render(template_vars)
 
     try:
         with open(args.name, "w") as f:
