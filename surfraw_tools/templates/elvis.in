@@ -19,24 +19,28 @@ EOF
 w3_config_hook ()
 {
 	# Flags don't use any config
+
 	# Bools
 	{% for bool in bools %}
 	defyn {{ bool.name|ns }} {{ bool.default }}
 	{% else %}
-	## No bools
+	## defyn {{ 'variable'|ns }} {{ 'default_yes_or_no' }}
 	{% endfor %}
+
 	# Enums
 	{% for enum in enums %}
 	def {{ enum.name|ns }} {{ enum.default }}
 	{% else %}
-	## No enums
+	## defyn {{ 'variable'|ns }} {{ 'default_enum_value' }}
 	{% endfor %}
+
 	# 'Anythings'
 	{% for anything in anythings %}
 	def {{ anything.name|ns }} {{ anything.default }}
 	{% else %}
-	## No 'anythings'
+	## defyn {{ 'variable'|ns }} {{ 'default_anything' }}
 	{% endfor %}
+
 	# Aliases don't use any config
 }
 
