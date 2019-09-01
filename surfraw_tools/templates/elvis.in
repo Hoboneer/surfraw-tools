@@ -53,26 +53,30 @@ w3_parse_option_hook ()
 		{% for flag in flags %}
 		-{{ flag.name }}) setoptyn {{ flag.target.name|ns }} {{ flag.value }} ;;
 		{% else %}
-		## No flags
+		##-{{ 'flag' }}) setoptyn {{ 'targetname'|ns }} {{ 'flag_value_yes_or_no' }} ;;
 		{% endfor %}
+
 		# Bools
 		{% for bool in bools %}
 		-{{ bool.name }}=*) setoptyn {{ bool.name|ns }} $optarg ;;
 		{% else %}
-		## No bools
+		##-{{ 'bool' }}) setoptyn {{ 'bool'|ns }} $optarg ;;
 		{% endfor %}
+
 		# Enums
 		{% for enum in enums %}
 		-{{ enum.name }}=*) setopt {{ enum.name|ns }} $optarg ;;
 		{% else %}
-		## No enums
+		##-{{ 'enum' }}) setopt {{ 'enum'|ns }} $optarg ;;
 		{% endfor %}
+
 		# 'Anythings'
 		{% for anything in anythings %}
 		-{{ anything.name }}=*) setopt {{ anything.name|ns }} $optarg ;;
 		{% else %}
-		## No 'anythings'
+		##-{{ 'anything' }}) setopt {{ 'anything'|ns }} $optarg ;;
 		{% endfor %}
+
 		# Aliases
 		{% for alias in aliases %}
 		{% if alias.target is flag_option %}
@@ -88,6 +92,7 @@ w3_parse_option_hook ()
 		{% endif %}
 		{% else %}
 		## No aliases
+		## Use the examples for the other option types to derive one for its alias
 		{% endfor %}
 		*) return 1 ;;
 	esac
