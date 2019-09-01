@@ -177,7 +177,13 @@ def get_env(args):
     simply render get a template and render it like so:
     `template.render(variables)` for simple uses.
     """
-    options = (args.flags, args.bools, args.enums, args.aliases)
+    options = (
+        args.flags,
+        args.bools,
+        args.enums,
+        args.aliases,
+        args.anythings,
+    )
     env = Environment(
         loader=PackageLoader("surfraw_tools"),
         trim_blocks=True,
