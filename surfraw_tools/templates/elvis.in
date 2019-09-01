@@ -72,7 +72,7 @@ w3_parse_option_hook ()
 		# Aliases
 		{% for alias in aliases %}
 		{% if alias.target is flag_option %}
-		-{{ alias.name }}) setoptyn {{ alias.target.target|ns }} {{ alias.target.value }} ;;
+		-{{ alias.name }}) setoptyn {{ alias.target.target.name|ns }} {{ alias.target.value }} ;;
 		{% elif alias.target is bool_option %}
 		-{{ alias.name }}=*) setoptyn {{ alias.target.name|ns }} $optarg ;;
 		{% elif alias.target is enum_option %}
