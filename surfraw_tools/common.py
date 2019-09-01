@@ -162,7 +162,7 @@ def process_args(args):
     return EX_OK
 
 
-def make_namespace(prefix):
+def _make_namespace(prefix):
     def prefixer(name):
         return f"{prefix}_{name}"
 
@@ -185,7 +185,7 @@ def get_env(args):
     )
 
     # Add functions to jinja template
-    env.globals["namespace"] = make_namespace(f"SURFRAW_{args.name}")
+    env.globals["namespace"] = _make_namespace(f"SURFRAW_{args.name}")
     env.globals["any_options_defined"] = lambda: any(
         len(option_container) for option_container in options
     )
