@@ -113,6 +113,7 @@ else
 		*) err "Invalid value for {{ enum.name|ns }}" ;;
 	esac
 	{% endfor %}
+	{% if collapses|length > 0 %}
 
 	# Collapse variables
 	{# TODO: Name this better! #}
@@ -124,6 +125,7 @@ else
 		{% endfor %}
 	esac
 	{% endfor %}
+	{% endif %}
 
 	# Map variables to parameters
 	{% for map in mappings %}
