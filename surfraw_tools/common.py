@@ -185,7 +185,11 @@ def get_env(args):
     )
 
     # Add functions to jinja template
-    env.globals["namespace"] = _make_namespace(f"SURFRAW_{args.name}")
+    default_namespace = _make_namespace(f"SURFRAW_{args.name}")
+    env.filters["namespace"] = default_namespace
+    # Short-hand for `namespace`
+    env.filters["ns"] = default_namespace
+
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
     env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)

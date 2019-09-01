@@ -21,19 +21,19 @@ w3_config_hook ()
 	# Flags don't use any config
 	# Bools
 	{% for bool in bools %}
-	defyn {{ namespace(bool.name) }} {{ bool.default }}
+	defyn {{ bool.name|ns }} {{ bool.default }}
 	{% else %}
 	## No bools
 	{% endfor %}
 	# Enums
 	{% for enum in enums %}
-	def {{ namespace(enum.name) }} {{ enum.default }}
+	def {{ enum.name|ns }} {{ enum.default }}
 	{% else %}
 	## No enums
 	{% endfor %}
 	# 'Anythings'
 	{% for anything in anythings %}
-	def {{ namespace(anything.name) }} {{ anything.default }}
+	def {{ anything.name|ns }} {{ anything.default }}
 	{% else %}
 	## No 'anythings'
 	{% endfor %}
@@ -47,38 +47,38 @@ w3_parse_option_hook ()
 	case "$opt" in
 		# Flags
 		{% for flag in flags %}
-		-{{ flag.name }}) setoptyn {{ namespace(flag.target.name) }} {{ flag.value }} ;;
+		-{{ flag.name }}) setoptyn {{ flag.target.name|ns }} {{ flag.value }} ;;
 		{% else %}
 		## No flags
 		{% endfor %}
 		# Bools
 		{% for bool in bools %}
-		-{{ bool.name }}=*) setoptyn {{ namespace(bool.name) }} $optarg ;;
+		-{{ bool.name }}=*) setoptyn {{ bool.name|ns }} $optarg ;;
 		{% else %}
 		## No bools
 		{% endfor %}
 		# Enums
 		{% for enum in enums %}
-		-{{ enum.name }}=*) setopt {{ namespace(enum.name) }} $optarg ;;
+		-{{ enum.name }}=*) setopt {{ enum.name|ns }} $optarg ;;
 		{% else %}
 		## No enums
 		{% endfor %}
 		# 'Anythings'
 		{% for anything in anythings %}
-		-{{ anything.name }}=*) setopt {{ namespace(anything.name) }} $optarg ;;
+		-{{ anything.name }}=*) setopt {{ anything.name|ns }} $optarg ;;
 		{% else %}
 		## No 'anythings'
 		{% endfor %}
 		# Aliases
 		{% for alias in aliases %}
 		{% if alias.target is flag_option %}
-		-{{ alias.name }}) setoptyn {{ namespace(alias.target.target) }} {{ alias.target.value }} ;;
+		-{{ alias.name }}) setoptyn {{ alias.target.target|ns }} {{ alias.target.value }} ;;
 		{% elif alias.target is bool_option %}
-		-{{ alias.name }}=*) setoptyn {{ namespace(alias.target.name) }} $optarg ;;
+		-{{ alias.name }}=*) setoptyn {{ alias.target.name|ns }} $optarg ;;
 		{% elif alias.target is enum_option %}
-		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
+		-{{ alias.name }}=*) setopt {{ alias.target.name|ns }} $optarg ;;
 		{% elif alias.target is anything_option %}
-		-{{ alias.name }}=*) setopt {{ namespace(alias.target.name) }} $optarg ;;
+		-{{ alias.name }}=*) setopt {{ alias.target.name|ns }} $optarg ;;
 		{% else %}
 		err "Alias target type unhandled! This should never have been reached. This is a bug!"
 		{% endif %}
@@ -99,19 +99,19 @@ else
 	escaped_args=$(w3_url_of_arg $w3_args)
 	search_url="{{ search_url }}"
 	{% for enum in enums %}
-	case "${{ namespace(enum.name) }}" in
+	case "${{ enum.name|ns }}" in
 		{{ '|'.join(enum.values) }}) ;;
-		*) err "Invalid value for {{ namespace(enum.name) }}" ;;
+		*) err "Invalid value for {{ enum.name|ns }}" ;;
 	esac
 	{% endfor %}
 
 	# Collapse variables
 	{# TODO: Name this better! #}
 	{% for collapse in collapses %}
-	case "${{ namespace(collapse.variable) }}" in
+	case "${{ collapse.variable|ns }}" in
 		{% for branch in collapse.collapses %}
 		{# Last in `branch` is the result #}
-		{{ '|'.join(branch[:-1]) }}) {{ namespace(collapse.variable) }}={{ branch[-1] }} ;;
+		{{ '|'.join(branch[:-1]) }}) {{ collapse.variable|ns }}={{ branch[-1] }} ;;
 		{% endfor %}
 	esac
 	{% endfor %}
@@ -120,9 +120,9 @@ else
 	{% for map in mappings %}
 	{# The first iteration is special #}
 	{% if loop.first %}
-	search_url="${search_url}{{ map.parameter }}=${{ namespace(map.variable) }}"
+	search_url="${search_url}{{ map.parameter }}=${{ map.variable|ns }}"
 	{% else %}
-	search_url="$search_url&{{ map.parameter }}=${{ namespace(map.variable) }}"
+	search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
 	{% endif %}
 	{% else %}
 	## No mappings
