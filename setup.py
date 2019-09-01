@@ -41,7 +41,12 @@ setup(
         "Topic :: Terminals",
     ],
     install_requires=["jinja2"],
-    entry_points={"console_scripts": ["mkelvis=surfraw_tools.mkelvis:main"]},
+    entry_points={
+        "console_scripts": [
+            "mkelvis=surfraw_tools.mkelvis:main",
+            "mkelviscomps=surfraw_tools.mkelviscomps:main",
+        ]
+    },
     python_requires=">=3.6",
     include_package_data=True,
     zip_safe=False,
