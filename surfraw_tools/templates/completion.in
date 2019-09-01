@@ -7,6 +7,9 @@ _surfraw_{{ name }} ()
 	local cur=${COMP_WORDS[COMP_CWORD]}
 	local prev=${COMP_WORDS[COMP_CWORD-1]}
 	local opts='{% for opt in chain.from_iterable(options) %}-{{ opt.name }}{% if not loop.last %} {% endif %}{% endfor %}'
+	local yes_no_args='yes no on off 1 0'
+
+	# Enums
 	{% for enum in enums %}
 	# Option is in the form `opt=`
 	if [ "$cur" = '='  ] && [ "$prev" = '-{{ enum.name }}' ]; then
@@ -15,6 +18,16 @@ _surfraw_{{ name }} ()
 	fi
 	# TODO: Option is in the form `opt=*`
 	{% endfor %}
+
+	# Bools
+	{% for bool in bools %}
+	# Option is in the form `opt=`
+	if [ "$cur" = '='  ] && [ "$prev" = '-{{ bool.name }}' ]; then
+		COMPREPLY=( $(compgen -W "$yes_no_args") )
+		return 0
+	fi
+	{% endfor %}
+
 	if [[ "$cur" =~ -[^=]* ]]; then
 		COMPREPLY=( $(compgen -W "$opts" -- $cur) )
 		return 0
