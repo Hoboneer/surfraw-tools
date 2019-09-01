@@ -136,7 +136,10 @@ else
 	search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
 	{% endif %}
 	{% else %}
-	## No mappings
+	## First parameter
+	##search_url="${search_url}param1=${{ 'variable1'|ns }}"
+	## Successive parameters
+	##search_url="$search_url&param2=${{ 'variable2'|ns }}"
 	{% endfor %}
 
 	# Add the search to url
