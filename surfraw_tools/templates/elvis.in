@@ -60,14 +60,14 @@ w3_parse_option_hook ()
 		{% for bool in bools %}
 		-{{ bool.name }}=*) setoptyn {{ bool.name|ns }} $optarg ;;
 		{% else %}
-		##-bool) setoptyn {{ 'bool'|ns }} $optarg ;;
+		##-bool=*) setoptyn {{ 'bool'|ns }} $optarg ;;
 		{% endfor %}
 
 		# Enums
 		{% for enum in enums %}
 		-{{ enum.name }}=*) setopt {{ enum.name|ns }} $optarg ;;
 		{% else %}
-		##-enum) setopt {{ 'enum'|ns }} $optarg ;;
+		##-enum=*) setopt {{ 'enum'|ns }} $optarg ;;
 		{% endfor %}
 
 		# 'Anythings'
