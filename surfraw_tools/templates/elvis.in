@@ -74,7 +74,7 @@ w3_parse_option_hook ()
 		{% for anything in anythings %}
 		-{{ anything.name }}=*) setopt {{ anything.name|ns }} $optarg ;;
 		{% else %}
-		##-{{ 'anything' }}) setopt {{ 'anything'|ns }} $optarg ;;
+		##-{{ 'anything' }}=*) setopt {{ 'anything'|ns }} $optarg ;;
 		{% endfor %}
 
 		# Aliases
