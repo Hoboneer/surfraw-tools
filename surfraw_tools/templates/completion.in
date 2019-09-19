@@ -10,7 +10,7 @@
 local {{ enum.name }}_values='{% for val in enum.values %}{{ val }} {% endfor %}'
 # Option is in the form `opt=*`
 if [[ "$cur" =~ -{{ name }}=([a-z]*) ]]; then
-	COMPREPLY=( $(compgen -W "${{ name }}_values" "${BASH_REMATCH[1]}") )
+	COMPREPLY=( $(compgen -W "${{ enum.name }}_values" "${BASH_REMATCH[1]}") )
 	return 0
 fi
 {% endmacro %}
@@ -64,6 +64,7 @@ _surfraw_{{ name }} ()
 	{{ complete_enum(alias.target, name=alias.name) }}
 	{% elif alias.target is bool_option %}
 	# Bool
+	{# TODO: Figure out if this bool alias code is correct #}
 	{{ complete_bool(alias) }}
 	{% endif %}
 	{% endfor %}
