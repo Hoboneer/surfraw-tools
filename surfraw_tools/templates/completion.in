@@ -3,21 +3,25 @@
 
 {# TODO: Make these macros indent correctly... #}
 {% macro _complete_enum(enum, name=None) %}
-# Option is in the form `opt=`
-if [ "$cur" = '='  ] && [ "$prev" = '-{% if name is none %}{{ enum.name }}{% else %}{{ name }}{% endif %}' ]; then
-	COMPREPLY=( {% for val in enum.values %}'{{ val }}' {% endfor %} )
+{% if name is none %}
+{% set name = enum.name %}
+{% endif %}
+{# Values are specific to enums #}
+local {{ enum.name }}_values='{% for val in enum.values %}{{ val }} {% endfor %}'
+# Option is in the form `opt=*`
+if [[ "$cur" =~ -{{ name }}=([a-z]*) ]]; then
+	COMPREPLY=( $(compgen -W "${{ name }}_values" "${BASH_REMATCH[1]}") )
 	return 0
 fi
-# TODO: Option is in the form `opt=*`
 {% endmacro %}
 {% macro complete_enum() %}
 {{ _complete_enum(*varargs, **kwargs)|indent|replace('    ', '\t') }}
 {% endmacro %}
 
 {%- macro _complete_bool(bool) %}
-# Option is in the form `opt=`
-if [ "$cur" = '='  ] && [ "$prev" = '-{{ bool.name }}' ]; then
-	COMPREPLY=( $(compgen -W "$yes_no_args") )
+# Option is in the form `opt=*`
+if [[ "$cur" =~ -{{ bool.name }}=([a-z]*) ]]; then
+	COMPREPLY=( $(compgen -W "$yes_no_args" "${BASH_REMATCH[1]}") )
 	return 0
 fi
 {% endmacro %}
@@ -28,8 +32,9 @@ fi
 _surfraw_{{ name }} ()
 {
 	COMPREPLY=()
-	local cur=${COMP_WORDS[COMP_CWORD]}
-	local prev=${COMP_WORDS[COMP_CWORD-1]}
+
+	local cur prev
+	_get_comp_words_by_ref -n = cur prev
 
 	local flag_opts='{% for opt in flags %}-{{ opt.name }}{% if not loop.last%} {% endif %}{% endfor %}'
 	local enum_opts='{% for opt in enums %}-{{ opt.name }}={% if not loop.last%} {% endif %}{% endfor %}'
