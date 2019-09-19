@@ -70,6 +70,7 @@ _surfraw_{{ name }} ()
 	{% endif %}
 	{% endfor %}
 
+	# Otherwise, complete option *names* when `cur` is a single dash
 	if [[ "$cur" =~ -[^=]* ]]; then
 		COMPREPLY=( $(compgen -W "$opts" -- $cur) )
 		return 0
