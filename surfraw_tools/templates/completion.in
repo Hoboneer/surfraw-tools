@@ -14,7 +14,7 @@ fi
 {{ _complete_enum(*varargs, **kwargs)|indent|replace('    ', '\t') }}
 {% endmacro %}
 
-{% macro _complete_bool(bool) %}
+{%- macro _complete_bool(bool) %}
 # Option is in the form `opt=`
 if [ "$cur" = '='  ] && [ "$prev" = '-{{ bool.name }}' ]; then
 	COMPREPLY=( $(compgen -W "$yes_no_args") )
