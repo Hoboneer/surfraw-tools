@@ -9,3 +9,9 @@
 	- Create `setup.py` file
 	- Make the program a Python package
 	- Upload to PyPI
+- Add more option types
+	- `results`: An option implementing elvi-specific results as suggested
+	  by `SURFRAW_results`. This may also need to have its own specific
+`--map-*` option (with the regular mapping option preventing it to be done?).
+	- More generally, a `nat`ural number option type to be the underlying
+	  "type" of the `results` option.
