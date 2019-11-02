@@ -1,6 +1,5 @@
 import argparse
 import sys
-from itertools import chain
 from os import EX_OK, EX_USAGE
 
 from jinja2 import Environment, PackageLoader
@@ -178,6 +177,7 @@ def get_env(args):
     simply render get a template and render it like so:
     `template.render(variables)` for simple uses.
     """
+    # XXX: Should `options` be flattened?
     options = (
         args.flags,
         args.bools,
@@ -192,8 +192,6 @@ def get_env(args):
     )
 
     # Add functions to jinja template
-    env.globals["chain"] = chain
-
     default_namespace = _make_namespace(f"SURFRAW_{args.name}")
     env.filters["namespace"] = default_namespace
     # Short-hand for `namespace`
