@@ -1,4 +1,5 @@
 from collections import namedtuple
+from functools import wraps
 from itertools import chain
 
 
@@ -9,9 +10,23 @@ class FlagOption:
         self.value = value
 
 
-BoolOption = namedtuple("BoolOption", ["name", "default"])
-EnumOption = namedtuple("EnumOption", ["name", "default", "values"])
-AnythingOption = namedtuple("AnythingOption", ["name", "default"])
+class BoolOption:
+    def __init__(self, name, default):
+        self.name = name
+        self.default = default
+
+
+class EnumOption:
+    def __init__(self, name, default, values):
+        self.name = name
+        self.default = default
+        self.values = values
+
+
+class AnythingOption:
+    def __init__(self, name, default):
+        self.name = name
+        self.default = default
 
 
 class AliasOption:
@@ -20,64 +35,82 @@ class AliasOption:
         self.target = target
 
 
-MappingOption = namedtuple("MappingOption", ["variable", "parameter"])
-CollapseOption = namedtuple("CollapseOption", ["variable", "collapses"])
+class MappingOption:
+    def __init__(self, variable, parameter):
+        self.target = variable
+        self.parameter = parameter
+
+    @property
+    def variable(self):
+        # To allow other code to continue to use this class unchanged
+        return self.target
+
+
+class CollapseOption:
+    def __init__(self, variable, collapses):
+        self.target = variable
+        self.collapses = collapses
+
+    @property
+    def variable(self):
+        # To allow other code to continue to use this class unchanged
+        return self.target
 
 
 class OptionResolutionError(Exception):
     pass
 
 
-def resolve_aliases(args):
-    # TODO: What to do about naming conflicts?
-    # Order is important! (Why?)
-    options = [*chain(args.flags, args.bools, args.enums, args.anythings)]
-    for alias in args.aliases:
-        for option in options:
-            if alias.target == option.name:
-                alias.target = option
-                break
-        else:
-            raise OptionResolutionError(
-                f"alias '{alias.name}' does not target any existing option"
-            )
+def make_option_resolver(target_type, option_types, error_msg, assign_target):
+    def resolve_option(args):
+        # `args` is the parsed arguments
+        targets = getattr(args, target_type)
+        options = list(
+            chain.from_iterable(getattr(args, type_) for type_ in option_types)
+        )
+        for target in targets:
+            for option in options:
+                if target.target == option.name:
+                    if assign_target:
+                        target.target = option
+                    break
+            else:
+                raise OptionResolutionError(error_msg.format(target=target))
+
+    return resolve_option
 
 
-def resolve_flags(args):
-    # TODO: Allow flags to be shorthand for passing the value of any bool or
-    # enum option.
-    options = args.bools
-    for flag in args.flags:
-        for option in options:
-            if flag.target == option.name:
-                flag.target = option
-                break
-        else:
-            raise OptionResolutionError(
-                f"flag '{flag.name}' does not target any existing option"
-            )
+# TODO: What to do about naming conflicts?
+# Order is important! (Why?)
+resolve_aliases = make_option_resolver(
+    "aliases",
+    ["flags", "bools", "enums", "anythings"],
+    error_msg="alias '{target.name}' does not target any existing option",
+    assign_target=True,
+)
 
 
-def resolve_mappings(args):
-    options = list(chain(args.bools, args.enums, args.anythings))
-    for mapping in args.mappings:
-        for option in options:
-            if mapping.variable == option.name:
-                # Mappings don't get modified.
-                break
-        else:
-            raise OptionResolutionError(
-                f"URL parameter '{mapping.parameter}' does not target any existing variable"
-            )
+# TODO: Allow flags to be shorthand for passing the value of any bool or enum
+# option.
+resolve_flags = make_option_resolver(
+    "flags",
+    ["bools"],
+    error_msg="flag '{target.name}' does not target any existing option",
+    assign_target=True,
+)
 
 
-def resolve_collapses(args):
-    options = list(chain(args.bools, args.enums, args.anythings))
-    for collapse in args.collapses:
-        for option in options:
-            if collapse.variable == option.name:
-                break
-        else:
-            raise OptionResolutionError(
-                f"'{collapse.variable}' is a non-existent variable so it cannot be collapsed"
-            )
+resolve_mappings = make_option_resolver(
+    "mappings",
+    ["bools", "enums", "anythings"],
+    error_msg="URL parameter '{target.parameter}' does not target any existing variable",
+    assign_target=False,
+)
+
+
+resolve_collapses = make_option_resolver(
+    "collapses",
+    ["bools", "enums", "anythings"],
+    error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
+    assign_target=False,
+)
