@@ -102,7 +102,6 @@ BASE_PARSER.add_argument(
 )
 BASE_PARSER.add_argument(
     "--map",
-    "-M",
     action="append",
     default=[],
     type=parse_mapping_option,
