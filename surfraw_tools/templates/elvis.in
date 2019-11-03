@@ -106,7 +106,6 @@ if test -z "$w3_args"; then
 	w3_browse_url "{{ base_url }}"
 else
 	escaped_args=$(w3_url_of_arg $w3_args)
-	search_url="{{ search_url }}"
 	{% for enum in enums %}
 	case "${{ enum.name|ns }}" in
 		{{ '|'.join(enum.values) }}) ;;
@@ -128,6 +127,7 @@ else
 	{% endif %}
 
 	# Map variables to parameters
+	search_url="{{ search_url }}"
 	{% for map in mappings %}
 	{# The first iteration is special #}
 	{% if loop.first %}
