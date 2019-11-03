@@ -10,11 +10,13 @@ from .options import (
     BoolOption,
     EnumOption,
     FlagOption,
+    MemberOption,
     OptionResolutionError,
     resolve_aliases,
     resolve_collapses,
     resolve_flags,
     resolve_mappings,
+    resolve_members,
 )
 from .parsers import (
     parse_alias_option,
@@ -155,6 +157,7 @@ def process_args(args):
     try:
         resolve_aliases(args)
         resolve_flags(args)
+        resolve_members(args)
         resolve_mappings(args)
         resolve_collapses(args)
     except OptionResolutionError as e:
@@ -191,6 +194,7 @@ def get_env(args):
     options = (
         args.flags,
         args.bools,
+        args.members,
         args.enums,
         args.aliases,
         args.anythings,
@@ -209,6 +213,7 @@ def get_env(args):
 
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
+    env.tests["member_option"] = lambda x: isinstance(x, MemberOption)
     env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
     env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
 
@@ -224,6 +229,7 @@ def get_env(args):
         # Options to generate
         "flags": args.flags,
         "bools": args.bools,
+        "members": args.members,
         "enums": args.enums,
         "anythings": args.anythings,
         "aliases": args.aliases,

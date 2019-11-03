@@ -63,6 +63,13 @@ w3_parse_option_hook ()
 		##-bool=*) setoptyn {{ 'bool'|ns }} $optarg ;;
 		{% endfor %}
 
+		# Members
+		{% for member in members %}
+		-{{ member.name }}) setopt {{ member.target.name|ns }} {{ member.value }} ;;
+		{% else %}
+		##-member) setopt {{ 'targetname'|ns }} enum_value ;;
+		{% endfor %}
+
 		# Enums
 		{% for enum in enums %}
 		-{{ enum.name }}=*) setopt {{ enum.name|ns }} $optarg ;;
@@ -83,6 +90,8 @@ w3_parse_option_hook ()
 		-{{ alias.name }}) setoptyn {{ alias.target.target.name|ns }} {{ alias.target.value }} ;;
 		{% elif alias.target is bool_option %}
 		-{{ alias.name }}=*) setoptyn {{ alias.target.name|ns }} $optarg ;;
+		{% elif alias.target is member_option %}
+		-{{ alias.name }}) setopt {{ alias.target.target.name|ns }} {{ alias.target.value }} ;;
 		{% elif alias.target is enum_option %}
 		-{{ alias.name }}=*) setopt {{ alias.target.name|ns }} $optarg ;;
 		{% elif alias.target is anything_option %}

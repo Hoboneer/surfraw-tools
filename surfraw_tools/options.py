@@ -89,7 +89,7 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
 # Order is important! (Why?)
 resolve_aliases = make_option_resolver(
     "aliases",
-    ["flags", "bools", "enums", "anythings"],
+    ["flags", "bools", "members", "enums", "anythings"],
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
