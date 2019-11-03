@@ -19,13 +19,4 @@
 	- More generally, a `nat`ural number option type to be the underlying
 	  "type" of the `results` option.
 - Make help messages and metavariables more helpful and clear
-- Evaluate user-provided search url as late as possible:
-	- To allow the results of option checking, variable collapsing, and
-	  enum checks to be used in the resultant search url.
-	- Useful to allow the options to manipulate parts of the search url
-	  *other* than the query parameters. Potentially allows for *any*
-snippet of shell code to be executed, so it can be as complex as users need it
-to be.
-	- Do option checking even with no args? This is to allow any variable
-	  mutations to propagate to the base url.
 - Allow aliases to target enum member options

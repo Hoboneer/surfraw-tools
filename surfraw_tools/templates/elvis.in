@@ -102,53 +102,55 @@ w3_parse_option_hook ()
 
 w3_config
 w3_parse_args "$@"
+
+escaped_args=$(w3_url_of_arg $w3_args)
+{% for enum in enums %}
+case "${{ enum.name|ns }}" in
+	{{ '|'.join(enum.values) }}) ;;
+	*) err "Invalid value for {{ enum.name|ns }}" ;;
+esac
+{% endfor %}
+{% if collapses|length > 0 %}
+
+# Collapse variables
+{# TODO: Name this better! #}
+{% for collapse in collapses %}
+case "${{ collapse.variable|ns }}" in
+	{% for branch in collapse.collapses %}
+	{# Last in `branch` is the result #}
+	{{ '|'.join(branch[:-1]) }}) {{ collapse.variable|ns }}={{ branch[-1] }} ;;
+	{% endfor %}
+esac
+{% endfor %}
+{% endif %}
+
 if test -z "$w3_args"; then
+	# Any variables in the url should have values now
 	w3_browse_url "{{ base_url }}"
-else
-	escaped_args=$(w3_url_of_arg $w3_args)
-	{% for enum in enums %}
-	case "${{ enum.name|ns }}" in
-		{{ '|'.join(enum.values) }}) ;;
-		*) err "Invalid value for {{ enum.name|ns }}" ;;
-	esac
-	{% endfor %}
-	{% if collapses|length > 0 %}
-
-	# Collapse variables
-	{# TODO: Name this better! #}
-	{% for collapse in collapses %}
-	case "${{ collapse.variable|ns }}" in
-		{% for branch in collapse.collapses %}
-		{# Last in `branch` is the result #}
-		{{ '|'.join(branch[:-1]) }}) {{ collapse.variable|ns }}={{ branch[-1] }} ;;
-		{% endfor %}
-	esac
-	{% endfor %}
-	{% endif %}
-
-	# Map variables to parameters
-	search_url="{{ search_url }}"
-	{% for map in mappings %}
-	{# The first iteration is special #}
-	{% if loop.first %}
-	search_url="${search_url}{{ map.parameter }}=${{ map.variable|ns }}"
-	{% else %}
-	search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
-	{% endif %}
-	{% else %}
-	## First parameter
-	##search_url="${search_url}param1=${{ 'variable1'|ns }}"
-	## Successive parameters
-	##search_url="$search_url&param2=${{ 'variable2'|ns }}"
-	{% endfor %}
-
-	# Add the search to url
-	{# Mappings and a query parameter are necessarily inclusive #}
-	{# `mkelvis` should prevent a situation where only one of the two are true #}
-	{% if mappings|length > 0 and query_parameter is not none %}
-	search_url="$search_url&{{ query_parameter }}=$escaped_args"
-	{% else %}
-	search_url="${search_url}${escaped_args}"
-	{% endif %}
-	w3_browse_url "$search_url"
+	exit
 fi
+# Map variables to parameters
+search_url="{{ search_url }}"
+{% for map in mappings %}
+{# The first iteration is special #}
+{% if loop.first %}
+search_url="${search_url}{{ map.parameter }}=${{ map.variable|ns }}"
+{% else %}
+search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
+{% endif %}
+{% else %}
+## First parameter
+##search_url="${search_url}param1=${{ 'variable1'|ns }}"
+## Successive parameters
+##search_url="$search_url&param2=${{ 'variable2'|ns }}"
+{% endfor %}
+
+# Add the search to url
+{# Mappings and a query parameter are necessarily inclusive #}
+{# `mkelvis` should prevent a situation where only one of the two are true #}
+{% if mappings|length > 0 and query_parameter is not none %}
+search_url="$search_url&{{ query_parameter }}=$escaped_args"
+{% else %}
+search_url="${search_url}${escaped_args}"
+{% endif %}
+w3_browse_url "$search_url"
