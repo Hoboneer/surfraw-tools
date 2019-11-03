@@ -20,3 +20,8 @@
 	  "type" of the `results` option.
 - Make help messages and metavariables more helpful and clear
 - Allow aliases to target enum member options
+- Put in comment in generated elvi: the example mappings in comments only work
+  as-is if the `search_url` is not provided with the parameter for search
+queries opened, but instead simply have the query string opened, with the
+`--query-parameter` specified.
+- Separate options into groups in help output for `mkelvis` and co.
