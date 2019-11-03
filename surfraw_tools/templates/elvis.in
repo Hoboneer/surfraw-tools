@@ -24,21 +24,21 @@ w3_config_hook ()
 	{% for bool in bools %}
 	defyn {{ bool.name|ns }} {{ bool.default }}
 	{% else %}
-	## defyn {{ 'variable'|ns }} {{ 'default_yes_or_no' }}
+	## defyn {{ 'variable'|ns }} default_yes_or_no
 	{% endfor %}
 
 	# Enums
 	{% for enum in enums %}
 	def {{ enum.name|ns }} {{ enum.default }}
 	{% else %}
-	## defyn {{ 'variable'|ns }} {{ 'default_enum_value' }}
+	## defyn {{ 'variable'|ns }} default_enum_value
 	{% endfor %}
 
 	# 'Anythings'
 	{% for anything in anythings %}
 	def {{ anything.name|ns }} {{ anything.default }}
 	{% else %}
-	## defyn {{ 'variable'|ns }} {{ 'default_anything' }}
+	## defyn {{ 'variable'|ns }} default_anything
 	{% endfor %}
 
 	# Aliases don't use any config
@@ -53,7 +53,7 @@ w3_parse_option_hook ()
 		{% for flag in flags %}
 		-{{ flag.name }}) setoptyn {{ flag.target.name|ns }} {{ flag.value }} ;;
 		{% else %}
-		##-flag) setoptyn {{ 'targetname'|ns }} {{ 'flag_value_yes_or_no' }} ;;
+		##-flag) setoptyn {{ 'targetname'|ns }} flag_value_yes_or_no ;;
 		{% endfor %}
 
 		# Bools
