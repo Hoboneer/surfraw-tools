@@ -28,3 +28,4 @@ snippet of shell code to be executed, so it can be as complex as users need it
 to be.
 	- Do option checking even with no args? This is to allow any variable
 	  mutations to propagate to the base url.
+- Allow aliases to target enum member options
