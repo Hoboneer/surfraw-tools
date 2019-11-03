@@ -9,6 +9,7 @@ from .options import (
     EnumOption,
     FlagOption,
     MappingOption,
+    MemberOption,
 )
 from .validation import (
     list_of,
@@ -93,6 +94,11 @@ def parse_enum_option(name, default, values):
         )
 
     return EnumOption(name, default, values)
+
+
+@parse_args([validate_name, validate_name, validate_name])
+def parse_member_option(name, enum_name, value):
+    return MemberOption(name, enum_name, value)
 
 
 @parse_args([validate_name, no_validation])

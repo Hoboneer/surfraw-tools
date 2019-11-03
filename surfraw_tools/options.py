@@ -21,6 +21,13 @@ class EnumOption:
         self.values = values
 
 
+class MemberOption:
+    def __init__(self, name, target, value):
+        self.name = name
+        self.target = target
+        self.value = value
+
+
 class AnythingOption:
     def __init__(self, name, default):
         self.name = name
@@ -112,3 +119,22 @@ resolve_collapses = make_option_resolver(
     error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
     assign_target=False,
 )
+
+
+# Do extra checking
+_inner_resolve_members = make_option_resolver(
+    "members",
+    ["enums"],
+    error_msg="enum member option '{target.name}' does not target any existing enum",
+    assign_target=True,
+)
+
+
+def resolve_members(args):
+    _inner_resolve_members(args)
+    # At this point, all members should be pointing to an existing enum
+    for member in args.members:
+        if member.value not in member.target.values:
+            raise OptionResolutionError(
+                f"enum member option {member.name}'s value ({member.value}) is not contained in its target enum ({member.target.values})"
+            )

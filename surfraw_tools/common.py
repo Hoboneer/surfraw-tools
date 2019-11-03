@@ -24,6 +24,7 @@ from .parsers import (
     parse_enum_option,
     parse_flag_option,
     parse_mapping_option,
+    parse_member_option,
     parse_query_parameter,
 )
 
@@ -80,6 +81,16 @@ BASE_PARSER.add_argument(
     dest="enums",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
+)
+BASE_PARSER.add_argument(
+    "--member",
+    "-M",
+    action="append",
+    default=[],
+    type=parse_member_option,
+    dest="members",
+    metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
+    help="specify an option that is an alias to a member of a defined --enum",
 )
 BASE_PARSER.add_argument(
     "--anything",
