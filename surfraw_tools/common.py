@@ -6,12 +6,16 @@ from jinja2 import Environment, PackageLoader
 
 from ._package import __version__
 from .options import (
+    AliasOption,
     AnythingOption,
     BoolOption,
+    CollapseOption,
     EnumOption,
     FlagOption,
+    MappingOption,
     MemberOption,
     OptionResolutionError,
+    QueryParameterOption,
     resolve_aliases,
     resolve_collapses,
     resolve_flags,
@@ -30,6 +34,8 @@ from .parsers import (
     parse_query_parameter,
 )
 
+# This is all very hacky in order to allow introspection into the arguments and
+# options the command takes.
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
 _VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
     "--version",
@@ -37,109 +43,109 @@ _VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
     version=f"%(prog)s (surfraw-tools) {__version__}",
 )
 VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
-BASE_PARSER.add_argument("name", help="name for the elvis")
-BASE_PARSER.add_argument(
-    "base_url",
-    help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",
-)
-BASE_PARSER.add_argument(
-    "search_url",
-    help="the url to append arguments to, with the query parameters opened and no protocol (automatically set to 'https')",
-)
-BASE_PARSER.add_argument(
-    "--description",
-    help="description for the elvis, excluding the domain name in parentheses",
-)
-BASE_PARSER.add_argument(
-    "--insecure", action="store_true", help="use 'http' instead of 'https'"
-)
-# Option generation
-BASE_PARSER.add_argument(
-    "--flag",
-    "-F",
-    action="append",
-    default=[],
-    type=parse_flag_option,
-    dest="flags",
-    metavar="FLAG_NAME:FLAG_TARGET:YES_OR_NO",
-    help="specify a flag for the elvis",
-)
-BASE_PARSER.add_argument(
-    "--yes-no",
-    "-Y",
-    action="append",
-    default=[],
-    type=parse_bool_option,
-    dest="bools",
-    metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
-    help="specify a yes or no option for the elvis",
-)
-BASE_PARSER.add_argument(
-    "--enum",
-    "-E",
-    action="append",
-    default=[],
-    type=parse_enum_option,
-    dest="enums",
-    metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
-    help="specify an option with an argument from a range of values",
-)
-BASE_PARSER.add_argument(
-    "--member",
-    "-M",
-    action="append",
-    default=[],
-    type=parse_member_option,
-    dest="members",
-    metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
-    help="specify an option that is an alias to a member of a defined --enum",
-)
-BASE_PARSER.add_argument(
-    "--anything",
-    "-A",
-    action="append",
-    default=[],
-    dest="anythings",
-    type=parse_anything_option,
-    metavar="VARIABLE_NAME:DEFAULT_VALUE",
-    help="specify an option that is not checked",
-)
-BASE_PARSER.add_argument(
-    "--alias",
-    action="append",
-    default=[],
-    type=parse_alias_option,
-    dest="aliases",
-    metavar="ALIAS_NAME:ALIAS_TARGET",
-    help="make an alias to another defined option",
-)
-BASE_PARSER.add_argument(
-    "--map",
-    action="append",
-    default=[],
-    type=parse_mapping_option,
-    dest="mappings",
-    metavar="VARIABLE_NAME:PARAMETER",
-    help="map a variable to a URL parameter",
-)
-BASE_PARSER.add_argument(
-    "--collapse",
-    action="append",
-    default=[],
-    type=parse_collapse,
-    dest="collapses",
-    metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
-    help="change groups of values of a variable to a single value",
-)
-BASE_PARSER.add_argument(
-    "--query-parameter",
-    "-Q",
-    type=parse_query_parameter,
-    help="define the parameter for the query arguments; needed with --map",
-)
+ARGUMENTS = [
+    BASE_PARSER.add_argument("name", help="name for the elvis"),
+    BASE_PARSER.add_argument(
+        "base_url",
+        help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",
+    ),
+    BASE_PARSER.add_argument(
+        "search_url",
+        help="the url to append arguments to, with the query parameters opened and no protocol (automatically set to 'https')",
+    ),
+]
+OPTIONS = [
+    BASE_PARSER.add_argument(
+        "--description",
+        help="description for the elvis, excluding the domain name in parentheses",
+    ),
+    BASE_PARSER.add_argument(
+        "--insecure", action="store_true", help="use 'http' instead of 'https'"
+    ),
+    # Option generation
+    BASE_PARSER.add_argument(
+        *FlagOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_flag_option,
+        dest="flags",
+        metavar="FLAG_NAME:FLAG_TARGET:YES_OR_NO",
+        help="specify a flag, which is an alias to a member of a defined --yes-no option",
+    ),
+    BASE_PARSER.add_argument(
+        *BoolOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_bool_option,
+        dest="bools",
+        metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
+        help="specify a yes or no option for the elvis",
+    ),
+    BASE_PARSER.add_argument(
+        *EnumOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_enum_option,
+        dest="enums",
+        metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
+        help="specify an option with an argument from a range of values",
+    ),
+    BASE_PARSER.add_argument(
+        *MemberOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_member_option,
+        dest="members",
+        metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
+        help="specify an option that is an alias to a member of a defined --enum",
+    ),
+    BASE_PARSER.add_argument(
+        *AnythingOption.option_names(),
+        action="append",
+        default=[],
+        dest="anythings",
+        type=parse_anything_option,
+        metavar="VARIABLE_NAME:DEFAULT_VALUE",
+        help="specify an option that is not checked",
+    ),
+    BASE_PARSER.add_argument(
+        *AliasOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_alias_option,
+        dest="aliases",
+        metavar="ALIAS_NAME:ALIAS_TARGET",
+        help="make an alias to another defined option",
+    ),
+    BASE_PARSER.add_argument(
+        *MappingOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_mapping_option,
+        dest="mappings",
+        metavar="VARIABLE_NAME:PARAMETER",
+        help="map a variable to a URL parameter",
+    ),
+    BASE_PARSER.add_argument(
+        *CollapseOption.option_names(),
+        action="append",
+        default=[],
+        type=parse_collapse,
+        dest="collapses",
+        metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
+        help="change groups of values of a variable to a single value",
+    ),
+    BASE_PARSER.add_argument(
+        *QueryParameterOption.option_names(),
+        type=parse_query_parameter,
+        help="define the parameter for the query arguments; needed with --map",
+    ),
+]
 
 
 def process_args(args):
+    _normalise_options(args)
+
     if args.description is None:
         args.description = f"Search {args.name} ({args.base_url})"
     else:
@@ -180,6 +186,28 @@ def _make_namespace(prefix):
         return f"{prefix}_{name}"
 
     return prefixer
+
+
+def _normalise_options(args):
+    """Get the arguments and options passed to the program in a manipulable form."""
+    arguments = []
+    for arg in ARGUMENTS:
+        val = getattr(args, arg.dest)
+        # Future-proofing if optional arguments are allowed
+        if val:
+            arguments.append(val)
+    options = []
+    for option in OPTIONS:
+        option_obj = getattr(args, option.dest)
+        if option_obj:
+            if isinstance(option_obj, list):
+                # Split list options
+                options.extend(option_obj)
+            else:
+                options.append(option_obj)
+
+    args._normalised_args = arguments
+    args._normalised_options = options
 
 
 def get_env(args):
@@ -226,6 +254,8 @@ def get_env(args):
         "base_url": args.base_url,
         "search_url": args.search_url,
         "options": options,
+        "__passed_args": args._normalised_args,
+        "__passed_opts": args._normalised_options,
         # Options to generate
         "flags": args.flags,
         "bools": args.bools,

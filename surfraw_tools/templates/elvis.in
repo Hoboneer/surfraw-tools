@@ -1,6 +1,16 @@
 #!/bin/sh
 # elvis: {{ name }}	-- {{ description }}
 # Generated-By: {{ GENERATOR_PROGRAM }}
+# To regenerate, run `mkelvis` with the arguments and options:
+{% for arg in __passed_args %}
+#    {{ arg }} {% if not loop.last and __passed_opts|length == 0 or __passed_opts|length > 0 %}\{% endif %}
+
+{% endfor %}
+{% for opt in __passed_opts|sort(attribute='long_option') %}
+#    {{ opt }} {% if not loop.last %}\{% endif %}
+
+{% endfor %}
+
 . surfraw || exit 1
 
 w3_usage_hook ()
@@ -158,7 +168,7 @@ search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
 {# Mappings and a query parameter are necessarily inclusive #}
 {# `mkelvis` should prevent a situation where only one of the two are true #}
 {% if mappings|length > 0 and query_parameter is not none %}
-search_url="$search_url&{{ query_parameter }}=$escaped_args"
+search_url="$search_url&{{ query_parameter.parameter }}=$escaped_args"
 {% else %}
 search_url="${search_url}${escaped_args}"
 {% endif %}

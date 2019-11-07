@@ -1,5 +1,14 @@
 # Bash completion script for standalone surfraw elvi
 # Generated-By: {{ GENERATOR_PROGRAM }}
+# To regenerate, run `mkelviscomps` with the arguments and options:
+{% for arg in __passed_args %}
+#    {{ arg }} {% if not loop.last and __passed_opts|length == 0 or __passed_opts|length > 0 %}\{% endif %}
+
+{% endfor %}
+{% for opt in __passed_opts|sort(attribute='long_option') %}
+#    {{ opt }} {% if not loop.last %}\{% endif %}
+
+{% endfor %}
 
 {# TODO: Make these macros indent correctly... #}
 {% macro _complete_enum(enum, name=None) %}

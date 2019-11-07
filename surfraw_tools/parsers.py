@@ -10,6 +10,7 @@ from .options import (
     FlagOption,
     MappingOption,
     MemberOption,
+    QueryParameterOption,
 )
 from .validation import (
     list_of,
@@ -60,7 +61,9 @@ def parse_args(validators, last_is_unlimited=False):
                     valid_args.append(result)
                     i += 1
 
-            return func(*valid_args)
+            option = func(*valid_args)
+            option._raw_arg = raw_arg
+            return option
 
         return validate_args_wrapper
 
@@ -131,4 +134,4 @@ def parse_collapse(variable, *collapses_list):
 
 @parse_args([validate_url_parameter])
 def parse_query_parameter(param):
-    return param
+    return QueryParameterOption(param)
