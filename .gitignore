@@ -15,6 +15,7 @@ dist/
 
 # Examples
 *.elvis
+*.completion
 
 env/
 tags

@@ -1,5 +1,9 @@
 SPECS := $(wildcard *.in)
-OUTPUTS := $(SPECS:.in=.elvis)
+
+ELVI := $(SPECS:.in=.elvis)
+COMPLETIONS := $(SPECS:.in=.completion)
+
+OUTPUTS := $(ELVI) $(COMPLETIONS)
 
 .PHONY: all
 all: $(OUTPUTS)
@@ -9,6 +13,9 @@ all: $(OUTPUTS)
 %.elvis: %.in
 	cat $< | xargs mkelvis
 	mv $(basename $@) $@
+
+%.completion: %.in
+	cat $< | xargs mkelviscomps
 
 .PHONY: clean
 clean:
