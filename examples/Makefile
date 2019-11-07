@@ -9,3 +9,7 @@ all: $(OUTPUTS)
 %.elvis: %.in
 	cat $< | xargs mkelvis
 	mv $(basename $@) $@
+
+.PHONY: clean
+clean:
+	rm -f -- $(OUTPUTS)
