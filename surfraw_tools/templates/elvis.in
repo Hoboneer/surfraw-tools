@@ -9,6 +9,10 @@ w3_usage_hook ()
 Usage: $w3_argv0 [options] [search words]...
 Description:
   {{ description|replace('$', '\\$') }}
+{% if any_options_defined %}
+Local options:
+{{ local_help_output }}
+{% endif %}
 EOF
 	w3_global_usage
 }

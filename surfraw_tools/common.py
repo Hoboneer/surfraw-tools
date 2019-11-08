@@ -212,6 +212,7 @@ def get_env(args):
     env.filters["namespace"] = default_namespace
     # Short-hand for `namespace`
     env.filters["ns"] = default_namespace
+    args._namespacer = default_namespace
 
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
