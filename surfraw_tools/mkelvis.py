@@ -119,7 +119,7 @@ def generate_local_help_output(args):
                     elif isinstance(opt.target, (FlagOption, MemberOption)):
                         entry[
                             i
-                        ] += f"An alias for -{opt.target.name}={opt.target.value}"
+                        ] += f"An alias for -{opt.target.target.name}={opt.target.value}"
                     else:
                         entry[i] += "TODO alias option help"
                 else:
