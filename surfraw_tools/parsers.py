@@ -16,6 +16,7 @@ from .validation import (
     no_validation,
     validate_bool,
     validate_name,
+    validate_option_type,
     validate_url_parameter,
 )
 
@@ -108,15 +109,15 @@ def parse_anything_option(name, default):
 
 # NOTE: Aliases are useful since they would result in the target and its
 # aliases to be displayed together in the help output.
-@parse_args([validate_name, validate_name])
-def parse_alias_option(name, target):
+@parse_args([validate_name, validate_name, validate_option_type])
+def parse_alias_option(name, target, target_type):
     """Make an alias to another option.
 
     NOTE: This function does *not* check whether the alias points to a valid
     option. It needs to be checked elsewhere since this does not have access to
     the parser.
     """
-    return AliasOption(name, target)
+    return AliasOption(name, target, target_type)
 
 
 @parse_args([validate_name, validate_url_parameter])

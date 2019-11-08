@@ -1,43 +1,59 @@
+import weakref
+from collections import defaultdict
 from itertools import chain
 
 
-class FlagOption:
+class AliasTarget:
+    def __init__(self):
+        self.aliases = weakref.WeakSet()
+
+    def add_alias(self, alias):
+        self.aliases.add(alias)
+
+
+class FlagOption(AliasTarget):
     def __init__(self, name, target, value):
+        super().__init__()
         self.name = name
         self.target = target
         self.value = value
 
 
-class BoolOption:
+class BoolOption(AliasTarget):
     def __init__(self, name, default):
+        super().__init__()
         self.name = name
         self.default = default
 
 
-class EnumOption:
+class EnumOption(AliasTarget):
     def __init__(self, name, default, values):
+        super().__init__()
         self.name = name
         self.default = default
         self.values = values
 
 
-class MemberOption:
+class MemberOption(AliasTarget):
     def __init__(self, name, target, value):
+        super().__init__()
         self.name = name
         self.target = target
         self.value = value
 
 
-class AnythingOption:
+class AnythingOption(AliasTarget):
     def __init__(self, name, default):
+        super().__init__()
         self.name = name
         self.default = default
 
 
 class AliasOption:
-    def __init__(self, name, target):
+    def __init__(self, name, target, target_type):
         self.name = name
         self.target = target
+        self.target_type = target_type
 
 
 class MappingOption:
@@ -87,12 +103,42 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
 
 # TODO: What to do about naming conflicts?
 # Order is important! (Why?)
-resolve_aliases = make_option_resolver(
+_inner_resolve_aliases = make_option_resolver(
     "aliases",
     ["flags", "bools", "members", "enums", "anythings"],
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
+
+
+def resolve_aliases(args):
+    _inner_resolve_aliases(args)
+    for alias in args.aliases:
+        if not isinstance(alias.target, alias.target_type):
+            # Find a matching target
+            target_name = alias.target.name
+            for opt in chain(
+                args.flags,
+                args.bools,
+                args.members,
+                args.enums,
+                args.anythings,
+            ):
+                if (
+                    isinstance(opt, alias.target_type)
+                    and opt.name == target_name
+                ):
+                    alias.target = opt
+                    break
+            else:
+                raise OptionResolutionError(
+                    f"alias {alias.name}'s target type does not match the alias target's type: {type(alias.target)}"
+                )
+        elif alias.target_type == AliasOption:
+            raise OptionResolutionError(
+                f"alias '{alias.name}' targets another alias, which is forbidden"
+            )
+        alias.target.add_alias(alias)
 
 
 # TODO: Allow flags to be shorthand for passing the value of any bool or enum

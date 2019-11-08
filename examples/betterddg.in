@@ -3,5 +3,5 @@ duckduckgo.com/${SURFRAW_betterddg_javascript}/
 duckduckgo.com/${SURFRAW_betterddg_javascript}/?q=
 --yes-no=javascript:no
 --flag=javascript:javascript:yes
---alias=j:javascript
+--alias=j:javascript:flag
 --collapse=javascript:yes,on,1,:no,off,0,lite

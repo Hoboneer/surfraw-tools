@@ -110,7 +110,7 @@ BASE_PARSER.add_argument(
     default=[],
     type=parse_alias_option,
     dest="aliases",
-    metavar="ALIAS_NAME:ALIAS_TARGET",
+    metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
 )
 BASE_PARSER.add_argument(
