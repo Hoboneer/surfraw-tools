@@ -31,6 +31,8 @@ w3_config_hook ()
 	## defyn {{ 'variable'|ns }} default_yes_or_no
 	{% endfor %}
 
+	# Members don't use any config
+
 	# Enums
 	{% for enum in enums %}
 	def {{ enum.name|ns }} {{ enum.default }}
@@ -117,13 +119,14 @@ w3_config
 w3_parse_args "$@"
 
 escaped_args=$(w3_url_of_arg $w3_args)
+
+# Check enums
 {% for enum in enums %}
 case "${{ enum.name|ns }}" in
 	{{ '|'.join(enum.values) }}) ;;
 	*) err "Invalid value for {{ enum.name|ns }}" ;;
 esac
 {% endfor %}
-{% if collapses|length > 0 %}
 
 # Collapse variables
 {# TODO: Name this better! #}
@@ -135,10 +138,9 @@ case "${{ collapse.variable|ns }}" in
 	{% endfor %}
 esac
 {% endfor %}
-{% endif %}
 
+# Any variables in the url should have values now
 if test -z "$w3_args"; then
-	# Any variables in the url should have values now
 	w3_browse_url "{{ base_url }}"
 	exit
 fi
