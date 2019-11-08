@@ -11,11 +11,11 @@ all: $(OUTPUTS)
 # The elvi are all prefixed with .elvis because it is easier to generate them
 # with makefiles this way.
 %.elvis: %.in
-	cat $< | xargs mkelvis
+	grep -v '^[[:space:]]*#' $< | xargs mkelvis
 	mv $(basename $@) $@
 
 %.completion: %.in
-	cat $< | xargs mkelviscomps
+	grep -v '^[[:space:]]*#' $< | xargs mkelviscomps
 
 .PHONY: clean
 clean:
