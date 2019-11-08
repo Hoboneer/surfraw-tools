@@ -163,12 +163,12 @@ def process_args(args):
         resolve_mappings(args)
         resolve_collapses(args)
     except OptionResolutionError as e:
-        print(e, file=sys.stderr)
+        print(f"{args._program_name}: {e}", file=sys.stderr)
         return EX_USAGE
 
     if len(args.mappings) > 0 and args.query_parameter is None:
         print(
-            "mapping variables without a defined --query-parameter is forbidden",
+            f"{args._program_name}: mapping variables without a defined --query-parameter is forbidden",
             file=sys.stderr,
         )
         # TODO: Use proper exit code.

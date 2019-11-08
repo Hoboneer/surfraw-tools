@@ -41,6 +41,7 @@ def main(args=None):
         parents=[BASE_PARSER],
     )
     args = parser.parse_args(args)
+    args._program_name = PROGRAM_NAME
 
     exit_code = process_args(args)
     if exit_code != EX_OK:
