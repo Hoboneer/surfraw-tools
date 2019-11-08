@@ -1,0 +1,6 @@
+variableconflict
+foo
+foo
+--yes-no=conflict:yes
+--enum=conflict:strict:strict,moderate,off
+--anything=bar:baz
