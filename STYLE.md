@@ -14,8 +14,6 @@ Variables should follow these rules:
 
 - Constants for the program (not things derived from the arguments!) should be
   in SCREAMING\_SNAKE\_CASE (e.g., `GENERATOR_PROGRAM`)
-- Metadata about the program arguments should be in \_\_prefixed\_snake\_case
-  (e.g., `__passed_opts`)
 - Otherwise, all variables should be in snake\_case
 
 Tests:

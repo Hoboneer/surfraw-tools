@@ -1,86 +1,46 @@
 from itertools import chain
 
 
-class Option:
-    short_option = None
-    long_option = None
-
-    @classmethod
-    def option_names(cls):
-        if cls.short_option:
-            # Long option displayed before short option to draw the eye to its
-            # real name.
-            return (cls.long_option, cls.short_option)
-        else:
-            return (cls.long_option,)
-
-    def __str__(self):
-        # So that options can be printed easily.
-        # _raw_arg is assigned after instance creation.
-        return f"{self.long_option}={self._raw_arg}"
-
-
-class FlagOption(Option):
-    short_option = "-F"
-    long_option = "--flag"
-
+class FlagOption:
     def __init__(self, name, target, value):
         self.name = name
         self.target = target
         self.value = value
 
 
-class BoolOption(Option):
-    short_option = "-Y"
-    long_option = "--yes-no"
-
+class BoolOption:
     def __init__(self, name, default):
         self.name = name
         self.default = default
 
 
-class EnumOption(Option):
-    short_option = "-E"
-    long_option = "--enum"
-
+class EnumOption:
     def __init__(self, name, default, values):
         self.name = name
         self.default = default
         self.values = values
 
 
-class MemberOption(Option):
-    short_option = "-M"
-    long_option = "--member"
-
+class MemberOption:
     def __init__(self, name, target, value):
         self.name = name
         self.target = target
         self.value = value
 
 
-class AnythingOption(Option):
-    short_option = "-A"
-    long_option = "--anything"
-
+class AnythingOption:
     def __init__(self, name, default):
         self.name = name
         self.default = default
 
 
-class AliasOption(Option):
-    short_option = None
-    long_option = "--alias"
-
+class AliasOption:
     def __init__(self, name, target):
         self.name = name
         self.target = target
 
 
-class MappingOption(Option):
-    short_option = None
-    long_option = "--map"
-
+class MappingOption:
     def __init__(self, variable, parameter):
         self.target = variable
         self.parameter = parameter
@@ -91,10 +51,7 @@ class MappingOption(Option):
         return self.target
 
 
-class CollapseOption(Option):
-    short_option = None
-    long_option = "--collapse"
-
+class CollapseOption:
     def __init__(self, variable, collapses):
         self.target = variable
         self.collapses = collapses
@@ -103,14 +60,6 @@ class CollapseOption(Option):
     def variable(self):
         # To allow other code to continue to use this class unchanged
         return self.target
-
-
-class QueryParameterOption(Option):
-    short_option = "-Q"
-    long_option = "--query-parameter"
-
-    def __init__(self, parameter):
-        self.parameter = parameter
 
 
 class OptionResolutionError(Exception):
