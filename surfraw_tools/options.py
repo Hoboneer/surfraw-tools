@@ -101,6 +101,17 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
     return resolve_option
 
 
+def resolve_variables(args):
+    options = chain(args.bools, args.enums, args.anythings)
+    name_counts = defaultdict(int)
+    for option in options:
+        name_counts[option.name] += 1
+        if name_counts[option.name] > 1:
+            raise OptionResolutionError(
+                f"the variable name '{option.name}' is duplicated"
+            )
+
+
 # TODO: What to do about naming conflicts?
 # Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(

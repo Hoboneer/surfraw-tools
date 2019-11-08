@@ -17,6 +17,7 @@ from .options import (
     resolve_flags,
     resolve_mappings,
     resolve_members,
+    resolve_variables,
 )
 from .parsers import (
     parse_alias_option,
@@ -155,6 +156,7 @@ def process_args(args):
     args.search_url = f"{url_scheme}://{args.search_url}"
 
     try:
+        resolve_variables(args)
         resolve_aliases(args)
         resolve_flags(args)
         resolve_members(args)
