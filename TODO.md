@@ -18,7 +18,11 @@
 `--map-*` option (with the regular mapping option preventing it to be done?).
 	- More generally, a `nat`ural number option type to be the underlying
 	  "type" of the `results` option.
-- Make help messages and metavariables more helpful and clear
+- Add special-cased options:
+	- language/lang: Uses the value in `SURFRAW_lang` as a default value
+	- results: Uses the value in `SURFRAW_results` as a default value
+- Make help messages and metavariables more helpful and clear:
+	- Generate -local-help output for local options
 - Allow aliases to target enum member options
 - Put in comment in generated elvi: the example mappings in comments only work
   as-is if the `search_url` is not provided with the parameter for search
