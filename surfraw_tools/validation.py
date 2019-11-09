@@ -112,15 +112,17 @@ def validate_option_type(option_type):
 # MISC.
 
 
-def no_validation(_):
-    pass
+def no_validation(arg):
+    return arg
 
 
 def list_of(validator):
     def list_validator(arg):
         values = arg.split(",")
+        # In case the validators return a different object from its input.
+        new_values = []
         for value in values:
-            validator(value)
-        return values
+            new_values.append(validator(value))
+        return new_values
 
     return list_validator
