@@ -120,6 +120,51 @@ def _resolve_duplicate_variables(args):
             )
 
 
+# Options with non alphabetic characters are impossible
+_FORBIDDEN_OPTION_NAMES = {
+    "browser",
+    "elvi",
+    "g",
+    "graphical",
+    "h",
+    "help",
+    "lh",
+    "p",
+    "print",
+    "o",
+    "new",
+    "ns",
+    "newscreen",
+    "t",
+    "text",
+    "q",
+    "quote",
+    "version",
+    # Just in case options with hyphens are allowed in the future:
+    "bookmark-search-elvis",
+    "custom-search",
+    "escape-url-args",
+    "local-help",
+}
+
+
+@_resolver
+def _resolve_forbidden_option_names(args):
+    options = chain(
+        args.bools,
+        args.enums,
+        args.anythings,
+        args.flags,
+        args.members,
+        args.aliases,
+    )
+    for option in options:
+        if option.name in _FORBIDDEN_OPTION_NAMES:
+            raise OptionResolutionError(
+                f"global option name '{option.name}' cannot be overriden by elvi"
+            )
+
+
 # TODO: What to do about naming conflicts?
 # Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(
