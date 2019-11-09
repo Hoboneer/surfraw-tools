@@ -52,14 +52,30 @@ def generate_local_help_output(args):
         if longest_entry_line > longest_length:
             longest_length = longest_entry_line
 
+    # Add aliases of options alongside main option, e.g.,
+    #   -s=SORT, -sort=SORT
+    def get_optheader(opt, has_metavar=False):
+        optnames = [opt.name, *(alias.name for alias in opt.aliases)]
+        optnames.sort()
+        if has_metavar:
+            metavar = opt.name.upper()
+            optheader = "  " + ", ".join(f"-{name}={metavar}" for name in optnames)
+        else:
+            optheader = "  " + ", ".join(f"-{name}" for name in optnames)
+        return optheader
+
     # Options that take arguments
     for opt in chain(args.bools, args.enums, args.anythings):
-        # +2 to include the equal
-        offset = base_offset + len(opt.name) + 2
         entry = []
         entry.append(opt)
-        entry.append(f"  -{opt.name}={opt.name.upper()}")
+
+        optheader = get_optheader(opt, has_metavar=True)
+        entry.append(optheader)
+
+        # +1 to go past the '='
+        offset = optheader.rindex('=') + 1
         if isinstance(opt, EnumOption):
+            # Add values of enum aligned with metavar
             for value in opt.values:
                 entry.append(" " * offset + value)
         set_longest_length(entry)
@@ -69,22 +85,8 @@ def generate_local_help_output(args):
     for opt in chain(args.flags, args.members):
         entry = []
         entry.append(opt)
-        entry.append(f"  -{opt.name}")
-        set_longest_length(entry)
-        entries.append(entry)
-
-    # Aliases to any other non-alias option, which can include an argument
-    for alias in args.aliases:
-        entry = []
-        entry.append(alias)
-        if isinstance(alias.target, (BoolOption, EnumOption, AnythingOption)):
-            entry.append(f"  -{alias.name}={alias.target.name.upper()}")
-        elif isinstance(alias.target, (FlagOption, MemberOption)):
-            entry.append(f"  -{alias.name}")
-        else:
-            raise RuntimeError(
-                f"Unhandled alias target: {alias.target} for alias {alias}"
-            )
+        optheader = get_optheader(opt)
+        entry.append(optheader)
         set_longest_length(entry)
         entries.append(entry)
 
@@ -109,19 +111,6 @@ def generate_local_help_output(args):
                     entry[i] += f"An unchecked option for '{opt.name}'"
                 elif isinstance(opt, (FlagOption, MemberOption)):
                     entry[i] += f"An alias for -{opt.target.name}={opt.value}"
-                elif isinstance(opt, AliasOption):
-                    if isinstance(
-                        opt.target, (BoolOption, EnumOption, AnythingOption)
-                    ):
-                        entry[
-                            i
-                        ] += f"An alias for -{opt.target.name}={opt.target.name.upper()}"
-                    elif isinstance(opt.target, (FlagOption, MemberOption)):
-                        entry[
-                            i
-                        ] += f"An alias for -{opt.target.target.name}={opt.target.value}"
-                    else:
-                        entry[i] += "TODO alias option help"
                 else:
                     entry[i] += "TODO option help"
             else:
