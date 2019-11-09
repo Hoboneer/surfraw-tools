@@ -59,7 +59,9 @@ def generate_local_help_output(args):
         optnames.sort()
         if has_metavar:
             metavar = opt.name.upper()
-            optheader = "  " + ", ".join(f"-{name}={metavar}" for name in optnames)
+            optheader = "  " + ", ".join(
+                f"-{name}={metavar}" for name in optnames
+            )
         else:
             optheader = "  " + ", ".join(f"-{name}" for name in optnames)
         return optheader
@@ -73,7 +75,7 @@ def generate_local_help_output(args):
         entry.append(optheader)
 
         # +1 to go past the '='
-        offset = optheader.rindex('=') + 1
+        offset = optheader.rindex("=") + 1
         if isinstance(opt, EnumOption):
             # Add values of enum aligned with metavar
             for value in opt.values:
