@@ -101,7 +101,15 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
     return resolve_option
 
 
-def resolve_variables(args):
+RESOLVERS = []
+
+
+def _resolver(func):
+    RESOLVERS.append(func)
+
+
+@_resolver
+def _resolve_duplicate_variables(args):
     options = chain(args.bools, args.enums, args.anythings)
     name_counts = defaultdict(int)
     for option in options:
@@ -122,7 +130,8 @@ _inner_resolve_aliases = make_option_resolver(
 )
 
 
-def resolve_aliases(args):
+@_resolver
+def _resolve_aliases(args):
     _inner_resolve_aliases(args)
     for alias in args.aliases:
         if not isinstance(alias.target, alias.target_type):
@@ -152,29 +161,38 @@ def resolve_aliases(args):
         alias.target.add_alias(alias)
 
 
+# Resolve flags
 # TODO: Allow flags to be shorthand for passing the value of any bool or enum
 # option.
-resolve_flags = make_option_resolver(
-    "flags",
-    ["bools"],
-    error_msg="flag '{target.name}' does not target any existing option",
-    assign_target=True,
+_resolver(
+    make_option_resolver(
+        "flags",
+        ["bools"],
+        error_msg="flag '{target.name}' does not target any existing option",
+        assign_target=True,
+    )
 )
 
 
-resolve_mappings = make_option_resolver(
-    "mappings",
-    ["bools", "enums", "anythings"],
-    error_msg="URL parameter '{target.parameter}' does not target any existing variable",
-    assign_target=False,
+# Resolve mappings
+_resolver(
+    make_option_resolver(
+        "mappings",
+        ["bools", "enums", "anythings"],
+        error_msg="URL parameter '{target.parameter}' does not target any existing variable",
+        assign_target=False,
+    )
 )
 
 
-resolve_collapses = make_option_resolver(
-    "collapses",
-    ["bools", "enums", "anythings"],
-    error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
-    assign_target=False,
+# Resolve collapses
+_resolver(
+    make_option_resolver(
+        "collapses",
+        ["bools", "enums", "anythings"],
+        error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
+        assign_target=False,
+    )
 )
 
 
@@ -187,7 +205,8 @@ _inner_resolve_members = make_option_resolver(
 )
 
 
-def resolve_members(args):
+@_resolver
+def _resolve_members(args):
     _inner_resolve_members(args)
     # At this point, all members should be pointing to an existing enum
     for member in args.members:
