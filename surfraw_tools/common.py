@@ -219,7 +219,6 @@ def get_env(args):
         "description": args.description,
         "base_url": args.base_url,
         "search_url": args.search_url,
-        "options": options,
         # Options to generate
         "flags": args.flags,
         "bools": args.bools,
