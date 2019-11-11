@@ -15,6 +15,7 @@ from .validation import (
     list_of,
     no_validation,
     validate_bool,
+    validate_enum_value,
     validate_name,
     validate_option_type,
     validate_url_parameter,
@@ -82,7 +83,7 @@ def parse_bool_option(name, default):
 
 # Third argument is validated inside the function since it needs access to
 # other arguments.
-@parse_args([validate_name, validate_name, list_of(validate_name)])
+@parse_args([validate_name, validate_enum_value, list_of(validate_enum_value)])
 def parse_enum_option(name, default, values):
     """Check an enum option, requiring three colon-delimited parts.
 
@@ -97,7 +98,7 @@ def parse_enum_option(name, default, values):
     return EnumOption(name, default, values)
 
 
-@parse_args([validate_name, validate_name, validate_name])
+@parse_args([validate_name, validate_name, validate_enum_value])
 def parse_member_option(name, enum_name, value):
     return MemberOption(name, enum_name, value)
 

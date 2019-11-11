@@ -109,6 +109,28 @@ def validate_option_type(option_type):
         return type_
 
 
+# ENUM VALUES
+
+_VALID_ENUM_VALUE_STR = "^[a-z0-9][a-z0-9_+-]*$"
+VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
+
+
+def is_valid_enum_value(value):
+    return VALID_ENUM_VALUE.fullmatch(value)
+
+
+def invalid_enum_value(value):
+    raise argparse.ArgumentTypeError(
+        f"enum value '{value}' must match the regex '{_VALID_ENUM_VALUE_STR}'"
+    )
+
+
+def validate_enum_value(value):
+    if not is_valid_enum_value(value):
+        invalid_enum_value(value)
+    return value
+
+
 # MISC.
 
 
