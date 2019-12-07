@@ -50,65 +50,58 @@ w3_config_hook ()
 	# Aliases don't use any config
 }
 
+{% macro _parse_option(opt, has_arg, setopt='setopt') %}
+{% set opts = [opt] + opt.aliases|list %}
+{% if has_arg %}
+	{% set suffix = "=*" %}
+{% else %}
+	{% set suffix = "" %}
+{% endif %}
+{% set ns = namespace(patterns=[]) %}
+{% for name in opts|map(attribute='name')|sort %}
+	{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
+{% endfor %}
+{% if not has_arg %}
+	{% set varname = opt.target.name %}
+	{% set optarg = opt.value %}
+{% else %}
+	{% set varname = opt.name %}
+	{% set optarg = "$optarg" %}
+{% endif %}
+{{ ns.patterns|join('|') }}) {{ setopt }} {{ varname|ns }} {{ optarg }} ;;
+{%- endmacro %}
+{% macro _parse_options(opts, default_optname, default_value, settings) %}
+{% for opt in opts %}
+{{ _parse_option(opt, **settings) }}
+{% else %}
+{% if settings.has_arg %}
+	{% set suffix = "=*" %}
+	{% set varname = default_optname %}
+{% else %}
+	{% set suffix = "" %}
+	{% set varname = "targetname" %}
+{% endif %}
+##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ settings.get('setopt', 'setopt') }} {{ varname|ns }} {{ default_value }} ;;
+{% endfor %}
+{%- endmacro %}
+{% macro parse_options() %}
+{{ _parse_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
+{%- endmacro %}
 w3_parse_option_hook ()
 {
 	opt="$1"
 	optarg="$2"
 	case "$opt" in
 		# Flags
-		{% for flag in flags %}
-		-{{ flag.name }}) setoptyn {{ flag.target.name|ns }} {{ flag.value }} ;;
-		{% else %}
-		##-flag) setoptyn {{ 'targetname'|ns }} flag_value_yes_or_no ;;
-		{% endfor %}
-
+		{{ parse_options(flags, default_optname='flag', default_value='flag_value_yes_or_no', settings={'has_arg': False, 'setopt': 'setoptyn'}) }}
 		# Bools
-		{% for bool in bools %}
-		-{{ bool.name }}=*) setoptyn {{ bool.name|ns }} $optarg ;;
-		{% else %}
-		##-bool=*) setoptyn {{ 'bool'|ns }} $optarg ;;
-		{% endfor %}
-
+		{{ parse_options(bools, default_optname='bool', default_value='$optarg', settings={'has_arg': True, 'setopt': 'setoptyn'}) }}
 		# Members
-		{% for member in members %}
-		-{{ member.name }}) setopt {{ member.target.name|ns }} {{ member.value }} ;;
-		{% else %}
-		##-member) setopt {{ 'targetname'|ns }} enum_value ;;
-		{% endfor %}
-
+		{{ parse_options(members, default_optname='member', default_value='enum_value', settings={'has_arg': False}) }}
 		# Enums
-		{% for enum in enums %}
-		-{{ enum.name }}=*) setopt {{ enum.name|ns }} $optarg ;;
-		{% else %}
-		##-enum=*) setopt {{ 'enum'|ns }} $optarg ;;
-		{% endfor %}
-
+		{{ parse_options(enums, default_optname='enum', default_value='$optarg', settings={'has_arg': True}) }}
 		# 'Anythings'
-		{% for anything in anythings %}
-		-{{ anything.name }}=*) setopt {{ anything.name|ns }} $optarg ;;
-		{% else %}
-		##-anything=*) setopt {{ 'anything'|ns }} $optarg ;;
-		{% endfor %}
-
-		# Aliases
-		{% for alias in aliases %}
-		{% if alias.target is flag_option %}
-		-{{ alias.name }}) setoptyn {{ alias.target.target.name|ns }} {{ alias.target.value }} ;;
-		{% elif alias.target is bool_option %}
-		-{{ alias.name }}=*) setoptyn {{ alias.target.name|ns }} $optarg ;;
-		{% elif alias.target is member_option %}
-		-{{ alias.name }}) setopt {{ alias.target.target.name|ns }} {{ alias.target.value }} ;;
-		{% elif alias.target is enum_option %}
-		-{{ alias.name }}=*) setopt {{ alias.target.name|ns }} $optarg ;;
-		{% elif alias.target is anything_option %}
-		-{{ alias.name }}=*) setopt {{ alias.target.name|ns }} $optarg ;;
-		{% else %}
-		err "Alias target type unhandled! This should never have been reached. This is a bug!"
-		{% endif %}
-		{% else %}
-		## No aliases
-		## Use the examples for the other option types to derive one for its alias
-		{% endfor %}
+		{{ parse_options(anythings, default_optname='anything', default_value='$optarg', settings={'has_arg': True}) }}
 		*) return 1 ;;
 	esac
 	return 0
