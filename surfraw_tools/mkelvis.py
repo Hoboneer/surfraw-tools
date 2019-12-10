@@ -19,7 +19,6 @@ from os import EX_OK, EX_OSERR
 
 from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
 from .options import (
-    AliasOption,
     AnythingOption,
     BoolOption,
     EnumOption,
@@ -42,7 +41,6 @@ def make_executable(path):
 def generate_local_help_output(args):
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
-    base_offset = 2
     entries = []
     longest_length = 0
 
@@ -93,7 +91,6 @@ def generate_local_help_output(args):
         entries.append(entry)
 
     # Include "  | "
-    base_offset = longest_length + 4
     for entry in entries:
         opt = entry[0]
         for i, record in enumerate(entry):
