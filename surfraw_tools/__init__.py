@@ -1,1 +1,1 @@
-from ._package import __version__
+from ._package import __version__  # noqa
