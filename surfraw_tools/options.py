@@ -1,14 +1,29 @@
+import argparse
 import weakref
 from collections import defaultdict
 from itertools import chain
 
+from .validation import no_validation, validate_bool, validate_enum_value
+
 
 class AliasTarget:
     def __init__(self):
+        super().__init__()
         self.aliases = weakref.WeakSet()
 
     def add_alias(self, alias):
         self.aliases.add(alias)
+
+
+class FlagTarget:
+    def __init__(self):
+        super().__init__()
+        # Preferably, flags should be listed in the order that they were
+        # defined in the command line.
+        self.flags = []
+
+    def add_flag(self, flag):
+        self.flags.append(flag)
 
 
 class FlagOption(AliasTarget):
@@ -19,14 +34,14 @@ class FlagOption(AliasTarget):
         self.value = value
 
 
-class BoolOption(AliasTarget):
+class BoolOption(AliasTarget, FlagTarget):
     def __init__(self, name, default):
         super().__init__()
         self.name = name
         self.default = default
 
 
-class EnumOption(AliasTarget):
+class EnumOption(AliasTarget, FlagTarget):
     def __init__(self, name, default, values):
         super().__init__()
         self.name = name
@@ -34,15 +49,7 @@ class EnumOption(AliasTarget):
         self.values = values
 
 
-class MemberOption(AliasTarget):
-    def __init__(self, name, target, value):
-        super().__init__()
-        self.name = name
-        self.target = target
-        self.value = value
-
-
-class AnythingOption(AliasTarget):
+class AnythingOption(AliasTarget, FlagTarget):
     def __init__(self, name, default):
         super().__init__()
         self.name = name
@@ -151,12 +158,7 @@ _FORBIDDEN_OPTION_NAMES = {
 @_resolver
 def _resolve_forbidden_option_names(args):
     options = chain(
-        args.bools,
-        args.enums,
-        args.anythings,
-        args.flags,
-        args.members,
-        args.aliases,
+        args.bools, args.enums, args.anythings, args.flags, args.aliases,
     )
     for option in options:
         if option.name in _FORBIDDEN_OPTION_NAMES:
@@ -169,7 +171,7 @@ def _resolve_forbidden_option_names(args):
 # Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
-    ["flags", "bools", "members", "enums", "anythings"],
+    ["flags", "bools", "enums", "anythings"],
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
@@ -183,11 +185,7 @@ def _resolve_aliases(args):
             # Find a matching target
             target_name = alias.target.name
             for opt in chain(
-                args.flags,
-                args.bools,
-                args.members,
-                args.enums,
-                args.anythings,
+                args.flags, args.bools, args.enums, args.anythings,
             ):
                 if (
                     isinstance(opt, alias.target_type)
@@ -204,19 +202,6 @@ def _resolve_aliases(args):
                 f"alias '{alias.name}' targets another alias, which is forbidden"
             )
         alias.target.add_alias(alias)
-
-
-# Resolve flags
-# TODO: Allow flags to be shorthand for passing the value of any bool or enum
-# option.
-_resolver(
-    make_option_resolver(
-        "flags",
-        ["bools"],
-        error_msg="flag '{target.name}' does not target any existing option",
-        assign_target=True,
-    )
-)
 
 
 # Resolve mappings
@@ -241,21 +226,37 @@ _resolver(
 )
 
 
-# Do extra checking
-_inner_resolve_members = make_option_resolver(
-    "members",
-    ["enums"],
-    error_msg="enum member option '{target.name}' does not target any existing enum",
+_inner_resolve_flags = make_option_resolver(
+    "flags",
+    ["bools", "enums", "anythings"],
+    error_msg="flag option '{target.name}' does not target any existing yes-no, enum, or 'anything' option",
     assign_target=True,
 )
 
 
 @_resolver
-def _resolve_members(args):
-    _inner_resolve_members(args)
-    # At this point, all members should be pointing to an existing enum
-    for member in args.members:
-        if member.value not in member.target.values:
+def _resolve_flags(args):
+    _inner_resolve_flags(args)
+    flags = args.flags
+    try:
+        flags.resolve()
+    except Exception as e:
+        raise OptionResolutionError(str(e)) from None
+
+    def validate_values(opts, validator):
+        for flag in opts:
+            flag.value = validator(flag.value)
+
+    try:
+        validate_values(flags.bools, validate_bool)
+        validate_values(flags.enums, validate_enum_value)
+        validate_values(flags.anythings, no_validation)
+    except argparse.ArgumentTypeError as e:
+        raise OptionResolutionError(str(e)) from None
+
+    # Extra validation
+    for enum_flag in flags.enums:
+        if enum_flag.value not in enum_flag.target.values:
             raise OptionResolutionError(
-                f"enum member option {member.name}'s value ({member.value}) is not contained in its target enum ({member.target.values})"
+                f"enum flag option {enum_flag.name}'s value ({enum_flag.value}) is not contained in its target enum ({enum_flag.target.values})"
             )

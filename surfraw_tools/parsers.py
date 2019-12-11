@@ -9,7 +9,6 @@ from .options import (
     EnumOption,
     FlagOption,
     MappingOption,
-    MemberOption,
 )
 from .validation import (
     list_of,
@@ -17,7 +16,6 @@ from .validation import (
     validate_bool,
     validate_enum_value,
     validate_name,
-    validate_option_type,
     validate_url_parameter,
 )
 
@@ -69,7 +67,7 @@ def parse_args(validators, last_is_unlimited=False):
     return wrapper
 
 
-@parse_args([validate_name, validate_name, validate_bool])
+@parse_args([validate_name, validate_name, no_validation])
 def parse_flag_option(name, target, value):
     """Check a flag option, requiring three colon-delimited parts."""
     return FlagOption(name, target, value)
@@ -98,14 +96,37 @@ def parse_enum_option(name, default, values):
     return EnumOption(name, default, values)
 
 
-@parse_args([validate_name, validate_name, validate_enum_value])
-def parse_member_option(name, enum_name, value):
-    return MemberOption(name, enum_name, value)
-
-
 @parse_args([validate_name, no_validation])
 def parse_anything_option(name, default):
     return AnythingOption(name, default)
+
+
+# OPTION TYPE
+OPTION_TYPES = {
+    "yes-no": BoolOption,
+    "enum": EnumOption,
+    "anything": AnythingOption,
+    "flag": FlagOption,
+    # For backward compatibility.
+    "member": FlagOption,
+    "alias": AliasOption,
+}
+
+
+def _invalid_option_type(option_type):
+    valid_option_types = ", ".join(sorted(OPTION_TYPES))
+    raise argparse.ArgumentTypeError(
+        f"option type '{option_type}' must be one of the following: {valid_option_types}"
+    ) from None
+
+
+def validate_option_type(option_type):
+    try:
+        type_ = OPTION_TYPES[option_type]
+    except KeyError:
+        _invalid_option_type(option_type)
+    else:
+        return type_
 
 
 # NOTE: Aliases are useful since they would result in the target and its

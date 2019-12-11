@@ -1,5 +1,6 @@
 import argparse
 import sys
+from itertools import chain
 from os import EX_OK, EX_USAGE
 
 from jinja2 import Environment, PackageLoader
@@ -11,7 +12,6 @@ from .options import (
     BoolOption,
     EnumOption,
     FlagOption,
-    MemberOption,
     OptionResolutionError,
 )
 from .parsers import (
@@ -22,9 +22,64 @@ from .parsers import (
     parse_enum_option,
     parse_flag_option,
     parse_mapping_option,
-    parse_member_option,
     parse_query_parameter,
 )
+
+
+class _FlagContainer:
+    def __init__(self):
+        self._flags = {"bools": [], "enums": [], "anythings": []}
+        self._pending_flags = []
+        self._resolved = False
+
+    def append(self, flag):
+        self._pending_flags.append(flag)
+
+    # Place flags into their corresponding buckets
+    def resolve(self):
+        # XXX: Should this just check for an instance of `FlagTarget`?
+        #      How to determine which "bucket" to place into then?
+        if not self._pending_flags:
+            return
+        for flag in self._pending_flags:
+            if isinstance(flag.target, BoolOption):
+                self._flags["bools"].append(flag)
+            elif isinstance(flag.target, EnumOption):
+                self._flags["enums"].append(flag)
+            elif isinstance(flag.target, AnythingOption):
+                self._flags["anythings"].append(flag)
+            else:
+                raise RuntimeError(
+                    "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
+                )
+            flag.target.add_flag(flag)
+        self._pending_flags.clear()
+        self._resolved = True
+
+    def __iter__(self):
+        if not self._resolved:
+            return iter(self._pending_flags)
+        return chain.from_iterable(self._flags.values())
+
+    def __len__(self):
+        return sum(len(types) for types in self._flags.values())
+
+    # Don't allow the user to modify the flags container
+    # XXX: Should that even be forbidden?
+    @property
+    def bools(self):
+        return self._flags["bools"].copy()
+
+    @property
+    def enums(self):
+        return self._flags["enums"].copy()
+
+    @property
+    def anythings(self):
+        return self._flags["anythings"].copy()
+
+
+_FLAGS = _FlagContainer()
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
 _VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
@@ -54,11 +109,11 @@ BASE_PARSER.add_argument(
     "--flag",
     "-F",
     action="append",
-    default=[],
+    default=_FLAGS,
     type=parse_flag_option,
     dest="flags",
-    metavar="FLAG_NAME:FLAG_TARGET:YES_OR_NO",
-    help="specify a flag for the elvis",
+    metavar="FLAG_NAME:FLAG_TARGET:VALUE",
+    help="specify an alias to a value of a defined yes-no, enum, or 'anything' option",
 )
 BASE_PARSER.add_argument(
     "--yes-no",
@@ -84,11 +139,12 @@ BASE_PARSER.add_argument(
     "--member",
     "-M",
     action="append",
-    default=[],
-    type=parse_member_option,
-    dest="members",
+    default=_FLAGS,
+    type=parse_flag_option,
+    # Append to the same _FLAGS object.
+    dest="flags",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
-    help="specify an option that is an alias to a member of a defined --enum",
+    help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )
 BASE_PARSER.add_argument(
     "--anything",
@@ -183,15 +239,6 @@ def get_env(args):
     simply render get a template and render it like so:
     `template.render(variables)` for simple uses.
     """
-    # XXX: Should `options` be flattened?
-    options = (
-        args.flags,
-        args.bools,
-        args.members,
-        args.enums,
-        args.aliases,
-        args.anythings,
-    )
     env = Environment(
         loader=PackageLoader("surfraw_tools"),
         trim_blocks=True,
@@ -207,13 +254,14 @@ def get_env(args):
 
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
-    env.tests["member_option"] = lambda x: isinstance(x, MemberOption)
     env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
     env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
 
     template_variables = {
+        # Aliases and flags can only exist if any variable-creating options are defined.
         "any_options_defined": any(
-            len(option_container) for option_container in options
+            len(option_container)
+            for option_container in (args.bools, args.enums, args.anythings)
         ),
         "name": args.name,
         "description": args.description,
@@ -222,7 +270,6 @@ def get_env(args):
         # Options to generate
         "flags": args.flags,
         "bools": args.bools,
-        "members": args.members,
         "enums": args.enums,
         "anythings": args.anythings,
         "aliases": args.aliases,

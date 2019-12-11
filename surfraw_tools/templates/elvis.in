@@ -22,16 +22,12 @@ EOF
 {% if any_options_defined %}
 w3_config_hook ()
 {
-	# Flags don't use any config
-
 	# Bools
 	{% for bool in bools %}
 	defyn {{ bool.name|ns }} {{ bool.default }}
 	{% else %}
 	## defyn {{ 'variable'|ns }} default_yes_or_no
 	{% endfor %}
-
-	# Members don't use any config
 
 	# Enums
 	{% for enum in enums %}
@@ -47,42 +43,45 @@ w3_config_hook ()
 	## defyn {{ 'variable'|ns }} default_anything
 	{% endfor %}
 
+	# Flags don't use any config
+
 	# Aliases don't use any config
 }
 
-{% macro _parse_option(opt, has_arg, setopt='setopt') %}
+{% macro _parse_option(opt, setopt='setopt') %}
 {% set opts = [opt] + opt.aliases|list %}
-{% if has_arg %}
-	{% set suffix = "=*" %}
-{% else %}
+{# All standalone, non-flag options have args #}
+{# Aliases are together with their target so it doesn't matter #}
+{% if opt is flag_option %}
 	{% set suffix = "" %}
+	{% set varname = opt.target.name %}
+	{% set optarg = opt.value %}
+{% else %}
+	{% set suffix = "=*" %}
+	{% set varname = opt.name %}
+	{% set optarg = "$optarg" %}
 {% endif %}
 {% set ns = namespace(patterns=[]) %}
 {% for name in opts|map(attribute='name')|sort %}
 	{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
 {% endfor %}
-{% if not has_arg %}
-	{% set varname = opt.target.name %}
-	{% set optarg = opt.value %}
-{% else %}
-	{% set varname = opt.name %}
-	{% set optarg = "$optarg" %}
-{% endif %}
 {{ ns.patterns|join('|') }}) {{ setopt }} {{ varname|ns }} {{ optarg }} ;;
-{%- endmacro %}
-{% macro _parse_options(opts, default_optname, default_value, settings) %}
+{%- endmacro %}{# _parse_option #}
+{% macro _parse_options(opts, default_optname, default_value, setopt='setopt') %}
 {% for opt in opts %}
-{{ _parse_option(opt, **settings) }}
+{{ _parse_option(opt, setopt=setopt) }}
+{% if opt.flags %}
+## Start: flags for {{ opt.name|ns }}
+{% for flag in opt.flags %}
+{{ _parse_option(flag, setopt=setopt) }}
+{% endfor %}{# opt.flags #}
+## End: flags for {{ opt.name|ns }}
+{% endif %}{# opt.flags #}
 {% else %}
-{% if settings.has_arg %}
-	{% set suffix = "=*" %}
-	{% set varname = default_optname %}
-{% else %}
-	{% set suffix = "" %}
-	{% set varname = "targetname" %}
-{% endif %}
-##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ settings.get('setopt', 'setopt') }} {{ varname|ns }} {{ default_value }} ;;
-{% endfor %}
+{% set suffix = "=*" %}
+{% set varname = default_optname %}
+##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ setopt }} {{ varname|ns }} {{ default_value }} ;;
+{% endfor %}{# opts #}
 {%- endmacro %}
 {% macro parse_options() %}
 {{ _parse_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
@@ -92,16 +91,12 @@ w3_parse_option_hook ()
 	opt="$1"
 	optarg="$2"
 	case "$opt" in
-		# Flags
-		{{ parse_options(flags, default_optname='flag', default_value='flag_value_yes_or_no', settings={'has_arg': False, 'setopt': 'setoptyn'}) }}
 		# Bools
-		{{ parse_options(bools, default_optname='bool', default_value='$optarg', settings={'has_arg': True, 'setopt': 'setoptyn'}) }}
-		# Members
-		{{ parse_options(members, default_optname='member', default_value='enum_value', settings={'has_arg': False}) }}
+		{{ parse_options(bools, default_optname='bool', default_value='$optarg', setopt='setoptyn') }}
 		# Enums
-		{{ parse_options(enums, default_optname='enum', default_value='$optarg', settings={'has_arg': True}) }}
+		{{ parse_options(enums, default_optname='enum', default_value='$optarg') }}
 		# 'Anythings'
-		{{ parse_options(anythings, default_optname='anything', default_value='$optarg', settings={'has_arg': True}) }}
+		{{ parse_options(anythings, default_optname='anything', default_value='$optarg') }}
 		*) return 1 ;;
 	esac
 	return 0

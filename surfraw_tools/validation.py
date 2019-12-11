@@ -1,15 +1,6 @@
 import argparse
 import re
 
-from .options import (
-    AliasOption,
-    AnythingOption,
-    BoolOption,
-    EnumOption,
-    FlagOption,
-    MemberOption,
-)
-
 # NAME
 
 # This is purposely not in the full range of shell variable names because I am
@@ -82,32 +73,7 @@ def validate_bool(bool_):
     return bool_
 
 
-# OPTION TYPE
-OPTION_TYPES = {
-    "yes-no": BoolOption,
-    "flag": FlagOption,
-    "enum": EnumOption,
-    "member": MemberOption,
-    "anything": AnythingOption,
-    "alias": AliasOption,
-}
-
-
-def invalid_option_type(option_type):
-    valid_option_types = ", ".join(sorted(OPTION_TYPES))
-    raise argparse.ArgumentTypeError(
-        f"option type '{option_type}' must be one of the following: {valid_option_types}"
-    ) from None
-
-
-def validate_option_type(option_type):
-    try:
-        type_ = OPTION_TYPES[option_type]
-    except KeyError:
-        invalid_option_type(option_type)
-    else:
-        return type_
-
+# OPTION TYPE is defined elsewhere to avoid circular imports.
 
 # ENUM VALUES
 

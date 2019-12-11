@@ -18,13 +18,7 @@ from itertools import chain
 from os import EX_OK, EX_OSERR
 
 from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
-from .options import (
-    AnythingOption,
-    BoolOption,
-    EnumOption,
-    FlagOption,
-    MemberOption,
-)
+from .options import AnythingOption, BoolOption, EnumOption, FlagOption
 
 PROGRAM_NAME = "mkelvis"
 
@@ -82,7 +76,7 @@ def generate_local_help_output(args):
         entries.append(entry)
 
     # Aliases to one of the above options, but with an argument
-    for opt in chain(args.flags, args.members):
+    for opt in chain(args.flags):
         entry = []
         entry.append(opt)
         optheader = get_optheader(opt)
@@ -108,7 +102,7 @@ def generate_local_help_output(args):
                     entry[i] += f"An enum option for '{opt.name}'"
                 elif isinstance(opt, AnythingOption):
                     entry[i] += f"An unchecked option for '{opt.name}'"
-                elif isinstance(opt, (FlagOption, MemberOption)):
+                elif isinstance(opt, FlagOption):
                     entry[i] += f"An alias for -{opt.target.name}={opt.value}"
                 else:
                     entry[i] += "TODO option help"
