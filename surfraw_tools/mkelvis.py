@@ -19,6 +19,7 @@ from os import EX_OK, EX_OSERR
 
 from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
 from .options import (
+    VARIABLE_OPTIONS,
     AnythingOption,
     BoolOption,
     EnumOption,
@@ -69,7 +70,7 @@ def generate_local_help_output(args):
         return optheader
 
     # Options that take arguments
-    for opt in chain(args.bools, args.enums, args.anythings, args.specials):
+    for opt in VARIABLE_OPTIONS["iterable_func"](args):
         entry = []
         entry.append(opt)
 
@@ -86,7 +87,7 @@ def generate_local_help_output(args):
         entries.append(entry)
 
     # Aliases to one of the above options, but with an argument
-    for opt in chain(args.flags):
+    for opt in args.flags:
         entry = []
         entry.append(opt)
         optheader = get_optheader(opt)
@@ -126,9 +127,7 @@ def generate_local_help_output(args):
                     record + " " * (longest_length - len(record)) + "  | "
                 )
         prefix = " " * longest_length + "    "
-        if isinstance(
-            opt, (BoolOption, EnumOption, AnythingOption, SpecialOption)
-        ):
+        if isinstance(opt, VARIABLE_OPTIONS["types"]):
             ns_name = args._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.

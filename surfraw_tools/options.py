@@ -122,6 +122,15 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
 
 RESOLVERS = []
 
+_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials")
+VARIABLE_OPTIONS = {
+    "iterable_func": lambda args: chain.from_iterable(
+        getattr(args, type_) for type_ in _VARIABLE_OPTION_TYPES
+    ),
+    "strings": _VARIABLE_OPTION_TYPES,
+    "types": (BoolOption, EnumOption, AnythingOption, SpecialOption),
+}
+
 
 def _resolver(func):
     RESOLVERS.append(func)
@@ -129,9 +138,8 @@ def _resolver(func):
 
 @_resolver
 def _resolve_duplicate_variables(args):
-    options = chain(args.bools, args.enums, args.anythings, args.specials)
     name_counts = defaultdict(int)
-    for option in options:
+    for option in VARIABLE_OPTIONS["iterable_func"](args):
         name_counts[option.name] += 1
         if name_counts[option.name] > 1:
             raise OptionResolutionError(
@@ -170,12 +178,7 @@ _FORBIDDEN_OPTION_NAMES = {
 @_resolver
 def _resolve_forbidden_option_names(args):
     options = chain(
-        args.bools,
-        args.enums,
-        args.anythings,
-        args.flags,
-        args.aliases,
-        args.specials,
+        VARIABLE_OPTIONS["iterable_func"](args), args.flags, args.aliases,
     )
     for option in options:
         if option.name in _FORBIDDEN_OPTION_NAMES:
@@ -188,7 +191,7 @@ def _resolve_forbidden_option_names(args):
 # Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
-    ["flags", "bools", "enums", "anythings", "specials"],
+    ("flags", *VARIABLE_OPTIONS["strings"]),
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
@@ -202,11 +205,7 @@ def _resolve_aliases(args):
             # Find a matching target
             target_name = alias.target.name
             for opt in chain(
-                args.flags,
-                args.bools,
-                args.enums,
-                args.anythings,
-                args.specials,
+                args.flags, VARIABLE_OPTIONS["iterable_func"](args)
             ):
                 if (
                     isinstance(opt, alias.target_type)
@@ -229,7 +228,7 @@ def _resolve_aliases(args):
 _resolver(
     make_option_resolver(
         "mappings",
-        ["bools", "enums", "anythings", "specials"],
+        VARIABLE_OPTIONS["strings"],
         error_msg="URL parameter '{target.parameter}' does not target any existing variable",
         assign_target=False,
     )
@@ -240,7 +239,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "collapses",
-        ["bools", "enums", "anythings", "specials"],
+        VARIABLE_OPTIONS["strings"],
         error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
         assign_target=False,
     )
@@ -249,7 +248,7 @@ _resolver(
 
 _inner_resolve_flags = make_option_resolver(
     "flags",
-    ["bools", "enums", "anythings", "specials"],
+    VARIABLE_OPTIONS["strings"],
     error_msg="flag option '{target.name}' does not target any existing yes-no, enum, or 'anything' option",
     assign_target=True,
 )
