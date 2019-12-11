@@ -18,7 +18,13 @@ from itertools import chain
 from os import EX_OK, EX_OSERR
 
 from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
-from .options import AnythingOption, BoolOption, EnumOption, FlagOption
+from .options import (
+    AnythingOption,
+    BoolOption,
+    EnumOption,
+    FlagOption,
+    SpecialOption,
+)
 
 PROGRAM_NAME = "mkelvis"
 
@@ -50,7 +56,11 @@ def generate_local_help_output(args):
         optnames = [opt.name, *(alias.name for alias in opt.aliases)]
         optnames.sort()
         if has_metavar:
-            metavar = opt.name.upper()
+            # Match the rest of the elvi's metavars for -results=
+            if isinstance(opt, SpecialOption) and opt.name == "results":
+                metavar = "NUM"
+            else:
+                metavar = opt.name.upper()
             optheader = "  " + ", ".join(
                 f"-{name}={metavar}" for name in optnames
             )
@@ -59,7 +69,7 @@ def generate_local_help_output(args):
         return optheader
 
     # Options that take arguments
-    for opt in chain(args.bools, args.enums, args.anythings):
+    for opt in chain(args.bools, args.enums, args.anythings, args.specials):
         entry = []
         entry.append(opt)
 
@@ -104,6 +114,11 @@ def generate_local_help_output(args):
                     entry[i] += f"An unchecked option for '{opt.name}'"
                 elif isinstance(opt, FlagOption):
                     entry[i] += f"An alias for -{opt.target.name}={opt.value}"
+                elif isinstance(opt, SpecialOption):
+                    if opt.name == "results":
+                        entry[i] += "Number of search results returned"
+                    else:
+                        entry[i] += "TODO special option help"
                 else:
                     entry[i] += "TODO option help"
             else:
@@ -111,10 +126,18 @@ def generate_local_help_output(args):
                     record + " " * (longest_length - len(record)) + "  | "
                 )
         prefix = " " * longest_length + "    "
-        if isinstance(opt, (BoolOption, EnumOption, AnythingOption)):
+        if isinstance(
+            opt, (BoolOption, EnumOption, AnythingOption, SpecialOption)
+        ):
             ns_name = args._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")
-            entry.append(prefix + f"Environment: {ns_name}")
+            # TODO: Allow a generic way for options to depend on other variables.
+            if isinstance(opt, SpecialOption) and opt.name == "results":
+                entry.append(
+                    prefix + f"Environment: {ns_name}, SURFRAW_results"
+                )
+            else:
+                entry.append(prefix + f"Environment: {ns_name}")
     # Flatten entries into a list of strings
     return "\n".join(
         line for line in chain.from_iterable(entries) if isinstance(line, str)

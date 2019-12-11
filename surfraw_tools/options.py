@@ -63,6 +63,18 @@ class AliasOption:
         self.target_type = target_type
 
 
+class SpecialOption(AliasTarget, FlagTarget):
+    """An option that depends on values of environment variables."""
+
+    def __init__(self, name, default=None):
+        super().__init__()
+        self.name = name
+        if default is None:
+            self.default = "$SURFRAW_" + name
+        else:
+            self.default = default
+
+
 class MappingOption:
     def __init__(self, variable, parameter):
         self.target = variable
@@ -117,7 +129,7 @@ def _resolver(func):
 
 @_resolver
 def _resolve_duplicate_variables(args):
-    options = chain(args.bools, args.enums, args.anythings)
+    options = chain(args.bools, args.enums, args.anythings, args.specials)
     name_counts = defaultdict(int)
     for option in options:
         name_counts[option.name] += 1
@@ -158,7 +170,12 @@ _FORBIDDEN_OPTION_NAMES = {
 @_resolver
 def _resolve_forbidden_option_names(args):
     options = chain(
-        args.bools, args.enums, args.anythings, args.flags, args.aliases,
+        args.bools,
+        args.enums,
+        args.anythings,
+        args.flags,
+        args.aliases,
+        args.specials,
     )
     for option in options:
         if option.name in _FORBIDDEN_OPTION_NAMES:
@@ -171,7 +188,7 @@ def _resolve_forbidden_option_names(args):
 # Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
-    ["flags", "bools", "enums", "anythings"],
+    ["flags", "bools", "enums", "anythings", "specials"],
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
@@ -185,7 +202,11 @@ def _resolve_aliases(args):
             # Find a matching target
             target_name = alias.target.name
             for opt in chain(
-                args.flags, args.bools, args.enums, args.anythings,
+                args.flags,
+                args.bools,
+                args.enums,
+                args.anythings,
+                args.specials,
             ):
                 if (
                     isinstance(opt, alias.target_type)
@@ -208,7 +229,7 @@ def _resolve_aliases(args):
 _resolver(
     make_option_resolver(
         "mappings",
-        ["bools", "enums", "anythings"],
+        ["bools", "enums", "anythings", "specials"],
         error_msg="URL parameter '{target.parameter}' does not target any existing variable",
         assign_target=False,
     )
@@ -219,7 +240,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "collapses",
-        ["bools", "enums", "anythings"],
+        ["bools", "enums", "anythings", "specials"],
         error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
         assign_target=False,
     )
@@ -228,7 +249,7 @@ _resolver(
 
 _inner_resolve_flags = make_option_resolver(
     "flags",
-    ["bools", "enums", "anythings"],
+    ["bools", "enums", "anythings", "specials"],
     error_msg="flag option '{target.name}' does not target any existing yes-no, enum, or 'anything' option",
     assign_target=True,
 )

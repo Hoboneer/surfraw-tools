@@ -13,6 +13,7 @@ from .options import (
     EnumOption,
     FlagOption,
     OptionResolutionError,
+    SpecialOption,
 )
 from .parsers import (
     parse_alias_option,
@@ -166,6 +167,13 @@ BASE_PARSER.add_argument(
     help="make an alias to another defined option",
 )
 BASE_PARSER.add_argument(
+    "--use-results-option",
+    action="store_true",
+    default=False,
+    dest="use_results_option",
+    help="define a 'results' variable and option",
+)
+BASE_PARSER.add_argument(
     "--map",
     action="append",
     default=[],
@@ -205,6 +213,11 @@ def process_args(args):
 
     args.base_url = f"{url_scheme}://{args.base_url}"
     args.search_url = f"{url_scheme}://{args.search_url}"
+
+    args.specials = []
+    if args.use_results_option:
+        results_option = SpecialOption("results")
+        args.specials.append(results_option)
 
     try:
         for resolver in RESOLVERS:
@@ -273,6 +286,7 @@ def get_env(args):
         "enums": args.enums,
         "anythings": args.anythings,
         "aliases": args.aliases,
+        "specials": args.specials,
         # URL parameters
         "mappings": args.mappings,
         "collapses": args.collapses,
