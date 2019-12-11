@@ -23,7 +23,6 @@
 	- results: Uses the value in `SURFRAW_results` as a default value
 - Make help messages and metavariables more helpful and clear:
 	- Generate -local-help output for local options
-- Allow aliases to target enum member options
 - Put in comment in generated elvi: the example mappings in comments only work
   as-is if the `search_url` is not provided with the parameter for search
 queries opened, but instead simply have the query string opened, with the
