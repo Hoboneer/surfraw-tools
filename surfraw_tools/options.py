@@ -198,8 +198,6 @@ def _resolve_forbidden_option_names(args):
             )
 
 
-# TODO: What to do about naming conflicts?
-# Order is important! (Why?)
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
     ("flags", *VARIABLE_OPTIONS["strings"]),
