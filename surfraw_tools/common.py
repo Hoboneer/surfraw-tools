@@ -29,7 +29,12 @@ from .parsers import (
 
 class _FlagContainer:
     def __init__(self):
-        self._flags = {"bools": [], "enums": [], "anythings": []}
+        self._flags = {
+            "bools": [],
+            "enums": [],
+            "anythings": [],
+            "specials": [],
+        }
         self._pending_flags = []
         self._resolved = False
 
@@ -49,6 +54,8 @@ class _FlagContainer:
                 self._flags["enums"].append(flag)
             elif isinstance(flag.target, AnythingOption):
                 self._flags["anythings"].append(flag)
+            elif isinstance(flag.target, SpecialOption):
+                self._flags["specials"].append(flag)
             else:
                 raise RuntimeError(
                     "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
@@ -114,7 +121,7 @@ BASE_PARSER.add_argument(
     type=parse_flag_option,
     dest="flags",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
-    help="specify an alias to a value of a defined yes-no, enum, or 'anything' option",
+    help="specify an alias to a value of a defined yes-no, enum, 'anything', or special option",
 )
 BASE_PARSER.add_argument(
     "--yes-no",

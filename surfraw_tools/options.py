@@ -267,10 +267,23 @@ def _resolve_flags(args):
         for flag in opts:
             flag.value = validator(flag.value)
 
+    def validate_specials(specials):
+        # Other special types will be handled as they have support added into
+        # mkelvis.
+        for flag in specials:
+            if flag.name == "results":
+                try:
+                    flag.value = int(flag.value)
+                except ValueError:
+                    raise argparse.ArgumentTypeError(
+                        "value for special 'results' option must be an integer"
+                    ) from None
+
     try:
         validate_values(flags.bools, validate_bool)
         validate_values(flags.enums, validate_enum_value)
         validate_values(flags.anythings, no_validation)
+        validate_specials(flags.specials)
     except argparse.ArgumentTypeError as e:
         raise OptionResolutionError(str(e)) from None
 
