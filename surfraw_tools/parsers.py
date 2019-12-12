@@ -9,6 +9,7 @@ from .options import (
     EnumOption,
     FlagOption,
     MappingOption,
+    SpecialOption,
 )
 from .validation import (
     list_of,
@@ -110,6 +111,7 @@ OPTION_TYPES = {
     # For backward compatibility.
     "member": FlagOption,
     "alias": AliasOption,
+    "special": SpecialOption,
 }
 
 

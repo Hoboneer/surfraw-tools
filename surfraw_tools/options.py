@@ -249,7 +249,7 @@ _resolver(
 _inner_resolve_flags = make_option_resolver(
     "flags",
     VARIABLE_OPTIONS["strings"],
-    error_msg="flag option '{target.name}' does not target any existing yes-no, enum, or 'anything' option",
+    error_msg="flag option '{target.name}' does not target any existing yes-no, enum, 'anything', or special option",
     assign_target=True,
 )
 
