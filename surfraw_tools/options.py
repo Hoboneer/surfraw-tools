@@ -147,6 +147,17 @@ def _resolve_duplicate_variables(args):
             )
 
 
+@_resolver
+def _resolve_duplicate_nonvariable_options(args):
+    name_counts = defaultdict(int)
+    for option in chain(args.flags, args.aliases):
+        name_counts[option.name] += 1
+        if name_counts[option.name] > 1:
+            raise OptionResolutionError(
+                f"the non-variable-creating option name '{option.name}' is duplicated"
+            )
+
+
 # Options with non alphabetic characters are impossible
 _FORBIDDEN_OPTION_NAMES = {
     "browser",
