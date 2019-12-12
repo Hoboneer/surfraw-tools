@@ -194,7 +194,7 @@ def _resolve_forbidden_option_names(args):
     for option in options:
         if option.name in _FORBIDDEN_OPTION_NAMES:
             raise OptionResolutionError(
-                f"global option name '{option.name}' cannot be overriden by elvi"
+                f"option name '{option.name}' is global, which cannot be overriden by elvi"
             )
 
 
