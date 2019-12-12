@@ -86,6 +86,10 @@ class _FlagContainer:
     def anythings(self):
         return self._flags["anythings"].copy()
 
+    @property
+    def specials(self):
+        return self._flags["specials"].copy()
+
 
 _FLAGS = _FlagContainer()
 
