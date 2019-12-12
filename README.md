@@ -7,41 +7,64 @@ scripts easily.
 The following are currently provided:
 
 * `mkelvis`: Generate a single surfraw elvis per invocation.
+* `mkelviscomps`: Generate bash completions for elvi.  NOTE: This has not been
+  updated with recent changes to `mkelvis` and its elvis generation.
 
-## How to use (simple)
+## Quickstart
 
 Specify your elvis to generate with the three positional arguments as shown:
 
 ```sh
-mkelvis ELVIS_NAME www.domain.com www.domain.com/search?q=
+mkelvis yourelvisname www.domain.com www.domain.com/search?q=
 ```
 
 Notice that the final argument has an open query string for the `q` parameter.
 This is intentional; it is where your search terms will be placed.
 
 The created elvis will be placed in the current directory with the name
-`ELVIS_NAME`, and ready for installation (made executable, shebang added).
+`yourelvisname`, and ready for installation (made executable, shebang added).
 
 ## Adding options
 
 To add options to an elvis, you need to use one of the following to generate
 option parsing code.
 
-* `--flag`: Boolean (yes-no) option with no arguments (e.g., `-lucky`).
-* `--yes-no`: Boolean option whose argument must be: yes, on, 1; or no, off, 0.
+* `--yes-no`: Boolean option whose argument must be one of: yes, on, 1; or no,
+  off, 0.
 * `--enum`: Option whose argument must be a member of a fixed list.
+* `--anything`: Option whose argument is not checked.
+* `--flag`: Alias to any variable-creating options (e.g., `-lucky` being an
+  alias to `-lucky=yes`).
 * `--alias`: Alias to any other option above. Displayed together in help
-  output (TODO).
+  output.
+* `--use-results-option`: Create a `-results=NUM` option whose default value is
+  taken from `$SURFRAW_results` (type: 'special').
+* `--collapse`: Perform modification of a variable in a shell case-statement.
 * `--map`: Map a variable in the generated elvis to a URL parameter.
 * `--query-parameter`: Define the query parameter to be appended to the URL
   (needed if `--map` is used).
 
-The yes-no, and enum options create variables corresponding to their name,
-named as such: `SURFRAW_yourelviname_thevariable`.
+The yes-no, enum, anything, and special options create variables corresponding
+to their name, named as such: `SURFRAW_yourelviname_thevariable`.
+
+## Aliases
+
+Aliases to flags or any variable-creating option can be made with the `--alias`
+option.  Since flags and variable-creating options can have conflicting names
+(but not between each other), this option needs the type of option it targets
+to be specified.  Valid types follow:
+
+* yes-no
+* enum
+* anything
+* flag
+* special
+
+Another type is 'alias', but is forbidden to have aliases target other aliases.
 
 ## Making many elvi at once
 
-`mkelvis` does not require any specific way of creating multiple elvi-- it only
+`mkelvis` does not define any specific way of creating multiple elvi-- it only
 does one a time. This enables multiple options.
 
 For many simple elvi, a single text file may be sufficient. It shall be called
