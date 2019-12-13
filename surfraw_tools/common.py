@@ -9,6 +9,7 @@ from ._package import __version__
 from .options import (
     RESOLVERS,
     VARIABLE_OPTIONS,
+    AliasOption,
     AnythingOption,
     BoolOption,
     EnumOption,
@@ -281,6 +282,8 @@ def get_env(args):
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
     env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
     env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
+    env.tests["special_option"] = lambda x: isinstance(x, SpecialOption)
+    env.tests["alias_option"] = lambda x: isinstance(x, AliasOption)
 
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
