@@ -8,6 +8,7 @@ from jinja2 import Environment, PackageLoader
 from ._package import __version__
 from .options import (
     RESOLVERS,
+    VARIABLE_OPTIONS,
     AnythingOption,
     BoolOption,
     EnumOption,
@@ -284,8 +285,7 @@ def get_env(args):
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
         "any_options_defined": any(
-            len(option_container)
-            for option_container in (args.bools, args.enums, args.anythings)
+            True for _ in VARIABLE_OPTIONS["iterable_func"](args)
         ),
         "name": args.name,
         "description": args.description,
