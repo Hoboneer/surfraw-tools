@@ -187,6 +187,13 @@ BASE_PARSER.add_argument(
     help="define a 'results' variable and option",
 )
 BASE_PARSER.add_argument(
+    "--use-language-option",
+    action="store_true",
+    default=False,
+    dest="use_language_option",
+    help="define a 'language' variable and option",
+)
+BASE_PARSER.add_argument(
     "--map",
     action="append",
     default=[],
@@ -229,8 +236,12 @@ def process_args(args):
 
     args.specials = []
     if args.use_results_option:
-        results_option = SpecialOption("results")
-        args.specials.append(results_option)
+        args.specials.append(SpecialOption("results"))
+    if args.use_language_option:
+        # If `SURFRAW_lang` is empty or unset, assume English.
+        args.specials.append(
+            SpecialOption("language", default="${SURFRAW_lang:=en}")
+        )
 
     try:
         for resolver in RESOLVERS:

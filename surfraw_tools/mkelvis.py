@@ -58,8 +58,12 @@ def generate_local_help_output(args):
         optnames.sort()
         if has_metavar:
             # Match the rest of the elvi's metavars for -results=
-            if isinstance(opt, SpecialOption) and opt.name == "results":
-                metavar = "NUM"
+            if isinstance(opt, SpecialOption):
+                if opt.name == "results":
+                    metavar = "NUM"
+                elif opt.name == "language":
+                    # Match the wikimedia elvi
+                    metavar = "ISOCODE"
             else:
                 metavar = opt.name.upper()
             optheader = "  " + ", ".join(
@@ -118,6 +122,10 @@ def generate_local_help_output(args):
                 elif isinstance(opt, SpecialOption):
                     if opt.name == "results":
                         entry[i] += "Number of search results returned"
+                    elif opt.name == "language":
+                        entry[
+                            i
+                        ] += "Two letter language code (resembles ISO country codes)"
                     else:
                         entry[i] += "TODO special option help"
                 else:
@@ -131,10 +139,15 @@ def generate_local_help_output(args):
             ns_name = args._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
-            if isinstance(opt, SpecialOption) and opt.name == "results":
-                entry.append(
-                    prefix + f"Environment: {ns_name}, SURFRAW_results"
-                )
+            if isinstance(opt, SpecialOption):
+                if opt.name == "results":
+                    entry.append(
+                        prefix + f"Environment: {ns_name}, SURFRAW_results"
+                    )
+                elif opt.name == "language":
+                    entry.append(
+                        prefix + f"Environment: {ns_name}, SURFRAW_lang"
+                    )
             else:
                 entry.append(prefix + f"Environment: {ns_name}")
     # Flatten entries into a list of strings

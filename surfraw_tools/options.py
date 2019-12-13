@@ -287,6 +287,8 @@ def _resolve_flags(args):
                     raise argparse.ArgumentTypeError(
                         "value for special 'results' option must be an integer"
                     ) from None
+            # The language option needn't be checked here.  There are way too
+            # many ISO language codes to match.
 
     try:
         validate_values(flags.bools, validate_bool)
