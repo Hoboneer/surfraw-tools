@@ -262,7 +262,6 @@ esac
 {% if collapse.variable in LIST_ENUMS|map(attribute='name') %}
 # Collapse list variable
 __mkelvis_deflist __mkelvis_collapse_tmp ''
-echo var: ${{ collapse.variable|ns }}
 vars="$(echo ${{ collapse.variable|ns }})"
 __mkelvis_enter_list_ctx
 for val in $vars; do
