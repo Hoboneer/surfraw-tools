@@ -3,7 +3,12 @@ import weakref
 from collections import defaultdict
 from itertools import chain
 
-from .validation import no_validation, validate_bool, validate_enum_value
+from .validation import (
+    list_of,
+    no_validation,
+    validate_bool,
+    validate_enum_value,
+)
 
 
 class AliasTarget:
@@ -42,11 +47,12 @@ class BoolOption(AliasTarget, FlagTarget):
 
 
 class EnumOption(AliasTarget, FlagTarget):
-    def __init__(self, name, default, values):
+    def __init__(self, name, default, values, is_list=False):
         super().__init__()
         self.name = name
         self.default = default
         self.values = values
+        self.is_list = is_list
 
 
 class AnythingOption(AliasTarget, FlagTarget):
@@ -242,6 +248,23 @@ _resolver(
         assign_target=False,
     )
 )
+# Resolve list mappings
+_inner_resolve_list_mappings = make_option_resolver(
+    "list_mappings",
+    VARIABLE_OPTIONS["strings"],
+    error_msg="URL parameter '{target.parameter}' does not target any existing variable",
+    assign_target=False,
+)
+
+
+@_resolver
+def _resolve_list_mappings(args):
+    VALID_LIST_VARIABLES = {enum.name for enum in args.enums if enum.is_list}
+    for mapping in args.list_mappings:
+        if mapping.variable not in VALID_LIST_VARIABLES:
+            raise OptionResolutionError(
+                f"URL parameter '{mapping.parameter}' does not target a valid list variable"
+            )
 
 
 # Resolve collapses
@@ -276,6 +299,19 @@ def _resolve_flags(args):
         for flag in opts:
             flag.value = validator(flag.value)
 
+    def validate_enum_flags(enum_flags):
+        list_flags = []
+        plain_flags = []
+        for flag in enum_flags:
+            if flag.target.is_list:
+                list_flags.append(flag)
+            else:
+                plain_flags.append(flag)
+        validate_values(plain_flags, validate_enum_value)
+        for flag in list_flags:
+            flag.value = list_of(validate_enum_value)(flag.value)
+            # flag.value is a list at this point
+
     def validate_specials(specials):
         # Other special types will be handled as they have support added into
         # mkelvis.
@@ -292,7 +328,7 @@ def _resolve_flags(args):
 
     try:
         validate_values(flags.bools, validate_bool)
-        validate_values(flags.enums, validate_enum_value)
+        validate_enum_flags(flags.enums)
         validate_values(flags.anythings, no_validation)
         validate_specials(flags.specials)
     except argparse.ArgumentTypeError as e:
@@ -300,7 +336,14 @@ def _resolve_flags(args):
 
     # Extra validation
     for enum_flag in flags.enums:
-        if enum_flag.value not in enum_flag.target.values:
-            raise OptionResolutionError(
-                f"enum flag option {enum_flag.name}'s value ({enum_flag.value}) is not contained in its target enum ({enum_flag.target.values})"
-            )
+        if enum_flag.target.is_list:
+            if not set(enum_flag.value) <= set(enum_flag.target.values):
+                raise argparse.ArgumentTypeError(
+                    f"enum flag option {enum_flag.name}'s values '{enum_flag.value}' must be a subset of '{enum_flag.target.values}'"
+                )
+
+        else:
+            if enum_flag.value not in enum_flag.target.values:
+                raise OptionResolutionError(
+                    f"enum flag option {enum_flag.name}'s value ({enum_flag.value}) is not contained in its target enum ({enum_flag.target.values})"
+                )

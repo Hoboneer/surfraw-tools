@@ -12,6 +12,8 @@ from .options import (
     SpecialOption,
 )
 from .validation import (
+    FALSE_WORDS,
+    TRUE_WORDS,
     list_of,
     no_validation,
     validate_bool,
@@ -26,7 +28,7 @@ def insufficient_spec_parts(arg, num_required):
     )
 
 
-def parse_args(validators, last_is_unlimited=False):
+def parse_args(validators, last_is_unlimited=False, last_is_optional=False):
     """Decorator to validate args of argument spec for generated elvis.
 
     Raises `argparse.ArgumentTypeError` when invalid, otherwise calls decorated
@@ -43,22 +45,25 @@ def parse_args(validators, last_is_unlimited=False):
                     arg = args[i]
                 except IndexError:
                     # Raise `argparse.ArgumentTypeError`
-                    insufficient_spec_parts(
-                        raw_arg, num_required=len(validators)
-                    )
+                    if last_is_optional:
+                        break
+                    else:
+                        insufficient_spec_parts(
+                            raw_arg, num_required=len(validators)
+                        )
                 else:
                     # Raise `argparse.ArgumentTypeError` if invalid arg.
                     result = valid_or_fail_func(arg)
                     valid_args.append(result)
-
-            # Continue until args exhausted.
-            if last_is_unlimited:
-                i += 1
-                while i < len(args):
-                    # Raise `argparse.ArgumentTypeError` if invalid arg.
-                    result = valid_or_fail_func(args[i])
-                    valid_args.append(result)
+            else:
+                # Continue until args exhausted only if all the validators succeeded.
+                if last_is_unlimited:
                     i += 1
+                    while i < len(args):
+                        # Raise `argparse.ArgumentTypeError` if invalid arg.
+                        result = valid_or_fail_func(args[i])
+                        valid_args.append(result)
+                        i += 1
 
             return func(*valid_args)
 
@@ -81,19 +86,60 @@ def parse_bool_option(name, default):
 
 # Third argument is validated inside the function since it needs access to
 # other arguments.
-@parse_args([validate_name, validate_enum_value, list_of(validate_enum_value)])
-def parse_enum_option(name, default, values):
-    """Check an enum option, requiring three colon-delimited parts.
-
-    The default value (part 2) *must* be a value in the third part.
-    """
+@parse_args(
+    [
+        validate_name,
+        list_of(no_validation),
+        list_of(validate_enum_value),
+        validate_bool,
+    ],
+    last_is_optional=True,
+)
+def parse_enum_option(name, default, values, list_=False):
     # Ensure `default` is among `values`.
-    if default not in values:
-        raise argparse.ArgumentTypeError(
-            f"default value '{default}' must be within '{values}'"
-        )
+    if isinstance(list_, bool):
+        # It's all good.
+        pass
+    elif list_ in TRUE_WORDS:
+        list_ = True
+    elif list_ in FALSE_WORDS:
+        list_ = False
+    else:
+        raise RuntimeError("`list_` is not true or false somehow")
 
-    return EnumOption(name, default, values)
+    if len(values) == 0 or (len(values) == 1 and values[0] == ""):
+        raise argparse.ArgumentTypeError(
+            f"enum '{name}' has an empty set of valid values, which is forbidden"
+        )
+    if not list_:
+        if isinstance(default, list):
+            if len(default) == 0 or (len(default) == 1 and default[0] == ""):
+                raise argparse.ArgumentTypeError(
+                    f"enum '{name}' has an empty default value, which is forbidden"
+                )
+            elif len(default) > 1:
+                raise argparse.ArgumentTypeError(
+                    f"default value '{default}' cannot be a list for non-list enums"
+                )
+            else:
+                default = validate_enum_value(default[0])
+
+        elif default not in values:
+            raise argparse.ArgumentTypeError(
+                f"default value '{default}' must be within '{values}'"
+            )
+    else:
+        if len(default) == 1 and default[0] == "":
+            # User passed in an empty list of defaults.
+            default = []
+        elif len(default) > 0:
+            default = list_of(validate_enum_value)(",".join(default))
+            if not set(default) <= set(values):
+                raise argparse.ArgumentTypeError(
+                    f"default values '{default}' must be a subset of '{values}'"
+                )
+
+    return EnumOption(name, default, values, is_list=list_)
 
 
 @parse_args([validate_name, no_validation])

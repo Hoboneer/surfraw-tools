@@ -146,8 +146,8 @@ BASE_PARSER.add_argument(
     default=[],
     type=parse_enum_option,
     dest="enums",
-    metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
-    help="specify an option with an argument from a range of values",
+    metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...[:IS_LIST]",
+    help="specify an option with an argument from a range of values; `DEFAULT_VALUE` may be a list if `IS_LIST` is 'yes'",
 )
 BASE_PARSER.add_argument(
     "--member",
@@ -201,6 +201,15 @@ BASE_PARSER.add_argument(
     dest="mappings",
     metavar="VARIABLE_NAME:PARAMETER",
     help="map a variable to a URL parameter",
+)
+BASE_PARSER.add_argument(
+    "--list-map",
+    action="append",
+    default=[],
+    type=parse_mapping_option,
+    dest="list_mappings",
+    metavar="VARIABLE_NAME:PARAMETER",
+    help="map the values of a list variable to multiple URL parameters",
 )
 BASE_PARSER.add_argument(
     "--collapse",
@@ -314,6 +323,7 @@ def get_env(args):
         "specials": args.specials,
         # URL parameters
         "mappings": args.mappings,
+        "list_mappings": args.list_mappings,
         "collapses": args.collapses,
         "query_parameter": args.query_parameter,
     }

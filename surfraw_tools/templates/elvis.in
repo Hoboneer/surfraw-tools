@@ -30,10 +30,17 @@ w3_config_hook ()
 	{% endfor %}
 
 	# Enums
-	{% for enum in enums %}
+	{% for enum in enums if not enum.is_list %}
 	def {{ enum.name|ns }} {{ enum.default }}
 	{% else %}
 	## defyn {{ 'variable'|ns }} default_enum_value
+	{% endfor %}
+
+	# Enum lists
+	{% for enum in enums if enum.is_list %}
+	__mkelvis_deflist {{ enum.name|ns }} {{ enum.default|join(',') }}
+	{% else %}
+	## __mkelvis_deflist {{ 'listvar'|ns }} default_enum_values
 	{% endfor %}
 
 	# 'Anythings'
@@ -54,6 +61,65 @@ w3_config_hook ()
 	## def {{ 'special'|ns }} $SURFRAW_special
 	{% endfor %}
 }
+{# Only define list functions if any list enums are defined #}
+{% set LIST_ENUMS = enums|selectattr('is_list')|list %}
+{% if LIST_ENUMS|length > 0 %}
+__mkelvis_default_ifs=' 	
+'
+# Change IFS to "," and save old value for expanding lists properly.
+__mkelvis_enter_list_ctx ()
+{
+	test -n "$__mkelvis_old_ifs" && err "tried to enter list context but are already in one"
+	__mkelvis_old_ifs="${IFS:-$__mkelvis_default_ifs}"
+	IFS=,
+}
+__mkelvis_exit_list_ctx ()
+{
+	test -z "$__mkelvis_old_ifs" && err "tried to exit list context but have not entered one"
+	IFS="$__mkelvis_old_ifs"
+	__mkelvis_old_ifs=''
+}
+
+__mkelvis_deflist ()
+{
+	def "$@"
+}
+__mkelvis_addlist ()
+{
+	__mkelvis_addlist__tmp="$(eval echo \$$1)"
+	if [ -z "$__mkelvis_addlist__tmp" ]; then
+		__mkelvis_addlist__newlist="$2"
+	else
+		__mkelvis_addlist__newlist="$__mkelvis_addlist__tmp,$2"
+	fi
+	setopt "$1" "$__mkelvis_addlist__newlist"
+}
+__mkelvis_removelist ()
+{
+	__mkelvis_removelist__toremove_re="$(echo "$2" | sed 's/,/\\|/g')"
+	__mkelvis_removelist__newlist=''
+
+	__mkelvis_enter_list_ctx
+	eval vars="$(echo \$$1)"
+	for val in $vars; do
+		# Add back to list if not in list of values to remove.
+		if ! echo $val | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
+			__mkelvis_exit_list_ctx
+			__mkelvis_addlist __mkelvis_removelist__newlist "$val"
+			__mkelvis_enter_list_ctx
+		fi
+	done
+	__mkelvis_exit_list_ctx
+
+	# Replace old list with new list.
+	__mkelvis_clearlist "$1"
+	__mkelvis_deflist "$1" "$__mkelvis_removelist__newlist"
+}
+__mkelvis_clearlist ()
+{
+	eval $1=''
+}
+{% endif %}
 
 {% macro _parse_option(opt, setopt='setopt') %}
 {% set opts = [opt] + opt.aliases|list %}
@@ -68,17 +134,49 @@ w3_config_hook ()
 	{% set varname = opt.name %}
 	{% set optarg = "$optarg" %}
 {% endif %}
-{% set ns = namespace(patterns=[]) %}
-{% for name in opts|map(attribute='name')|sort %}
-	{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
-{% endfor %}
-{% set prefix = ns.patterns|join('|') ~ ') ' ~ setopt ~ ' '  ~ varname|ns %}
+{% set ns = namespace(patterns=[], lines=[], iter=opts|map(attribute='name')|sort) %}
+{% if opt.is_list|default(False) %}
+	{% for opt_prefix in ('add-', 'remove-', 'clear-') %}
+		{% for name in ns.iter %}
+			{# clear is an automatic flag-like option #}
+			{% if opt_prefix == 'clear-' %}
+				{% set ns.patterns = ns.patterns + ["-" ~ opt_prefix ~ name] %}
+			{% else %}
+				{% set ns.patterns = ns.patterns + ["-" ~ opt_prefix ~ name ~ suffix] %}
+			{% endif %}
+		{% endfor %}
+		{% if opt_prefix == 'add-' %}
+			{% set local_setopt = setopt %}
+		{% elif opt_prefix == 'remove-' %}
+			{% set local_setopt = '__mkelvis_removelist' %}
+		{% elif opt_prefix == 'clear-' %}
+			{% set local_setopt = '__mkelvis_clearlist' %}
+		{% endif %}
+		{% set ns.lines = ns.lines + [ns.patterns|join('|') ~ ') ' ~ local_setopt ~ ' '  ~ varname|ns] %}
+		{% set ns.patterns = [] %}
+	{% endfor %}
 {# If optarg contains whitespace or is special in any way, quote it #}
+{% for prefix in ns.lines %}
+{% if optarg == '$optarg' or ' ' in optarg or '\t' in optarg or '\n' in optarg %}
+{{ prefix }} "{{ optarg }}" ;;
+{% else %}
+{{ prefix }} {{ optarg }} ;;
+{% endif %}
+{% endfor %}{# ns.lines #}
+{% else %}
+	{% for name in ns.iter %}
+		{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
+	{% endfor %}
+	{% set ns.lines = ns.lines + [ns.patterns|join('|') ~ ') ' ~ setopt ~ ' '  ~ varname|ns] %}
+{# If optarg contains whitespace or is special in any way, quote it #}
+{% for prefix in ns.lines %}
 {% if optarg == '$optarg' or ' ' in optarg or '\t' in optarg or '\n' in optarg %}
 {{ prefix }} "{{ optarg }}" ;;
 {%- else %}
 {{ prefix }} {{ optarg }} ;;
 {%- endif %}
+{% endfor %}{# ns.lines #}
+{% endif %}
 {%- endmacro %}{# _parse_option #}
 {% macro _parse_options(opts, default_optname, setopt='setopt') %}
 {% for opt in opts %}
@@ -107,7 +205,9 @@ w3_parse_option_hook ()
 		# Bools
 		{{ parse_options(bools, default_optname='bool', setopt='setoptyn') }}
 		# Enums
-		{{ parse_options(enums, default_optname='enum') }}
+		{{ parse_options(enums|rejectattr('is_list'), default_optname='enum') }}
+		# Enum lists
+		{{ parse_options(enums|selectattr('is_list'), default_optname='list', setopt='__mkelvis_addlist') }}
 		# 'Anythings'
 		{{ parse_options(anythings, default_optname='anything') }}
 		# Special options
@@ -124,22 +224,58 @@ w3_parse_args "$@"
 escaped_args=$(w3_url_of_arg $w3_args)
 
 # Check enums
-{% for enum in enums %}
-case "${{ enum.name|ns }}" in
-	{{ '|'.join(enum.values) }}) ;;
-	*) err "Invalid value for {{ enum.name|ns }}" ;;
+{% macro check_enum(var, values, orig_var=None) %}
+case "${{ var }}" in
+	{{ '|'.join(values) }}) ;;
+	{% if orig_var is none %}
+	*) err "Invalid value for {{ var }}" ;;
+	{% else %}
+	*) err "Invalid value for {{ orig_var }}" ;;
+	{% endif %}
 esac
+{%- endmacro %}
+{% for enum in enums %}
+{% if enum.is_list %}
+__mkelvis_enter_list_ctx
+for val in ${{ enum.name|ns }}; do
+	__mkelvis_exit_list_ctx
+	{{ check_enum('val', enum.values, orig_var=enum.name|ns)|indent(4)|replace('    ', '\t') }}
+	__mkelvis_enter_list_ctx
+done
+__mkelvis_exit_list_ctx
+{% else %}
+{{ check_enum(enum.name|ns, enum.values) }}
+{% endif %}
 {% endfor %}
 
 # Collapse variables
 {# TODO: Name this better! #}
-{% for collapse in collapses %}
-case "${{ collapse.variable|ns }}" in
-	{% for branch in collapse.collapses %}
+{% macro collapse_variable(var, branches) %}
+case "${{ var }}" in
+	{% for branch in branches %}
 	{# Last in `branch` is the result #}
-	{{ '|'.join(branch[:-1]) }}) {{ collapse.variable|ns }}={{ branch[-1] }} ;;
+	{{ '|'.join(branch[:-1]) }}) {{ var }}={{ branch[-1] }} ;;
 	{% endfor %}
 esac
+{%- endmacro %}
+{% for collapse in collapses %}
+{% if collapse.variable in LIST_ENUMS|map(attribute='name') %}
+# Collapse list variable
+__mkelvis_deflist __mkelvis_collapse_tmp ''
+echo var: ${{ collapse.variable|ns }}
+vars="$(echo ${{ collapse.variable|ns }})"
+__mkelvis_enter_list_ctx
+for val in $vars; do
+	__mkelvis_exit_list_ctx
+	{{ collapse_variable('val', collapse.collapses)|indent(4)|replace('    ', '\t') }}
+	__mkelvis_addlist __mkelvis_collapse_tmp "$val"
+	__mkelvis_enter_list_ctx
+done
+__mkelvis_exit_list_ctx
+{{ collapse.variable|ns }}="$__mkelvis_collapse_tmp"
+{% else %}
+{{ collapse_variable(collapse.variable|ns, collapse.collapses) }}
+{% endif %}
 {% endfor %}
 
 # Any variables in the url should have values now
@@ -149,24 +285,32 @@ if test -z "$w3_args"; then
 fi
 # Map variables to parameters
 search_url="{{ search_url }}"
+{% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
-{# The first iteration is special #}
-{% if loop.first %}
-search_url="${search_url}{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
-{% else %}
+{% set map_ns.mapped = True %}
 search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
-{% endif %}
-{% else %}
+{% endfor %}
+{% for map in list_mappings %}
+{% set map_ns.mapped = True %}
+__mkelvis_enter_list_ctx
+for val in ${{ map.variable|ns }}; do
+	__mkelvis_exit_list_ctx
+	search_url="$search_url&{{ map.parameter|urlencode }}=$val"
+	__mkelvis_enter_list_ctx
+done
+__mkelvis_exit_list_ctx
+{% endfor %}
+{% if not map_ns.mapped %}
 ## First parameter
 ##search_url="${search_url}param1=${{ 'variable1'|ns }}"
 ## Successive parameters
 ##search_url="$search_url&param2=${{ 'variable2'|ns }}"
-{% endfor %}
+{% endif %}
 
 # Add the search to url
 {# Mappings and a query parameter are necessarily inclusive #}
 {# `mkelvis` should prevent a situation where only one of the two are true #}
-{% if mappings|length > 0 and query_parameter is not none %}
+{% if map_ns.mapped and query_parameter is not none %}
 search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
 {% else %}
 search_url="${search_url}${escaped_args}"
