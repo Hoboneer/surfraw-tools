@@ -56,7 +56,7 @@ def validate_bool(bool_):
 
 # ENUM VALUES
 
-_VALID_ENUM_VALUE_STR = "^[a-z0-9][a-z0-9_+-]*$"
+_VALID_ENUM_VALUE_STR = "^[a-z0-9][a-z0-9_+-.]*$"
 VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
 
 
