@@ -72,9 +72,15 @@ w3_config_hook ()
 {% for name in opts|map(attribute='name')|sort %}
 	{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
 {% endfor %}
-{{ ns.patterns|join('|') }}) {{ setopt }} {{ varname|ns }} {{ optarg }} ;;
+{% set prefix = ns.patterns|join('|') ~ ') ' ~ setopt ~ ' '  ~ varname|ns %}
+{# If optarg contains whitespace or is special in any way, quote it #}
+{% if optarg == '$optarg' or ' ' in optarg or '\t' in optarg or '\n' in optarg %}
+{{ prefix }} "{{ optarg }}" ;;
+{%- else %}
+{{ prefix }} {{ optarg }} ;;
+{%- endif %}
 {%- endmacro %}{# _parse_option #}
-{% macro _parse_options(opts, default_optname, default_value, setopt='setopt') %}
+{% macro _parse_options(opts, default_optname, setopt='setopt') %}
 {% for opt in opts %}
 {{ _parse_option(opt, setopt=setopt) }}
 {% if opt.flags %}
@@ -87,7 +93,7 @@ w3_config_hook ()
 {% else %}
 {% set suffix = "=*" %}
 {% set varname = default_optname %}
-##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ setopt }} {{ varname|ns }} {{ default_value }} ;;
+##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ setopt }} {{ varname|ns }} "$optarg" ;;
 {% endfor %}{# opts #}
 {%- endmacro %}
 {% macro parse_options() %}
@@ -99,13 +105,13 @@ w3_parse_option_hook ()
 	optarg="$2"
 	case "$opt" in
 		# Bools
-		{{ parse_options(bools, default_optname='bool', default_value='$optarg', setopt='setoptyn') }}
+		{{ parse_options(bools, default_optname='bool', setopt='setoptyn') }}
 		# Enums
-		{{ parse_options(enums, default_optname='enum', default_value='$optarg') }}
+		{{ parse_options(enums, default_optname='enum') }}
 		# 'Anythings'
-		{{ parse_options(anythings, default_optname='anything', default_value='$optarg') }}
+		{{ parse_options(anythings, default_optname='anything') }}
 		# Special options
-		{{ parse_options(specials, default_optname='special', default_value='$optarg') }}
+		{{ parse_options(specials, default_optname='special') }}
 		*) return 1 ;;
 	esac
 	return 0
