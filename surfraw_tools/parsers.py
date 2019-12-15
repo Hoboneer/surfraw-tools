@@ -17,7 +17,6 @@ from .validation import (
     validate_bool,
     validate_enum_value,
     validate_name,
-    validate_url_parameter,
 )
 
 
@@ -144,7 +143,7 @@ def parse_alias_option(name, target, target_type):
     return AliasOption(name, target, target_type)
 
 
-@parse_args([validate_name, validate_url_parameter])
+@parse_args([validate_name, no_validation])
 def parse_mapping_option(variable, parameter):
     return MappingOption(variable, parameter)
 
@@ -154,6 +153,6 @@ def parse_collapse(variable, *collapses_list):
     return CollapseOption(variable, collapses_list)
 
 
-@parse_args([validate_url_parameter])
+@parse_args([no_validation])
 def parse_query_parameter(param):
     return param

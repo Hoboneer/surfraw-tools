@@ -25,27 +25,6 @@ def validate_name(name):
     return name
 
 
-# URL PARAMETER
-
-VALID_URL_PARAM = re.compile("^[A-Za-z0-9_]+$")
-
-
-def is_valid_url_parameter(url_param):
-    return VALID_URL_PARAM.fullmatch(url_param)
-
-
-def invalid_url_parameter(url_param):
-    raise argparse.ArgumentTypeError(
-        f"'{url_param}' is an invalid URL parameter"
-    )
-
-
-def validate_url_parameter(url_param):
-    if not is_valid_url_parameter(url_param):
-        invalid_url_parameter(url_param)
-    return url_param
-
-
 # YES-NO
 
 # TODO: Should the yes-no option take the other forms?

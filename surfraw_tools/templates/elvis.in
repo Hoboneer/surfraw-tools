@@ -152,9 +152,9 @@ search_url="{{ search_url }}"
 {% for map in mappings %}
 {# The first iteration is special #}
 {% if loop.first %}
-search_url="${search_url}{{ map.parameter }}=${{ map.variable|ns }}"
+search_url="${search_url}{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
 {% else %}
-search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
+search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
 {% endif %}
 {% else %}
 ## First parameter
@@ -167,7 +167,7 @@ search_url="$search_url&{{ map.parameter }}=${{ map.variable|ns }}"
 {# Mappings and a query parameter are necessarily inclusive #}
 {# `mkelvis` should prevent a situation where only one of the two are true #}
 {% if mappings|length > 0 and query_parameter is not none %}
-search_url="$search_url&{{ query_parameter }}=$escaped_args"
+search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
 {% else %}
 search_url="${search_url}${escaped_args}"
 {% endif %}
