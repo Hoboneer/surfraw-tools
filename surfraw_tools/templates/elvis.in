@@ -298,6 +298,10 @@ for val in ${{ map.variable|ns }}; do
 	__mkelvis_enter_list_ctx
 done
 __mkelvis_exit_list_ctx
+# Ensure parameter receives a null value if empty list.
+if null ${{ map.variable|ns }}; then
+	search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+fi
 {% endfor %}
 {% if not map_ns.mapped %}
 ## First parameter
