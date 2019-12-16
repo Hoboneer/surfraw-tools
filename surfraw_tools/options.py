@@ -271,7 +271,7 @@ def validate_option_type(option_type):
         return type_
 
 
-class AliasOption(Option):
+class AliasOption(Option, SurfrawOption):
     """An alias to another option.
 
     NOTE: This does *not* check whether the alias points to a valid
@@ -281,8 +281,10 @@ class AliasOption(Option):
 
     validators = [validate_name, validate_name, validate_option_type]
 
+    creates_variable = False
+    typename = "alias"
+
     def __init__(self, name, target, target_type):
-        super().__init__()
         self.name = name
         self.target = target
         if not issubclass(target_type, AliasTarget):
@@ -291,6 +293,7 @@ class AliasOption(Option):
             )
         else:
             self.target_type = target_type
+        super().__init__()
 
 
 class MappingOption(Option):
