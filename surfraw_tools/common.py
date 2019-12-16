@@ -1,5 +1,6 @@
 import argparse
 import sys
+from abc import ABCMeta, abstractmethod
 from itertools import chain
 from os import EX_OK, EX_USAGE
 
@@ -29,71 +30,76 @@ from .parsers import (
 )
 
 
-class _FlagContainer:
+class _ChainContainer(metaclass=ABCMeta):
+    types = []
+
     def __init__(self):
-        self._flags = {
-            "bools": [],
-            "enums": [],
-            "anythings": [],
-            "specials": [],
-        }
-        self._pending_flags = []
+        self._items = {type_: [] for type_ in self.types}
+        self._unresolved_items = []
         self._resolved = False
+        # Dynamically create getters.
+        for type_ in self.types:
+            # Account for late binding
+            saved_type = type_
+            setattr(
+                self.__class__,
+                type_,
+                property(lambda self_: self_._items[saved_type].copy()),
+            )
 
-    def append(self, flag):
-        self._pending_flags.append(flag)
+    # For use with argparse's "append" action.
+    def append(self, item):
+        self._unresolved_items.append(item)
 
-    # Place flags into their corresponding buckets
+    @abstractmethod
+    def resolve(self):
+        """Place items into their corresponding buckets.
+
+        Remember to set `_resolved` to `True` afterward."""
+        raise NotImplementedError
+
+    def __iter__(self):
+        if not self._resolved:
+            return iter(self._unresolved_items)
+        return chain.from_iterable(self._items.values())
+
+    def __len__(self):
+        return sum(len(types_) for types_ in self._items.values())
+
+
+class _FlagContainer(_ChainContainer):
+    types = ["bools", "enums", "anythings", "specials"]
+
     def resolve(self):
         # XXX: Should this just check for an instance of `FlagTarget`?
         #      How to determine which "bucket" to place into then?
-        if not self._pending_flags:
+        if not self._unresolved_items:
             return
-        for flag in self._pending_flags:
+        for flag in self._unresolved_items:
             if isinstance(flag.target, BoolOption):
-                self._flags["bools"].append(flag)
+                self._items["bools"].append(flag)
             elif isinstance(flag.target, EnumOption):
-                self._flags["enums"].append(flag)
+                self._items["enums"].append(flag)
             elif isinstance(flag.target, AnythingOption):
-                self._flags["anythings"].append(flag)
+                self._items["anythings"].append(flag)
             elif isinstance(flag.target, SpecialOption):
-                self._flags["specials"].append(flag)
+                self._items["specials"].append(flag)
             else:
                 raise RuntimeError(
                     "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
                 )
             flag.target.add_flag(flag)
-        self._pending_flags.clear()
+        self._unresolved_items.clear()
         self._resolved = True
 
-    def __iter__(self):
-        if not self._resolved:
-            return iter(self._pending_flags)
-        return chain.from_iterable(self._flags.values())
 
-    def __len__(self):
-        return sum(len(types) for types in self._flags.values())
-
-    # Don't allow the user to modify the flags container
-    # XXX: Should that even be forbidden?
-    @property
-    def bools(self):
-        return self._flags["bools"].copy()
-
-    @property
-    def enums(self):
-        return self._flags["enums"].copy()
-
-    @property
-    def anythings(self):
-        return self._flags["anythings"].copy()
-
-    @property
-    def specials(self):
-        return self._flags["specials"].copy()
 
 
 _FLAGS = _FlagContainer()
+
+
+
+
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
 _VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
