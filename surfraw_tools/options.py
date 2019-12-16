@@ -99,6 +99,9 @@ class Option:
     validators = []
     last_arg_is_unlimited = False
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({', '.join(f'{name}={var!r}' for name, var in vars(self).items())})"
+
     @classmethod
     def from_arg(cls, arg):
         parsed_args = cls.parse_args(
