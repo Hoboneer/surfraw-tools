@@ -1,9 +1,16 @@
-import argparse
 import weakref
 from collections import defaultdict
 from itertools import chain
 
-from .validation import no_validation, validate_bool, validate_enum_value
+from .validation import (
+    OptionParseError,
+    insufficient_spec_parts,
+    list_of,
+    no_validation,
+    validate_bool,
+    validate_enum_value,
+    validate_name,
+)
 
 
 class AliasTarget:
@@ -16,6 +23,10 @@ class AliasTarget:
 
 
 class FlagTarget:
+    @staticmethod
+    def flag_value_indicator(_):
+        raise NotImplementedError
+
     def __init__(self):
         super().__init__()
         # Preferably, flags should be listed in the order that they were
@@ -25,137 +36,12 @@ class FlagTarget:
     def add_flag(self, flag):
         self.flags.append(flag)
 
-
-class FlagOption(AliasTarget):
-    def __init__(self, name, target, value):
-        super().__init__()
-        self.name = name
-        self.target = target
-        self.value = value
-
-
-class BoolOption(AliasTarget, FlagTarget):
-    def __init__(self, name, default):
-        super().__init__()
-        self.name = name
-        self.default = default
-
-
-class EnumOption(AliasTarget, FlagTarget):
-    def __init__(self, name, default, values):
-        super().__init__()
-        self.name = name
-        self.default = default
-        self.values = values
-
-
-class AnythingOption(AliasTarget, FlagTarget):
-    def __init__(self, name, default):
-        super().__init__()
-        self.name = name
-        self.default = default
-
-
-class AliasOption:
-    def __init__(self, name, target, target_type):
-        self.name = name
-        self.target = target
-        self.target_type = target_type
-
-
-class SpecialOption(AliasTarget, FlagTarget):
-    """An option that depends on values of environment variables."""
-
-    def __init__(self, name, default=None):
-        super().__init__()
-        self.name = name
-        if default is None:
-            self.default = "$SURFRAW_" + name
-        else:
-            self.default = default
-
-
-class MappingOption:
-    def __init__(self, variable, parameter):
-        self.target = variable
-        self.parameter = parameter
-
-    @property
-    def variable(self):
-        # To allow other code to continue to use this class unchanged
-        return self.target
-
-
-class CollapseOption:
-    def __init__(self, variable, collapses):
-        self.target = variable
-        self.collapses = collapses
-
-    @property
-    def variable(self):
-        # To allow other code to continue to use this class unchanged
-        return self.target
-
-
-class OptionResolutionError(Exception):
-    pass
-
-
-def make_option_resolver(target_type, option_types, error_msg, assign_target):
-    def resolve_option(args):
-        # `args` is the parsed arguments
-        targets = getattr(args, target_type)
-        options = list(
-            chain.from_iterable(getattr(args, type_) for type_ in option_types)
-        )
-        for target in targets:
-            for option in options:
-                if target.target == option.name:
-                    if assign_target:
-                        target.target = option
-                    break
-            else:
-                raise OptionResolutionError(error_msg.format(target=target))
-
-    return resolve_option
-
-
-RESOLVERS = []
-
-_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials")
-VARIABLE_OPTIONS = {
-    "iterable_func": lambda args: chain.from_iterable(
-        getattr(args, type_) for type_ in _VARIABLE_OPTION_TYPES
-    ),
-    "strings": _VARIABLE_OPTION_TYPES,
-    "types": (BoolOption, EnumOption, AnythingOption, SpecialOption),
-}
-
-
-def _resolver(func):
-    RESOLVERS.append(func)
-
-
-@_resolver
-def _resolve_duplicate_variables(args):
-    name_counts = defaultdict(int)
-    for option in VARIABLE_OPTIONS["iterable_func"](args):
-        name_counts[option.name] += 1
-        if name_counts[option.name] > 1:
-            raise OptionResolutionError(
-                f"the variable name '{option.name}' is duplicated"
-            )
-
-
-@_resolver
-def _resolve_duplicate_nonvariable_options(args):
-    name_counts = defaultdict(int)
-    for option in chain(args.flags, args.aliases):
-        name_counts[option.name] += 1
-        if name_counts[option.name] > 1:
-            raise OptionResolutionError(
-                f"the non-variable-creating option name '{option.name}' is duplicated"
-            )
+    def resolve_flags(self):
+        try:
+            for flag in self.flags:
+                flag.value = self.__class__.flag_value_validator(flag.value)
+        except OptionParseError as e:
+            raise OptionResolutionError(str(e)) from None
 
 
 # Options with non alphabetic characters are impossible
@@ -186,15 +72,310 @@ _FORBIDDEN_OPTION_NAMES = {
 }
 
 
+class SurfrawOption:
+    creates_variable = False
+    typenames = {}
+
+    def __init__(self):
+        super().__init__()
+        # Depends on `self.name` being defined by a subclass
+        if not hasattr(self, "name"):
+            raise RuntimeError(
+                f"tried to run __init__ method of `{self.__class__.__name__}` but `self.name` was not defined"
+            )
+        if self.creates_variable:
+            if self.name in _FORBIDDEN_OPTION_NAMES:
+                raise ValueError(
+                    f"option name '{self.name}' is global, which cannot be overriden by elvi"
+                )
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        SurfrawOption.typenames[cls.typename] = cls
+
+
+class Option:
+    validators = []
+    last_arg_is_unlimited = False
+
+    @classmethod
+    def from_arg(cls, arg):
+        parsed_args = cls.parse_args(
+            arg,
+            validators=cls.validators,
+            last_is_unlimited=cls.last_arg_is_unlimited,
+        )
+        if cls.last_arg_is_unlimited:
+            # `rest_args` is the positional arguments of `cls` and corresponds to the validators *before* the last one.
+            rest_args = parsed_args[: len(cls.validators) - 1]
+            # `normal_arg` is the list of validated args from the last validator.
+            normal_arg = parsed_args[len(cls.validators) - 1 :]
+            return cls(*rest_args, normal_arg)
+        else:
+            return cls(*parsed_args)
+
+    @staticmethod
+    def parse_args(raw_arg, validators, last_is_unlimited=False):
+        args = raw_arg.split(":")
+        valid_args = []
+        for i, valid_or_fail_func in enumerate(validators):
+            try:
+                arg = args[i]
+            except IndexError:
+                # Raise `OptionParseError`
+                insufficient_spec_parts(raw_arg, num_required=len(validators))
+            else:
+                # Raise `OptionParseError` if invalid arg.
+                result = valid_or_fail_func(arg)
+                valid_args.append(result)
+
+        # Continue until args exhausted.
+        if last_is_unlimited:
+            i += 1
+            while i < len(args):
+                # Raise `argparse.ArgumentTypeError` if invalid arg.
+                result = valid_or_fail_func(args[i])
+                valid_args.append(result)
+                i += 1
+
+        return valid_args
+
+
+# Concrete option types follow
+
+
+class FlagOption(Option, AliasTarget, SurfrawOption):
+    validators = [validate_name, validate_name, no_validation]
+
+    creates_variable = False
+    # This will break backwards-compatibility if 'member' isn't an alias
+    typename = "flag"
+
+    def __init__(self, name, target, value):
+        self.name = name
+        self.target = target
+        self.value = value
+        super().__init__()
+
+
+class BoolOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+    flag_value_validator = validate_bool
+    validators = [validate_name, flag_value_validator]
+
+    creates_variable = True
+    typename = "yes-no"
+
+    def __init__(self, name, default):
+        self.name = name
+        self.default = default
+        super().__init__()
+
+
+class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+    flag_value_validator = validate_enum_value
+    validators = [
+        validate_name,
+        flag_value_validator,
+        list_of(validate_enum_value),
+    ]
+
+    creates_variable = True
+    typename = "enum"
+
+    def __init__(self, name, default, values):
+        self.name = name
+        if default not in values:
+            raise ValueError(
+                f"enum default value '{default}' must be within '{values}'",
+                subject=default,
+                subject_type="enum default value",
+            )
+        self.default = default
+        self.values = values
+        super().__init__()
+
+    def resolve_flags(self):
+        for flag in self.flags:
+            flag.value = self.__class__.flag_value_validator(flag.value)
+            if flag.value not in self.values:
+                raise OptionResolutionError(
+                    f"enum flag option {flag.name}'s value ({flag.value}) is not contained in its target enum ({self.values})"
+                )
+
+
+class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+    flag_value_validator = no_validation
+    validators = [validate_name, flag_value_validator]
+
+    creates_variable = True
+    typename = "anything"
+
+    def __init__(self, name, default):
+        self.name = name
+        self.default = default
+        super().__init__()
+
+
+class SpecialOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+    """An option that depends on values of environment variables."""
+
+    @staticmethod
+    def flag_value_validator(_):
+        raise RuntimeError(
+            "This method should not have been called directly.  Use `resolve_flags` instead."
+        )
+
+    creates_variable = True
+    typename = "special"
+
+    # This class is not instantiated normally... maybe prepend name with underscore?
+    def __init__(self, name, default=None):
+        self.name = name
+        if default is None:
+            self.default = "$SURFRAW_" + name
+        else:
+            self.default = default
+        super().__init__()
+
+    def resolve_flags(self):
+        for flag in self.flags:
+            if flag.name == "results":
+                try:
+                    flag.value = int(flag.value)
+                except ValueError:
+                    raise OptionResolutionError(
+                        "value for special 'results' option must be an integer"
+                    ) from None
+            # The language option needn't be checked here.  There are way too
+            # many ISO language codes to match.
+
+
+def validate_option_type(option_type):
+    # For backward compatibility.
+    if option_type == "member":
+        option_type = "flag"
+    try:
+        type_ = SurfrawOption.typenames[option_type]
+    except KeyError:
+        valid_option_types = ", ".join(sorted(SurfrawOption.typenames))
+        raise OptionParseError(
+            f"option type '{option_type}' must be one of the following: {valid_option_types}",
+            subject=option_type,
+            subject_type="option type",
+        ) from None
+    else:
+        return type_
+
+
+class AliasOption(Option):
+    """An alias to another option.
+
+    NOTE: This does *not* check whether the alias points to a valid
+    option. It needs to be checked elsewhere since this does not have access to
+    the parser.
+    """
+
+    validators = [validate_name, validate_name, validate_option_type]
+
+    def __init__(self, name, target, target_type):
+        super().__init__()
+        self.name = name
+        self.target = target
+        if not issubclass(target_type, AliasTarget):
+            raise TypeError(
+                f"target type ('{target_type.__name__}') of alias '{self.name}' is not a valid alias target"
+            )
+        else:
+            self.target_type = target_type
+
+
+class MappingOption(Option):
+    validators = [validate_name, no_validation]
+
+    def __init__(self, variable, parameter):
+        self.target = variable
+        self.parameter = parameter
+
+    @property
+    def variable(self):
+        # To allow other code to continue to use this class unchanged
+        return self.target
+
+
+class CollapseOption(Option):
+    validators = [validate_name, list_of(no_validation)]
+    last_arg_is_unlimited = True
+
+    def __init__(self, variable, collapses):
+        self.target = variable
+        self.collapses = collapses
+
+    @property
+    def variable(self):
+        # To allow other code to continue to use this class unchanged
+        return self.target
+
+
+class OptionResolutionError(Exception):
+    pass
+
+
+_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials")
+VARIABLE_OPTIONS = {
+    "iterable_func": lambda args: chain.from_iterable(
+        getattr(args, type_) for type_ in _VARIABLE_OPTION_TYPES
+    ),
+    "strings": _VARIABLE_OPTION_TYPES,
+    "types": (BoolOption, EnumOption, AnythingOption, SpecialOption),
+}
+
+
+def make_option_resolver(target_type, option_types, error_msg, assign_target):
+    def resolve_option(args):
+        # `args` is the parsed arguments
+        targets = getattr(args, target_type)
+        options = list(
+            chain.from_iterable(getattr(args, type_) for type_ in option_types)
+        )
+        for target in targets:
+            for option in options:
+                if target.target == option.name:
+                    if assign_target:
+                        target.target = option
+                    break
+            else:
+                raise OptionResolutionError(error_msg.format(target=target))
+
+    return resolve_option
+
+
+RESOLVERS = []
+
+
+def _resolver(func):
+    RESOLVERS.append(func)
+
+
 @_resolver
-def _resolve_forbidden_option_names(args):
-    options = chain(
-        VARIABLE_OPTIONS["iterable_func"](args), args.flags, args.aliases,
-    )
-    for option in options:
-        if option.name in _FORBIDDEN_OPTION_NAMES:
+def _resolve_duplicate_variables(args):
+    name_counts = defaultdict(int)
+    for option in VARIABLE_OPTIONS["iterable_func"](args):
+        name_counts[option.name] += 1
+        if name_counts[option.name] > 1:
             raise OptionResolutionError(
-                f"option name '{option.name}' is global, which cannot be overriden by elvi"
+                f"the variable name '{option.name}' is duplicated"
+            )
+
+
+@_resolver
+def _resolve_duplicate_nonvariable_options(args):
+    name_counts = defaultdict(int)
+    for option in chain(args.flags, args.aliases):
+        name_counts[option.name] += 1
+        if name_counts[option.name] > 1:
+            raise OptionResolutionError(
+                f"the non-variable-creating option name '{option.name}' is duplicated"
             )
 
 
@@ -227,6 +408,7 @@ def _resolve_aliases(args):
                     f"alias {alias.name}'s target type does not match the alias target's type: {type(alias.target)}"
                 )
         elif alias.target_type == AliasOption:
+            # This should be unreachable.
             raise OptionResolutionError(
                 f"alias '{alias.name}' targets another alias, which is forbidden"
             )
@@ -272,35 +454,8 @@ def _resolve_flags(args):
     except Exception as e:
         raise OptionResolutionError(str(e)) from None
 
-    def validate_values(opts, validator):
-        for flag in opts:
-            flag.value = validator(flag.value)
-
-    def validate_specials(specials):
-        # Other special types will be handled as they have support added into
-        # mkelvis.
-        for flag in specials:
-            if flag.name == "results":
-                try:
-                    flag.value = int(flag.value)
-                except ValueError:
-                    raise argparse.ArgumentTypeError(
-                        "value for special 'results' option must be an integer"
-                    ) from None
-            # The language option needn't be checked here.  There are way too
-            # many ISO language codes to match.
-
     try:
-        validate_values(flags.bools, validate_bool)
-        validate_values(flags.enums, validate_enum_value)
-        validate_values(flags.anythings, no_validation)
-        validate_specials(flags.specials)
-    except argparse.ArgumentTypeError as e:
+        for flag_target in VARIABLE_OPTIONS["iterable_func"](args):
+            flag_target.resolve_flags()
+    except OptionParseError as e:
         raise OptionResolutionError(str(e)) from None
-
-    # Extra validation
-    for enum_flag in flags.enums:
-        if enum_flag.value not in enum_flag.target.values:
-            raise OptionResolutionError(
-                f"enum flag option {enum_flag.name}'s value ({enum_flag.value}) is not contained in its target enum ({enum_flag.target.values})"
-            )

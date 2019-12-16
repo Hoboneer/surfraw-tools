@@ -1,27 +1,36 @@
-import argparse
 import re
+
+
+class OptionParseError(Exception):
+    def __init__(self, msg, subject, subject_type):
+        super().__init__(msg)
+        self.subject = subject
+        self.subject_type = subject_type
+
+
+def insufficient_spec_parts(arg, num_required):
+    raise OptionParseError(
+        f"option arg '{arg}' needs at least {num_required} colon-delimited parts",
+        subject=arg,
+        subject_type="option argument",
+    )
+
 
 # NAME
 
 # This is purposely not in the full range of shell variable names because I am
 # trying to encourage a particular naming convention. That is,
 # `SURFRAW_elvisname_onewordvar` is what the script would generate.
-VALID_SURFRAW_VAR_NAME = re.compile("^[a-z]+$")
-
-
-def is_valid_name(name):
-    return VALID_SURFRAW_VAR_NAME.fullmatch(name)
-
-
-def invalid_name(name):
-    raise argparse.ArgumentTypeError(
-        f"name '{name}' is an invalid variable name for an elvis"
-    )
+_VALID_SURFRAW_VAR_NAME = re.compile("^[a-z]+$")
 
 
 def validate_name(name):
-    if not is_valid_name(name):
-        invalid_name(name)
+    if not _VALID_SURFRAW_VAR_NAME.fullmatch(name):
+        raise OptionParseError(
+            f"name '{name}' is an invalid variable name for an elvis",
+            subject=name,
+            subject_type="variable name",
+        )
     return name
 
 
@@ -30,49 +39,37 @@ def validate_name(name):
 # TODO: Should the yes-no option take the other forms?
 # TRUE_WORDS = {"yes", "on", "1"}
 # FALSE_WORDS = {"no", "off", "0"}
-TRUE_WORDS = {"yes"}
-FALSE_WORDS = {"no"}
-BOOL_WORDS = TRUE_WORDS | FALSE_WORDS
-
-
-def is_valid_bool(bool_arg):
-    return bool_arg in BOOL_WORDS
-
-
-def invalid_bool(bool_arg):
-    valid_bools = ", ".join(sorted(BOOL_WORDS))
-    raise argparse.ArgumentTypeError(
-        f"bool '{bool_arg}' must be one of the following: {valid_bools}"
-    )
+_TRUE_WORDS = {"yes"}
+_FALSE_WORDS = {"no"}
+_BOOL_WORDS = _TRUE_WORDS | _FALSE_WORDS
 
 
 def validate_bool(bool_):
-    if not is_valid_bool(bool_):
-        invalid_bool(bool_)
+    if bool_ not in _BOOL_WORDS:
+        valid_bools = ", ".join(sorted(_BOOL_WORDS))
+        raise OptionParseError(
+            f"bool '{bool_}' must be one of the following: {valid_bools}",
+            subject=bool_,
+            subject_type="bool",
+        )
     return bool_
 
 
-# OPTION TYPE is defined elsewhere to avoid circular imports.
+# OPTION TYPES is defined elsewhere to avoid circular imports.
 
 # ENUM VALUES
 
 _VALID_ENUM_VALUE_STR = "^[a-z0-9][a-z0-9_+-]*$"
-VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
-
-
-def is_valid_enum_value(value):
-    return VALID_ENUM_VALUE.fullmatch(value)
-
-
-def invalid_enum_value(value):
-    raise argparse.ArgumentTypeError(
-        f"enum value '{value}' must match the regex '{_VALID_ENUM_VALUE_STR}'"
-    )
+_VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
 
 
 def validate_enum_value(value):
-    if not is_valid_enum_value(value):
-        invalid_enum_value(value)
+    if not _VALID_ENUM_VALUE.fullmatch(value):
+        raise OptionParseError(
+            f"enum value '{value}' must match the regex '{_VALID_ENUM_VALUE_STR}'",
+            subject=value,
+            subject_type="enum value",
+        )
     return value
 
 

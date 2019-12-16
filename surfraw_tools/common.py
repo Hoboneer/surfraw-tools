@@ -1,6 +1,7 @@
 import argparse
 import sys
 from abc import ABCMeta, abstractmethod
+from functools import wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
 
@@ -13,20 +14,12 @@ from .options import (
     AliasOption,
     AnythingOption,
     BoolOption,
+    CollapseOption,
     EnumOption,
     FlagOption,
+    MappingOption,
     OptionResolutionError,
     SpecialOption,
-)
-from .parsers import (
-    parse_alias_option,
-    parse_anything_option,
-    parse_bool_option,
-    parse_collapse,
-    parse_enum_option,
-    parse_flag_option,
-    parse_mapping_option,
-    parse_query_parameter,
 )
 
 
@@ -98,7 +91,16 @@ class _FlagContainer(_ChainContainer):
 _FLAGS = _FlagContainer()
 
 
+def _wrap_parser(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            ret = func(*args, **kwargs)
+        except Exception as e:
+            raise argparse.ArgumentTypeError(str(e)) from None
+        return ret
 
+    return wrapper
 
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
@@ -130,7 +132,7 @@ BASE_PARSER.add_argument(
     "-F",
     action="append",
     default=_FLAGS,
-    type=parse_flag_option,
+    type=_wrap_parser(FlagOption.from_arg),
     dest="flags",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help="specify an alias to a value of a defined yes-no, enum, 'anything', or special option",
@@ -140,7 +142,7 @@ BASE_PARSER.add_argument(
     "-Y",
     action="append",
     default=[],
-    type=parse_bool_option,
+    type=_wrap_parser(BoolOption.from_arg),
     dest="bools",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
     help="specify a yes or no option for the elvis",
@@ -150,7 +152,7 @@ BASE_PARSER.add_argument(
     "-E",
     action="append",
     default=[],
-    type=parse_enum_option,
+    type=_wrap_parser(EnumOption.from_arg),
     dest="enums",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
@@ -160,7 +162,7 @@ BASE_PARSER.add_argument(
     "-M",
     action="append",
     default=_FLAGS,
-    type=parse_flag_option,
+    type=_wrap_parser(FlagOption.from_arg),
     # Append to the same _FLAGS object.
     dest="flags",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
@@ -172,7 +174,7 @@ BASE_PARSER.add_argument(
     action="append",
     default=[],
     dest="anythings",
-    type=parse_anything_option,
+    type=_wrap_parser(AnythingOption.from_arg),
     metavar="VARIABLE_NAME:DEFAULT_VALUE",
     help="specify an option that is not checked",
 )
@@ -180,7 +182,7 @@ BASE_PARSER.add_argument(
     "--alias",
     action="append",
     default=[],
-    type=parse_alias_option,
+    type=_wrap_parser(AliasOption.from_arg),
     dest="aliases",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
@@ -203,7 +205,7 @@ BASE_PARSER.add_argument(
     "--map",
     action="append",
     default=[],
-    type=parse_mapping_option,
+    type=_wrap_parser(MappingOption.from_arg),
     dest="mappings",
     metavar="VARIABLE_NAME:PARAMETER",
     help="map a variable to a URL parameter",
@@ -212,7 +214,7 @@ BASE_PARSER.add_argument(
     "--collapse",
     action="append",
     default=[],
-    type=parse_collapse,
+    type=_wrap_parser(CollapseOption.from_arg),
     dest="collapses",
     metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
     help="change groups of values of a variable to a single value",
@@ -220,7 +222,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--query-parameter",
     "-Q",
-    type=parse_query_parameter,
     help="define the parameter for the query arguments; needed with --map",
 )
 
