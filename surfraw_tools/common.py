@@ -17,6 +17,7 @@ from .options import (
     CollapseOption,
     EnumOption,
     FlagOption,
+    FlagTarget,
     ListOption,
     MappingOption,
     OptionResolutionError,
@@ -252,7 +253,21 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--insecure", action="store_true", help="use 'http' instead of 'https'"
 )
+
 # Option generation
+
+# Include the 'or' for the last typename.
+_valid_flag_types = [
+    name
+    for name in SurfrawOption.typenames
+    if issubclass(SurfrawOption.typenames[name], FlagTarget)
+]
+_valid_flag_types_str = ", ".join(
+    f"'{typename}'"
+    if typename != _valid_flag_types[-1]
+    else f"or '{typename}'"
+    for i, typename in enumerate(_valid_flag_types)
+)
 BASE_PARSER.add_argument(
     "--flag",
     "-F",
@@ -261,7 +276,7 @@ BASE_PARSER.add_argument(
     type=_wrap_parser(FlagOption.from_arg),
     dest="options",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
-    help="specify an alias to a value of a defined yes-no, enum, 'anything', or special option",
+    help=f"specify an alias to a value(s) of a defined {_valid_flag_types_str} option",
 )
 BASE_PARSER.add_argument(
     "--yes-no",
