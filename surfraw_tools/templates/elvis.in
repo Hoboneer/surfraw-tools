@@ -54,6 +54,64 @@ w3_config_hook ()
 	## def {{ 'special'|ns }} $SURFRAW_special
 	{% endfor %}
 }
+{# Only define list functions if any list enums are defined #}
+{% if lists %}
+__mkelvis_default_ifs=' 	
+'
+# Change IFS to "," and save old value for expanding lists properly.
+__mkelvis_enter_list_ctx ()
+{
+	test -n "$__mkelvis_old_ifs" && err "tried to enter list context but are already in one"
+	__mkelvis_old_ifs="${IFS:-$__mkelvis_default_ifs}"
+	IFS=,
+}
+__mkelvis_exit_list_ctx ()
+{
+	test -z "$__mkelvis_old_ifs" && err "tried to exit list context but have not entered one"
+	IFS="$__mkelvis_old_ifs"
+	__mkelvis_old_ifs=''
+}
+
+__mkelvis_deflist ()
+{
+	def "$@"
+}
+__mkelvis_addlist ()
+{
+	__mkelvis_addlist__tmp="$(eval echo \$$1)"
+	if [ -z "$__mkelvis_addlist__tmp" ]; then
+		__mkelvis_addlist__newlist="$2"
+	else
+		__mkelvis_addlist__newlist="$__mkelvis_addlist__tmp,$2"
+	fi
+	setopt "$1" "$__mkelvis_addlist__newlist"
+}
+__mkelvis_removelist ()
+{
+	__mkelvis_removelist__toremove_re="$(echo "$2" | sed 's/,/\\|/g')"
+	__mkelvis_removelist__newlist=''
+
+	__mkelvis_enter_list_ctx
+	eval vars="$(echo \$$1)"
+	for val in $vars; do
+		# Add back to list if not in list of values to remove.
+		if ! echo $val | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
+			__mkelvis_exit_list_ctx
+			__mkelvis_addlist __mkelvis_removelist__newlist "$val"
+			__mkelvis_enter_list_ctx
+		fi
+	done
+	__mkelvis_exit_list_ctx
+
+	# Replace old list with new list.
+	__mkelvis_clearlist "$1"
+	__mkelvis_deflist "$1" "$__mkelvis_removelist__newlist"
+}
+__mkelvis_clearlist ()
+{
+	eval $1=''
+}
+{% endif %}
 
 {% macro _parse_option(opt, setopt='setopt') %}
 {% set opts = [opt] + opt.aliases|list %}

@@ -462,6 +462,7 @@ def get_env(args):
         "specials": args.specials,
         # URL parameters
         "mappings": args.mappings,
+        "lists": args.lists,
         "list_mappings": args.list_mappings,
         "collapses": args.collapses,
         "query_parameter": args.query_parameter,
