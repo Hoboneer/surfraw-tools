@@ -35,7 +35,17 @@ w3_config_hook ()
 	{% else %}
 	## defyn {{ 'variable'|ns }} default_enum_value
 	{% endfor %}
+	{# Only show if list option defined.  Users may be confused if an undefined `__mkelvis_deflist` is shown #}
+	{% if lists %}
 
+	# Lists
+	{% for list in lists %}
+	__mkelvis_deflist {{ list.name|ns }} {{ list.defaults|join(',') }}
+	{% else %}
+	## __mkelvis_deflist {{ 'listvar'|ns }} default_val1,default_val2,default_val3
+	{% endfor %}
+
+	{% endif %}
 	# 'Anythings'
 	{% for anything in anythings %}
 	def {{ anything.name|ns }} {{ anything.default }}
