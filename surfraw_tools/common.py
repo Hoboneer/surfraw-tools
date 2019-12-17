@@ -33,12 +33,18 @@ class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
         self._resolved = False
         # Dynamically create getters.
         for type_ in self.types:
-            # Account for late binding
-            saved_type = type_
             setattr(
                 self.__class__,
                 type_,
-                property(lambda self_: self_._items[saved_type].copy()),
+                # Account for late binding
+                property(
+                    partial(
+                        lambda self_, saved_type: self_._items[
+                            saved_type
+                        ].copy(),
+                        saved_type=type_,
+                    )
+                ),
             )
 
     # For use with argparse's "append" action.
