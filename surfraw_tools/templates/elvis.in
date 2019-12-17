@@ -317,9 +317,9 @@ fi
 search_url="{{ search_url }}"
 {% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
-{# First param is special #}
+{# First param is special; don't be preceded by a '&' #}
 {% if not map_ns.mapped %}
-search_url="$search_url{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+search_url="${search_url}{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
 {% set map_ns.mapped = True %}
 {% else %}
 search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
@@ -328,27 +328,31 @@ search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
 {% for map in list_mappings %}
 {% if loop.first %}
 # Map each value of list variables to parameters
-{% if map_ns.mapped %}
-mapped=yes
-{% else %}
+## Entering list context for all list mappings should be safe.
+__mkelvis_enter_list_ctx
+{% if not map_ns.mapped %}
+## Make sure the first parameter name isn't preceded by a '&'.
 mapped=no
 {% endif %}
-{% endif %}
-__mkelvis_enter_list_ctx
+{% endif %}{# loop.first #}
 for val in ${{ map.variable|ns }}; do
-	__mkelvis_exit_list_ctx
+	{% if not map_ns.mapped %}
 	if ! ok mapped; then
-		search_url="$search_url{{ map.parameter|urlencode }}=$val"
+		search_url="${search_url}{{ map.parameter|urlencode }}=$val"
 		mapped=yes
 	else
 		search_url="$search_url&{{ map.parameter|urlencode }}=$val"
 	fi
-	__mkelvis_enter_list_ctx
+	{% else %}
+	search_url="$search_url&{{ map.parameter|urlencode }}=$val"
+	{% endif %}
 done
+{% if loop.last %}
 __mkelvis_exit_list_ctx
+{% endif %}
 {% endfor %}
 {# Cannot check shell variable, so must check lists manually #}
-{% if mappings or list_mappings %}
+{% if not (mappings or list_mappings) %}
 ## First parameter
 ##search_url="${search_url}param1=${{ 'variable1'|ns }}"
 ## Successive parameters
