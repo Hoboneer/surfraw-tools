@@ -222,13 +222,32 @@ __mkelvis_exit_list_ctx
 
 # Collapse variables
 {# TODO: Name this better! #}
-{% for collapse in collapses %}
-case "${{ collapse.variable|ns }}" in
-	{% for branch in collapse.collapses %}
+{% macro collapse_variable(var, branches) %}
+case "${{ var }}" in
+	{% for branch in branches %}
 	{# Last in `branch` is the result #}
-	{{ '|'.join(branch[:-1]) }}) {{ collapse.variable|ns }}={{ branch[-1] }} ;;
+	{{ '|'.join(branch[:-1]) }}) {{ var }}={{ branch[-1] }} ;;
 	{% endfor %}
 esac
+{%- endmacro %}
+{% for collapse in collapses %}
+{% if collapse.variable in lists|map(attribute='name') %}
+# Collapse list variable
+__mkelvis_collapse_tmp=''
+vars="$(echo ${{ collapse.variable|ns }})"
+__mkelvis_enter_list_ctx
+for val in $vars; do
+	{# Exiting list context is necessary for users to be able to expand variables with behaviour they expect (only relevant when unquoted) #}
+	__mkelvis_exit_list_ctx
+	{{ collapse_variable('val', collapse.collapses)|indent(4)|replace('    ', '\t') }}
+	__mkelvis_addlist __mkelvis_collapse_tmp "$val"
+	__mkelvis_enter_list_ctx
+done
+__mkelvis_exit_list_ctx
+{{ collapse.variable|ns }}="$__mkelvis_collapse_tmp"
+{% else %}
+{{ collapse_variable(collapse.variable|ns, collapse.collapses) }}
+{% endif %}
 {% endfor %}
 
 # Any variables in the url should have values now
@@ -238,24 +257,50 @@ if test -z "$w3_args"; then
 fi
 # Map variables to parameters
 search_url="{{ search_url }}"
+{% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
-{# The first iteration is special #}
-{% if loop.first %}
-search_url="${search_url}{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+{# First param is special #}
+{% if not map_ns.mapped %}
+search_url="$search_url{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+{% set map_ns.mapped = True %}
 {% else %}
 search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
 {% endif %}
+{% endfor %}
+{% for map in list_mappings %}
+{% if loop.first %}
+# Map each value of list variables to parameters
+{% if map_ns.mapped %}
+mapped=yes
 {% else %}
+mapped=no
+{% endif %}
+{% endif %}
+__mkelvis_enter_list_ctx
+for val in ${{ map.variable|ns }}; do
+	__mkelvis_exit_list_ctx
+	if ! ok mapped; then
+		search_url="$search_url{{ map.parameter|urlencode }}=$val"
+		mapped=yes
+	else
+		search_url="$search_url&{{ map.parameter|urlencode }}=$val"
+	fi
+	__mkelvis_enter_list_ctx
+done
+__mkelvis_exit_list_ctx
+{% endfor %}
+{# Cannot check shell variable, so must check lists manually #}
+{% if mappings or list_mappings %}
 ## First parameter
 ##search_url="${search_url}param1=${{ 'variable1'|ns }}"
 ## Successive parameters
 ##search_url="$search_url&param2=${{ 'variable2'|ns }}"
-{% endfor %}
+{% endif %}
 
 # Add the search to url
 {# Mappings and a query parameter are necessarily inclusive #}
 {# `mkelvis` should prevent a situation where only one of the two are true #}
-{% if mappings|length > 0 and query_parameter is not none %}
+{% if (mappings or list_mappings) and query_parameter is not none %}
 search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
 {% else %}
 search_url="${search_url}${escaped_args}"
