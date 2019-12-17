@@ -286,7 +286,7 @@ BASE_PARSER.add_argument(
     type=_wrap_parser(BoolOption.from_arg),
     dest="options",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
-    help="specify a yes or no option for the elvis",
+    help="specify a boolean option for the elvis",
 )
 BASE_PARSER.add_argument(
     "--enum",
