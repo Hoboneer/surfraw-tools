@@ -14,10 +14,17 @@
 
 import argparse
 import os
+import sys
 from itertools import chain
-from os import EX_OK, EX_OSERR
+from os import EX_OK, EX_OSERR, EX_USAGE
 
-from .common import BASE_PARSER, VERSION_FORMAT_STRING, get_env, process_args
+from .common import (
+    BASE_PARSER,
+    VERSION_FORMAT_STRING,
+    Context,
+    get_env,
+    process_args,
+)
 from .options import (
     VARIABLE_OPTIONS,
     AnythingOption,
@@ -167,7 +174,13 @@ def main(args=None):
         description="generate an elvis for surfraw",
         parents=[BASE_PARSER],
     )
-    args = parser.parse_args(args)
+    ctx = Context()
+    try:
+        args = parser.parse_args(args, namespace=ctx)
+    except Exception as e:
+        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        return EX_USAGE
+
     args._program_name = PROGRAM_NAME
 
     exit_code = process_args(args)

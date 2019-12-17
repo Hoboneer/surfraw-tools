@@ -1,5 +1,4 @@
 import weakref
-from collections import defaultdict
 from itertools import chain
 
 from .validation import (
@@ -361,28 +360,6 @@ RESOLVERS = []
 
 def _resolver(func):
     RESOLVERS.append(func)
-
-
-@_resolver
-def _resolve_duplicate_variables(args):
-    name_counts = defaultdict(int)
-    for option in VARIABLE_OPTIONS["iterable_func"](args):
-        name_counts[option.name] += 1
-        if name_counts[option.name] > 1:
-            raise OptionResolutionError(
-                f"the variable name '{option.name}' is duplicated"
-            )
-
-
-@_resolver
-def _resolve_duplicate_nonvariable_options(args):
-    name_counts = defaultdict(int)
-    for option in chain(args.flags, args.aliases):
-        name_counts[option.name] += 1
-        if name_counts[option.name] > 1:
-            raise OptionResolutionError(
-                f"the non-variable-creating option name '{option.name}' is duplicated"
-            )
 
 
 _inner_resolve_aliases = make_option_resolver(

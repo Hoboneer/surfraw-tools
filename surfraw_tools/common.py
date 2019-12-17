@@ -1,7 +1,7 @@
 import argparse
 import sys
 from abc import ABCMeta, abstractmethod
-from functools import wraps
+from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
 
@@ -20,6 +20,7 @@ from .options import (
     MappingOption,
     OptionResolutionError,
     SpecialOption,
+    SurfrawOption,
 )
 
 
@@ -86,9 +87,103 @@ class _FlagContainer(_ChainContainer):
         self._resolved = True
 
 
+class _SurfrawOptionContainer(argparse.Namespace):
+    def __init__(self):
+        # Options that create variables (corresponds to `creates_variable`)
+        # attribute on `SurfrawOption`).
+        self.variable_options = []
+        self._seen_variable_names = set()
+        self.nonvariable_options = []
+        self._seen_nonvariable_names = set()
+
+        self._types_to_buckets = {
+            FlagOption: "flags",
+            BoolOption: "bools",
+            EnumOption: "enums",
+            AnythingOption: "anythings",
+            AliasOption: "aliases",
+            SpecialOption: "specials",
+        }
+        self.options = {
+            "flags": _FlagContainer(),
+            "bools": [],
+            "enums": [],
+            "anythings": [],
+            "aliases": [],
+            "specials": [],
+        }
+        # Dynamically create getters.
+        for type_ in self.options.keys():
+            setattr(
+                self.__class__,
+                type_,
+                # Account for late binding
+                property(
+                    partial(
+                        lambda self_, saved_type: self_.options[saved_type],
+                        saved_type=type_,
+                    )
+                ),
+            )
+
+    def append(self, option):
+        if not isinstance(option, SurfrawOption):
+            raise TypeError(f"option '{option.name}' is not a surfraw option")
+
+        try:
+            bucket = self._types_to_buckets[option.__class__]
+        except KeyError:
+            raise RuntimeError(
+                f"could not route option '{option.name}' to a bucket; the code is out of sync with itself"
+            )
+        else:
+            self.options[bucket].append(option)
+
+        self._notify_append(option)
+
+    def _notify_append(self, option):
+        if option.creates_variable:
+            if option.name in self._seen_variable_names:
+                raise ValueError(
+                    f"the variable name '{option.name}' is duplicated"
+                )
+            self._seen_variable_names.add(option.name)
+            self.variable_options.append(option)
+        else:
+            if option.name in self._seen_nonvariable_names:
+                raise ValueError(
+                    f"the non-variable-creating option name '{option.name}' is duplicated"
+                )
+            self._seen_nonvariable_names.add(option.name)
+            self.nonvariable_options.append(option)
 
 
-_FLAGS = _FlagContainer()
+class Context(argparse.Namespace):
+    def __init__(self):
+        self._surfraw_options = _SurfrawOptionContainer()
+
+    # I'd prefer properties but argparse's "append" action doesn't append in
+    # the way I expected it to.  It requires the ability to assign values...
+    def __getattr__(self, name):
+        # For backward compatibility.
+        if name == "members":
+            name = "flags"
+        # Delegate to `_SurfrawOptionContainer`.
+        try:
+            ret = self._surfraw_options.options[name]
+        except KeyError:
+            raise AttributeError from None
+        else:
+            return ret
+
+    @property
+    def options(self):
+        return self._surfraw_options
+
+    # Again, needed for argparse's weirdness.
+    @options.setter
+    def options(self, val):
+        self._surfraw_options = val
 
 
 def _wrap_parser(func):
@@ -131,9 +226,9 @@ BASE_PARSER.add_argument(
     "--flag",
     "-F",
     action="append",
-    default=_FLAGS,
+    default=argparse.SUPPRESS,
     type=_wrap_parser(FlagOption.from_arg),
-    dest="flags",
+    dest="options",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help="specify an alias to a value of a defined yes-no, enum, 'anything', or special option",
 )
@@ -141,9 +236,9 @@ BASE_PARSER.add_argument(
     "--yes-no",
     "-Y",
     action="append",
-    default=[],
+    default=argparse.SUPPRESS,
     type=_wrap_parser(BoolOption.from_arg),
-    dest="bools",
+    dest="options",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
     help="specify a yes or no option for the elvis",
 )
@@ -151,9 +246,9 @@ BASE_PARSER.add_argument(
     "--enum",
     "-E",
     action="append",
-    default=[],
+    default=argparse.SUPPRESS,
     type=_wrap_parser(EnumOption.from_arg),
-    dest="enums",
+    dest="options",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
 )
@@ -161,10 +256,9 @@ BASE_PARSER.add_argument(
     "--member",
     "-M",
     action="append",
-    default=_FLAGS,
+    default=argparse.SUPPRESS,
     type=_wrap_parser(FlagOption.from_arg),
-    # Append to the same _FLAGS object.
-    dest="flags",
+    dest="options",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
     help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )
@@ -172,8 +266,8 @@ BASE_PARSER.add_argument(
     "--anything",
     "-A",
     action="append",
-    default=[],
-    dest="anythings",
+    default=argparse.SUPPRESS,
+    dest="options",
     type=_wrap_parser(AnythingOption.from_arg),
     metavar="VARIABLE_NAME:DEFAULT_VALUE",
     help="specify an option that is not checked",
@@ -181,9 +275,9 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--alias",
     action="append",
-    default=[],
+    default=argparse.SUPPRESS,
     type=_wrap_parser(AliasOption.from_arg),
-    dest="aliases",
+    dest="options",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
 )
@@ -241,7 +335,6 @@ def process_args(args):
     args.base_url = f"{url_scheme}://{args.base_url}"
     args.search_url = f"{url_scheme}://{args.search_url}"
 
-    args.specials = []
     if args.use_results_option:
         args.specials.append(SpecialOption("results"))
     if args.use_language_option:
