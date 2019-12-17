@@ -1,5 +1,7 @@
 import argparse
 import sys
+from abc import ABCMeta, abstractmethod
+from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
 
@@ -12,88 +14,220 @@ from .options import (
     AliasOption,
     AnythingOption,
     BoolOption,
+    CollapseOption,
     EnumOption,
     FlagOption,
+    ListOption,
+    MappingOption,
     OptionResolutionError,
     SpecialOption,
-)
-from .parsers import (
-    parse_alias_option,
-    parse_anything_option,
-    parse_bool_option,
-    parse_collapse,
-    parse_enum_option,
-    parse_flag_option,
-    parse_mapping_option,
-    parse_query_parameter,
+    SurfrawOption,
 )
 
 
-class _FlagContainer:
+class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
+    types = []
+
     def __init__(self):
-        self._flags = {
-            "bools": [],
-            "enums": [],
-            "anythings": [],
-            "specials": [],
-        }
-        self._pending_flags = []
+        self._items = {type_: [] for type_ in self.types}
+        self._unresolved_items = []
         self._resolved = False
+        # Dynamically create getters.
+        for type_ in self.types:
+            setattr(
+                self.__class__,
+                type_,
+                # Account for late binding
+                property(
+                    partial(
+                        lambda self_, saved_type: self_._items[
+                            saved_type
+                        ].copy(),
+                        saved_type=type_,
+                    )
+                ),
+            )
 
-    def append(self, flag):
-        self._pending_flags.append(flag)
+    # For use with argparse's "append" action.
+    def append(self, item):
+        self._unresolved_items.append(item)
 
-    # Place flags into their corresponding buckets
+    @abstractmethod
+    def resolve(self):
+        """Place items into their corresponding buckets.
+
+        Remember to set `_resolved` to `True` afterward."""
+        raise NotImplementedError
+
+    def __iter__(self):
+        if not self._resolved:
+            return iter(self._unresolved_items)
+        return chain.from_iterable(self._items.values())
+
+    # `__bool__` automatically defined.  True if non-zero length.
+    def __len__(self):
+        return sum(len(types_) for types_ in self._items.values())
+
+
+class _FlagContainer(_ChainContainer):
+    types = ["bools", "enums", "anythings", "specials", "lists"]
+
     def resolve(self):
         # XXX: Should this just check for an instance of `FlagTarget`?
         #      How to determine which "bucket" to place into then?
-        if not self._pending_flags:
+        if not self._unresolved_items:
             return
-        for flag in self._pending_flags:
+        for flag in self._unresolved_items:
             if isinstance(flag.target, BoolOption):
-                self._flags["bools"].append(flag)
+                self._items["bools"].append(flag)
             elif isinstance(flag.target, EnumOption):
-                self._flags["enums"].append(flag)
+                self._items["enums"].append(flag)
             elif isinstance(flag.target, AnythingOption):
-                self._flags["anythings"].append(flag)
+                self._items["anythings"].append(flag)
             elif isinstance(flag.target, SpecialOption):
-                self._flags["specials"].append(flag)
+                self._items["specials"].append(flag)
+            elif isinstance(flag.target, ListOption):
+                self._items["lists"].append(flag)
             else:
                 raise RuntimeError(
                     "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
                 )
             flag.target.add_flag(flag)
-        self._pending_flags.clear()
+        self._unresolved_items.clear()
         self._resolved = True
 
-    def __iter__(self):
-        if not self._resolved:
-            return iter(self._pending_flags)
-        return chain.from_iterable(self._flags.values())
 
-    def __len__(self):
-        return sum(len(types) for types in self._flags.values())
+class _ListContainer(_ChainContainer):
+    types = ["enums", "anythings"]
 
-    # Don't allow the user to modify the flags container
-    # XXX: Should that even be forbidden?
+    def resolve(self):
+        if not self._unresolved_items:
+            return
+        for list_ in self._unresolved_items:
+            if issubclass(list_.type, EnumOption):
+                self._items["enums"].append(list_)
+            elif issubclass(list_.type, AnythingOption):
+                self._items["anythings"].append(list_)
+            else:
+                raise RuntimeError(
+                    "Invalid list target type.  This should never be raised; the code is out of sync with itself."
+                )
+        self._unresolved_items.clear()
+        self._resolved = True
+
+
+class _SurfrawOptionContainer(argparse.Namespace):
+    def __init__(self):
+        # Options that create variables (corresponds to `creates_variable`)
+        # attribute on `SurfrawOption`).
+        self.variable_options = []
+        self._seen_variable_names = set()
+        self.nonvariable_options = []
+        self._seen_nonvariable_names = set()
+
+        self._types_to_buckets = {
+            FlagOption: "flags",
+            BoolOption: "bools",
+            EnumOption: "enums",
+            AnythingOption: "anythings",
+            AliasOption: "aliases",
+            SpecialOption: "specials",
+            ListOption: "lists",
+        }
+        self.options = {
+            "flags": _FlagContainer(),
+            "bools": [],
+            "enums": [],
+            "anythings": [],
+            "aliases": [],
+            "specials": [],
+            "lists": _ListContainer(),
+        }
+        # Dynamically create getters.
+        for type_ in self.options.keys():
+            setattr(
+                self.__class__,
+                type_,
+                # Account for late binding
+                property(
+                    partial(
+                        lambda self_, saved_type: self_.options[saved_type],
+                        saved_type=type_,
+                    )
+                ),
+            )
+
+    def append(self, option):
+        if not isinstance(option, SurfrawOption):
+            raise TypeError(f"option '{option.name}' is not a surfraw option")
+
+        try:
+            bucket = self._types_to_buckets[option.__class__]
+        except KeyError:
+            raise RuntimeError(
+                f"could not route option '{option.name}' to a bucket; the code is out of sync with itself"
+            )
+        else:
+            self.options[bucket].append(option)
+
+        self._notify_append(option)
+
+    def _notify_append(self, option):
+        if option.creates_variable:
+            if option.name in self._seen_variable_names:
+                raise ValueError(
+                    f"the variable name '{option.name}' is duplicated"
+                )
+            self._seen_variable_names.add(option.name)
+            self.variable_options.append(option)
+        else:
+            if option.name in self._seen_nonvariable_names:
+                raise ValueError(
+                    f"the non-variable-creating option name '{option.name}' is duplicated"
+                )
+            self._seen_nonvariable_names.add(option.name)
+            self.nonvariable_options.append(option)
+
+
+class Context(argparse.Namespace):
+    def __init__(self):
+        self._surfraw_options = _SurfrawOptionContainer()
+
+    # I'd prefer properties but argparse's "append" action doesn't append in
+    # the way I expected it to.  It requires the ability to assign values...
+    def __getattr__(self, name):
+        # For backward compatibility.
+        if name == "members":
+            name = "flags"
+        # Delegate to `_SurfrawOptionContainer`.
+        try:
+            ret = self._surfraw_options.options[name]
+        except KeyError:
+            raise AttributeError from None
+        else:
+            return ret
+
     @property
-    def bools(self):
-        return self._flags["bools"].copy()
+    def options(self):
+        return self._surfraw_options
 
-    @property
-    def enums(self):
-        return self._flags["enums"].copy()
-
-    @property
-    def anythings(self):
-        return self._flags["anythings"].copy()
-
-    @property
-    def specials(self):
-        return self._flags["specials"].copy()
+    # Again, needed for argparse's weirdness.
+    @options.setter
+    def options(self, val):
+        self._surfraw_options = val
 
 
-_FLAGS = _FlagContainer()
+def _wrap_parser(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            ret = func(*args, **kwargs)
+        except Exception as e:
+            raise argparse.ArgumentTypeError(str(e)) from None
+        return ret
+
+    return wrapper
+
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
 _VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
@@ -123,9 +257,9 @@ BASE_PARSER.add_argument(
     "--flag",
     "-F",
     action="append",
-    default=_FLAGS,
-    type=parse_flag_option,
-    dest="flags",
+    default=argparse.SUPPRESS,
+    type=_wrap_parser(FlagOption.from_arg),
+    dest="options",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help="specify an alias to a value of a defined yes-no, enum, 'anything', or special option",
 )
@@ -133,9 +267,9 @@ BASE_PARSER.add_argument(
     "--yes-no",
     "-Y",
     action="append",
-    default=[],
-    type=parse_bool_option,
-    dest="bools",
+    default=argparse.SUPPRESS,
+    type=_wrap_parser(BoolOption.from_arg),
+    dest="options",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
     help="specify a yes or no option for the elvis",
 )
@@ -143,9 +277,9 @@ BASE_PARSER.add_argument(
     "--enum",
     "-E",
     action="append",
-    default=[],
-    type=parse_enum_option,
-    dest="enums",
+    default=argparse.SUPPRESS,
+    type=_wrap_parser(EnumOption.from_arg),
+    dest="options",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
 )
@@ -153,10 +287,9 @@ BASE_PARSER.add_argument(
     "--member",
     "-M",
     action="append",
-    default=_FLAGS,
-    type=parse_flag_option,
-    # Append to the same _FLAGS object.
-    dest="flags",
+    default=argparse.SUPPRESS,
+    type=_wrap_parser(FlagOption.from_arg),
+    dest="options",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
     help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )
@@ -164,20 +297,28 @@ BASE_PARSER.add_argument(
     "--anything",
     "-A",
     action="append",
-    default=[],
-    dest="anythings",
-    type=parse_anything_option,
+    default=argparse.SUPPRESS,
+    dest="options",
+    type=_wrap_parser(AnythingOption.from_arg),
     metavar="VARIABLE_NAME:DEFAULT_VALUE",
     help="specify an option that is not checked",
 )
 BASE_PARSER.add_argument(
     "--alias",
     action="append",
-    default=[],
-    type=parse_alias_option,
-    dest="aliases",
+    default=argparse.SUPPRESS,
+    type=_wrap_parser(AliasOption.from_arg),
+    dest="options",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
+)
+BASE_PARSER.add_argument(
+    "--list",
+    action="append",
+    type=_wrap_parser(ListOption.from_arg),
+    dest="options",
+    metavar="LIST_NAME:LIST_TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]",
+    help="create a list of enum or 'anything' values as a repeatable (cumulative) option (e.g., `-add-foos=bar,baz,qux`)",
 )
 BASE_PARSER.add_argument(
     "--use-results-option",
@@ -197,16 +338,26 @@ BASE_PARSER.add_argument(
     "--map",
     action="append",
     default=[],
-    type=parse_mapping_option,
+    type=_wrap_parser(MappingOption.from_arg),
     dest="mappings",
     metavar="VARIABLE_NAME:PARAMETER",
     help="map a variable to a URL parameter",
 )
 BASE_PARSER.add_argument(
+    "--list-map",
+    action="append",
+    default=[],
+    # Same object, different target
+    type=_wrap_parser(MappingOption.from_arg),
+    dest="list_mappings",
+    metavar="VARIABLE_NAME:PARAMETER",
+    help="map the values of a list variable to multiple URL parameters",
+)
+BASE_PARSER.add_argument(
     "--collapse",
     action="append",
     default=[],
-    type=parse_collapse,
+    type=_wrap_parser(CollapseOption.from_arg),
     dest="collapses",
     metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
     help="change groups of values of a variable to a single value",
@@ -214,7 +365,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--query-parameter",
     "-Q",
-    type=parse_query_parameter,
     help="define the parameter for the query arguments; needed with --map",
 )
 
@@ -234,7 +384,6 @@ def process_args(args):
     args.base_url = f"{url_scheme}://{args.base_url}"
     args.search_url = f"{url_scheme}://{args.search_url}"
 
-    args.specials = []
     if args.use_results_option:
         args.specials.append(SpecialOption("results"))
     if args.use_language_option:
@@ -250,7 +399,7 @@ def process_args(args):
         print(f"{args._program_name}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    if len(args.mappings) > 0 and args.query_parameter is None:
+    if (args.mappings or args.list_mappings) and args.query_parameter is None:
         print(
             f"{args._program_name}: mapping variables without a defined --query-parameter is forbidden",
             file=sys.stderr,
@@ -295,6 +444,7 @@ def get_env(args):
     env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
     env.tests["special_option"] = lambda x: isinstance(x, SpecialOption)
     env.tests["alias_option"] = lambda x: isinstance(x, AliasOption)
+    env.tests["list_option"] = lambda x: isinstance(x, ListOption)
 
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
@@ -314,6 +464,8 @@ def get_env(args):
         "specials": args.specials,
         # URL parameters
         "mappings": args.mappings,
+        "lists": args.lists,
+        "list_mappings": args.list_mappings,
         "collapses": args.collapses,
         "query_parameter": args.query_parameter,
     }
