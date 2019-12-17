@@ -10,6 +10,7 @@ from jinja2 import Environment, PackageLoader
 from ._package import __version__
 from .options import (
     RESOLVERS,
+    VALID_FLAG_TYPES_STR,
     VARIABLE_OPTIONS,
     AliasOption,
     AnythingOption,
@@ -17,7 +18,6 @@ from .options import (
     CollapseOption,
     EnumOption,
     FlagOption,
-    FlagTarget,
     ListOption,
     MappingOption,
     OptionResolutionError,
@@ -257,17 +257,6 @@ BASE_PARSER.add_argument(
 # Option generation
 
 # Include the 'or' for the last typename.
-_valid_flag_types = [
-    name
-    for name in SurfrawOption.typenames
-    if issubclass(SurfrawOption.typenames[name], FlagTarget)
-]
-_valid_flag_types_str = ", ".join(
-    f"'{typename}'"
-    if typename != _valid_flag_types[-1]
-    else f"or '{typename}'"
-    for i, typename in enumerate(_valid_flag_types)
-)
 BASE_PARSER.add_argument(
     "--flag",
     "-F",
@@ -276,7 +265,7 @@ BASE_PARSER.add_argument(
     type=_wrap_parser(FlagOption.from_arg),
     dest="options",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
-    help=f"specify an alias to a value(s) of a defined {_valid_flag_types_str} option",
+    help=f"specify an alias to a value(s) of a defined {VALID_FLAG_TYPES_STR} option",
 )
 BASE_PARSER.add_argument(
     "--yes-no",

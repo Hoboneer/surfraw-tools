@@ -427,6 +427,15 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
     return resolve_option
 
 
+VALID_FLAG_TYPES = [
+    name
+    for name in SurfrawOption.typenames
+    if issubclass(SurfrawOption.typenames[name], FlagTarget)
+]
+VALID_FLAG_TYPES_STR = ", ".join(
+    f"'{typename}'" if typename != VALID_FLAG_TYPES[-1] else f"or '{typename}'"
+    for i, typename in enumerate(VALID_FLAG_TYPES)
+)
 RESOLVERS = []
 
 
@@ -504,7 +513,8 @@ _resolver(
 _inner_resolve_flags = make_option_resolver(
     "flags",
     VARIABLE_OPTIONS["strings"],
-    error_msg="flag option '{target.name}' does not target any existing yes-no, enum, 'anything', or special option",
+    error_msg="flag option '{target.name}' does not target any existing "
+    f"{VALID_FLAG_TYPES_STR} option",
     assign_target=True,
 )
 
