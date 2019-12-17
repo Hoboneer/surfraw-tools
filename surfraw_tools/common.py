@@ -444,6 +444,7 @@ def get_env(args):
     env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
     env.tests["special_option"] = lambda x: isinstance(x, SpecialOption)
     env.tests["alias_option"] = lambda x: isinstance(x, AliasOption)
+    env.tests["list_option"] = lambda x: isinstance(x, ListOption)
 
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.

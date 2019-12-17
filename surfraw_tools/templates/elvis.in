@@ -123,6 +123,7 @@ __mkelvis_clearlist ()
 }
 {% endif %}
 
+{# Readers beware.  This is an ugly monstrosity #}
 {% macro _parse_option(opt, setopt='setopt') %}
 {% set opts = [opt] + opt.aliases|list %}
 {# All standalone, non-flag options have args #}
@@ -136,17 +137,46 @@ __mkelvis_clearlist ()
 	{% set varname = opt.name %}
 	{% set optarg = "$optarg" %}
 {% endif %}
-{% set ns = namespace(patterns=[]) %}
-{% for name in opts|map(attribute='name')|sort %}
-	{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
-{% endfor %}
-{% set prefix = ns.patterns|join('|') ~ ') ' ~ setopt ~ ' '  ~ varname|ns %}
 {# If optarg contains whitespace or is special in any way, quote it #}
 {% if optarg == '$optarg' or ' ' in optarg or '\t' in optarg or '\n' in optarg %}
-{{ prefix }} "{{ optarg }}" ;;
+	{% set optarg = '"' ~ optarg ~ '"' %}
+{% endif %}
+{% set ns = namespace(patterns=[], lines=[]) %}
+{% if opt is flag_option and opt.target is list_option %}
+	{% set subject = opt.target %}
+{% else %}
+	{% set subject = opt %}
+{% endif %}
+{% if subject is list_option %}
+	{# Jinja does not allow assigning to list indices... #}
+	{% set ns.pattern0 = [] %}
+	{% set ns.pattern1 = [] %}
+	{% set ns.pattern2 = [] %}
+	{% for name in opts|map(attribute='name')|sort %}
+		{% set ns.pattern0 = ns.pattern0 + ["-add-" ~ name ~ suffix] %}
+		{% set ns.pattern1 = ns.pattern1 + ["-remove-" ~ name ~ suffix] %}
+		{% set ns.pattern2 = ns.pattern2 + ["-clear-" ~ name] %}
+	{% endfor %}
+	{# Now build up the lines #}
+	{% set ns.lines = ns.lines + [ns.pattern0|join('|') ~ ') ' ~ '__mkelvis_addlist' ~ ' '  ~ varname|ns ~ ' ' ~ optarg] %}
+	{% set ns.lines = ns.lines + [ns.pattern1|join('|') ~ ') ' ~ '__mkelvis_removelist' ~ ' '  ~ varname|ns ~ ' ' ~ optarg] %}
+	{% set ns.lines = ns.lines + [ns.pattern2|join('|') ~ ') ' ~ '__mkelvis_clearlist' ~ ' '  ~ varname|ns] %}
+{% else %}
+	{% for name in opts|map(attribute='name')|sort %}
+		{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}
+	{% endfor %}
+	{% set ns.lines = [ns.patterns|join('|') ~ ') ' ~ setopt ~ ' '  ~ varname|ns ~ ' ' ~ optarg] %}
+{% endif %}{# list_option #}
+{# Remove unnecessary newline characters #}
+{% if subject is list_option %}
+{% for line in ns.lines %}
+{{ line }} ;;
+{% endfor %}{# ns.lines #}
 {%- else %}
-{{ prefix }} {{ optarg }} ;;
-{%- endif %}
+{% for line in ns.lines %}
+{{ line }} ;;
+{%- endfor %}{# ns.lines #}
+{% endif %}{# list_option #}
 {%- endmacro %}{# _parse_option #}
 {% macro _parse_options(opts, default_optname, setopt='setopt') %}
 {% for opt in opts %}
@@ -167,6 +197,30 @@ __mkelvis_clearlist ()
 {% macro parse_options() %}
 {{ _parse_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
 {%- endmacro %}
+{# ============ #}
+{# List options #}
+{# ============ #}
+{% macro _parse_list_options(opts, default_optname) %}
+{% for list in opts %}
+{{ _parse_option(list) }}
+{% if list.flags %}
+## Start: flags for {{ list.name|ns }}
+{% for flag in list.flags %}
+{{ _parse_option(flag) }}
+{% endfor %}{# list.flags #}
+## End: flags for {{ list.name|ns }}
+{% endif %}{# list.flags #}
+{% else %}
+{% set varname = default_optname %}
+{# These won't actually be displayed; but just in case... #}
+##-add-{{ default_optname }}=*|-add-alias1=*|-add-alias2=*) __mkelvis_addlist {{ varname|ns }} "$optarg" ;;
+##-remove-{{ default_optname }}=*|-remove-alias1=*|-remove-alias2=*) __mkelvis_removelist {{ varname|ns }} "$optarg" ;;
+##-clear-{{ default_optname }}|-clear-alias1|-clear-alias2) __mkelvis_clearlist {{ varname|ns }} ;;
+{% endfor %}{# opts #}
+{%- endmacro %}
+{% macro parse_list_options() %}
+{{ _parse_list_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
+{%- endmacro %}
 w3_parse_option_hook ()
 {
 	opt="$1"
@@ -176,6 +230,10 @@ w3_parse_option_hook ()
 		{{ parse_options(bools, default_optname='bool', setopt='setoptyn') }}
 		# Enums
 		{{ parse_options(enums, default_optname='enum') }}
+		{% if lists %}
+		# Lists
+		{{ parse_list_options(lists, default_optname='list') }}
+		{%- endif %}
 		# 'Anythings'
 		{{ parse_options(anythings, default_optname='anything') }}
 		# Special options
