@@ -24,7 +24,7 @@ from .options import (
 )
 
 
-class _ChainContainer(metaclass=ABCMeta):
+class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
     types = []
 
     def __init__(self):
