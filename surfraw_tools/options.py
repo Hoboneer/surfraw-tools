@@ -140,7 +140,7 @@ class Option:
         if last_is_unlimited:
             i += 1
             while i < len(args):
-                # Raise `argparse.ArgumentTypeError` if invalid arg.
+                # Raise `OptionParseError` if invalid arg.
                 result = valid_or_fail_func(args[i])
                 valid_args.append(result)
                 i += 1
