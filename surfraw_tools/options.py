@@ -27,7 +27,7 @@ class AliasTarget:
 
 class FlagTarget:
     @staticmethod
-    def flag_value_indicator(_):
+    def flag_value_validator(_):
         raise NotImplementedError
 
     def __init__(self):
