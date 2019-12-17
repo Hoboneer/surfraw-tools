@@ -64,6 +64,7 @@ class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
             return iter(self._unresolved_items)
         return chain.from_iterable(self._items.values())
 
+    # `__bool__` automatically defined.  True if non-zero length.
     def __len__(self):
         return sum(len(types_) for types_ in self._items.values())
 
