@@ -474,7 +474,7 @@ def _resolve_aliases(args):
         elif alias.target_type == AliasOption:
             # This should be unreachable.
             raise OptionResolutionError(
-                f"alias '{alias.name}' targets another alias, which is forbidden"
+                f"alias '{alias.name}' targets another alias, which is forbidden; this should never be reached; this is a bug!"
             )
         alias.target.add_alias(alias)
 
