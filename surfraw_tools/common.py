@@ -343,6 +343,16 @@ BASE_PARSER.add_argument(
     help="map a variable to a URL parameter",
 )
 BASE_PARSER.add_argument(
+    "--list-map",
+    action="append",
+    default=[],
+    # Same object, different target
+    type=_wrap_parser(MappingOption.from_arg),
+    dest="list_mappings",
+    metavar="VARIABLE_NAME:PARAMETER",
+    help="map the values of a list variable to multiple URL parameters",
+)
+BASE_PARSER.add_argument(
     "--collapse",
     action="append",
     default=[],
@@ -388,7 +398,7 @@ def process_args(args):
         print(f"{args._program_name}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    if len(args.mappings) > 0 and args.query_parameter is None:
+    if (args.mappings or args.list_mappings) and args.query_parameter is None:
         print(
             f"{args._program_name}: mapping variables without a defined --query-parameter is forbidden",
             file=sys.stderr,
@@ -452,6 +462,7 @@ def get_env(args):
         "specials": args.specials,
         # URL parameters
         "mappings": args.mappings,
+        "list_mappings": args.list_mappings,
         "collapses": args.collapses,
         "query_parameter": args.query_parameter,
     }

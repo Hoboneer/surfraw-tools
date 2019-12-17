@@ -480,6 +480,15 @@ _resolver(
         assign_target=False,
     )
 )
+# Resolve list mappings
+_resolver(
+    make_option_resolver(
+        "list_mappings",
+        ("lists",),
+        error_msg="URL parameter '{target.parameter}' does not target any existing variable",
+        assign_target=False,
+    )
+)
 
 
 # Resolve collapses
