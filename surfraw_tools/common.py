@@ -17,6 +17,7 @@ from .options import (
     CollapseOption,
     EnumOption,
     FlagOption,
+    ListOption,
     MappingOption,
     OptionResolutionError,
     SpecialOption,
@@ -68,7 +69,7 @@ class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
 
 
 class _FlagContainer(_ChainContainer):
-    types = ["bools", "enums", "anythings", "specials"]
+    types = ["bools", "enums", "anythings", "specials", "lists"]
 
     def resolve(self):
         # XXX: Should this just check for an instance of `FlagTarget`?
@@ -84,11 +85,32 @@ class _FlagContainer(_ChainContainer):
                 self._items["anythings"].append(flag)
             elif isinstance(flag.target, SpecialOption):
                 self._items["specials"].append(flag)
+            elif isinstance(flag.target, ListOption):
+                self._items["lists"].append(flag)
             else:
                 raise RuntimeError(
                     "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
                 )
             flag.target.add_flag(flag)
+        self._unresolved_items.clear()
+        self._resolved = True
+
+
+class _ListContainer(_ChainContainer):
+    types = ["enums", "anythings"]
+
+    def resolve(self):
+        if not self._unresolved_items:
+            return
+        for list_ in self._unresolved_items:
+            if issubclass(list_.type, EnumOption):
+                self._items["enums"].append(list_)
+            elif issubclass(list_.type, AnythingOption):
+                self._items["anythings"].append(list_)
+            else:
+                raise RuntimeError(
+                    "Invalid list target type.  This should never be raised; the code is out of sync with itself."
+                )
         self._unresolved_items.clear()
         self._resolved = True
 
@@ -109,6 +131,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
             AnythingOption: "anythings",
             AliasOption: "aliases",
             SpecialOption: "specials",
+            ListOption: "lists",
         }
         self.options = {
             "flags": _FlagContainer(),
@@ -117,6 +140,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
             "anythings": [],
             "aliases": [],
             "specials": [],
+            "lists": _ListContainer(),
         }
         # Dynamically create getters.
         for type_ in self.options.keys():
@@ -286,6 +310,14 @@ BASE_PARSER.add_argument(
     dest="options",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
+)
+BASE_PARSER.add_argument(
+    "--list",
+    action="append",
+    type=_wrap_parser(ListOption.from_arg),
+    dest="options",
+    metavar="LIST_NAME:LIST_TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]",
+    help="create a list of enum or 'anything' values as a repeatable (cumulative) option (e.g., `-add-foos=bar,baz,qux`)",
 )
 BASE_PARSER.add_argument(
     "--use-results-option",

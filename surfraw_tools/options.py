@@ -12,6 +12,10 @@ from .validation import (
 )
 
 
+class ListType:
+    pass
+
+
 class AliasTarget:
     def __init__(self):
         super().__init__()
@@ -174,7 +178,7 @@ class BoolOption(Option, AliasTarget, FlagTarget, SurfrawOption):
         super().__init__()
 
 
-class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
     flag_value_validator = validate_enum_value
     validators = [
         validate_name,
@@ -206,7 +210,7 @@ class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption):
                 )
 
 
-class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
     flag_value_validator = no_validation
     validators = [validate_name, flag_value_validator]
 
@@ -270,6 +274,69 @@ def validate_option_type(option_type):
         return type_
 
 
+class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+    # XXX: I'm not sure if this is needed?
+    flag_value_validator = no_validation
+
+    validators = [
+        validate_name,
+        validate_option_type,
+        list_of(no_validation),
+        no_validation,
+    ]
+    last_arg_is_unlimited = True
+
+    typename = "list"
+
+    def __init__(self, name, type_, defaults, spec):
+        self.name = name
+        self.type = type_
+        # They are equivalent.
+        if len(defaults) == 1 and defaults[0] == "":
+            defaults = []
+        self.defaults = defaults
+        if not issubclass(self.type, ListType):
+            raise TypeError(
+                f"element type ('{self.type.__name__}') of list '{self.name}' is not a valid list type"
+            )
+
+        self.flag_value_validator = list_of(self.type.flag_value_validator)
+        if issubclass(self.type, EnumOption):
+            # Ignore unused later values in `spec`.
+            unparsed_enum_values, *_ = spec
+
+            try:
+                # Don't unnecessarily validate.  Defaults may be empty.
+                if len(self.defaults) > 0:
+                    self.defaults = self.flag_value_validator(
+                        ",".join(self.defaults)
+                    )
+                self.valid_enum_values = self.flag_value_validator(
+                    unparsed_enum_values
+                )
+            except OptionParseError as e:
+                raise ValueError(str(e)) from None
+
+            if not set(self.defaults) <= set(self.valid_enum_values):
+                raise ValueError(
+                    f"enum list option {self.name}'s defaults ('{self.defaults}') must be a subset of its valid values ('{self.valid_enum_values}')"
+                )
+        elif issubclass(self.type, AnythingOption):
+            # Nothing to check for 'anythings'.
+            pass
+        super().__init__()
+
+    def resolve_flags(self):
+        for flag in self.flags:
+            flag.value = self.flag_value_validator(flag.value)
+            if issubclass(self.type, EnumOption):
+                if not set(flag.value) <= set(self.valid_enum_values):
+                    raise OptionResolutionError(
+                        f"enum list flag option {flag.name}'s value ('{flag.value}') must be a subset of its target's values ('{self.valid_enum_values}')"
+                    )
+            # Don't need to check `AnythingOption`.
+
+
 class AliasOption(Option, SurfrawOption):
     """An alias to another option.
 
@@ -326,13 +393,19 @@ class OptionResolutionError(Exception):
     pass
 
 
-_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials")
+_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials", "lists")
 VARIABLE_OPTIONS = {
     "iterable_func": lambda args: chain.from_iterable(
         getattr(args, type_) for type_ in _VARIABLE_OPTION_TYPES
     ),
     "strings": _VARIABLE_OPTION_TYPES,
-    "types": (BoolOption, EnumOption, AnythingOption, SpecialOption),
+    "types": (
+        BoolOption,
+        EnumOption,
+        AnythingOption,
+        SpecialOption,
+        ListOption,
+    ),
 }
 
 
@@ -441,4 +514,13 @@ def _resolve_flags(args):
         for flag_target in VARIABLE_OPTIONS["iterable_func"](args):
             flag_target.resolve_flags()
     except OptionParseError as e:
+        raise OptionResolutionError(str(e)) from None
+
+
+@_resolver
+def _resolve_lists(args):
+    lists = args.lists
+    try:
+        lists.resolve()
+    except Exception as e:
         raise OptionResolutionError(str(e)) from None
