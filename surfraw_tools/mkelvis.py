@@ -104,6 +104,10 @@ def generate_local_help_output(args):
             # Add values of enum aligned with metavar
             for value in opt.values:
                 entry.append(" " * offset + value)
+        elif isinstance(opt, ListOption) and issubclass(opt.type, EnumOption):
+            # Add values of enum aligned with metavar
+            for value in opt.valid_enum_values:
+                entry.append(" " * offset + value)
         set_longest_length(entry)
         entries.append(entry)
 
