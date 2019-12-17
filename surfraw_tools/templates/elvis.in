@@ -192,12 +192,33 @@ w3_parse_args "$@"
 escaped_args=$(w3_url_of_arg $w3_args)
 
 # Check enums
-{% for enum in enums %}
-case "${{ enum.name|ns }}" in
-	{{ '|'.join(enum.values) }}) ;;
-	*) err "Invalid value for {{ enum.name|ns }}" ;;
+{% macro check_enum(var, values, orig_var=None) %}
+case "${{ var }}" in
+	{{ '|'.join(values) }}) ;;
+	{% if orig_var is none %}
+	*) err "Invalid value for {{ var }}" ;;
+	{% else %}
+	*) err "Invalid value for {{ orig_var }}" ;;
+	{% endif %}
 esac
+{%- endmacro %}
+{% for enum in enums %}
+{{ check_enum(enum.name|ns, enum.values) }}
 {% endfor %}
+{% for enum_list in lists.enums %}
+{# Don't spew too many unrelated things into generated elvi #}
+{% if loop.first %}
+# Check enum lists
+## Entering list context for all the checking should be safe.
+__mkelvis_enter_list_ctx
+{% endif %}
+for val in ${{ enum.name|ns }}; do
+	{{ check_enum('val', enum.values, orig_var=enum.name|ns)|indent(4)|replace('    ', '\t') }}
+done
+{% if loop.last %}
+__mkelvis_exit_list_ctx
+{% endif %}
+{% endfor %}{# lists.enums #}
 
 # Collapse variables
 {# TODO: Name this better! #}
