@@ -86,11 +86,10 @@ class SurfrawOption:
             raise RuntimeError(
                 f"tried to run __init__ method of `{self.__class__.__name__}` but `self.name` was not defined"
             )
-        if self.creates_variable:
-            if self.name in _FORBIDDEN_OPTION_NAMES:
-                raise ValueError(
-                    f"option name '{self.name}' is global, which cannot be overriden by elvi"
-                )
+        if self.name in _FORBIDDEN_OPTION_NAMES:
+            raise ValueError(
+                f"option name '{self.name}' is global, which cannot be overriden by elvi"
+            )
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
