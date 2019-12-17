@@ -31,6 +31,7 @@ from .options import (
     BoolOption,
     EnumOption,
     FlagOption,
+    ListOption,
     SpecialOption,
 )
 
@@ -60,7 +61,7 @@ def generate_local_help_output(args):
 
     # Add aliases of options alongside main option, e.g.,
     #   -s=SORT, -sort=SORT
-    def get_optheader(opt, has_metavar=False):
+    def get_optheader(opt, has_metavar=False, prefix=""):
         optnames = [opt.name, *(alias.name for alias in opt.aliases)]
         optnames.sort()
         if has_metavar:
@@ -74,10 +75,12 @@ def generate_local_help_output(args):
             else:
                 metavar = opt.name.upper()
             optheader = "  " + ", ".join(
-                f"-{name}={metavar}" for name in optnames
+                f"-{prefix+name}={metavar}" for name in optnames
             )
         else:
-            optheader = "  " + ", ".join(f"-{name}" for name in optnames)
+            optheader = "  " + ", ".join(
+                f"-{prefix+name}" for name in optnames
+            )
         return optheader
 
     # Options that take arguments
@@ -85,8 +88,15 @@ def generate_local_help_output(args):
         entry = []
         entry.append(opt)
 
-        optheader = get_optheader(opt, has_metavar=True)
-        entry.append(optheader)
+        if isinstance(opt, ListOption):
+            entry.append(get_optheader(opt, has_metavar=True, prefix="add-"))
+            entry.append(
+                get_optheader(opt, has_metavar=True, prefix="remove-")
+            )
+            entry.append(get_optheader(opt, has_metavar=True, prefix="clear-"))
+        else:
+            entry.append(get_optheader(opt, has_metavar=True))
+        optheader = entry[-1]
 
         # +1 to go past the '='
         offset = optheader.rindex("=") + 1
@@ -101,8 +111,14 @@ def generate_local_help_output(args):
     for opt in args.flags:
         entry = []
         entry.append(opt)
-        optheader = get_optheader(opt)
-        entry.append(optheader)
+
+        if isinstance(opt, ListOption):
+            entry.append(get_optheader(opt, prefix="add-"))
+            entry.append(get_optheader(opt, prefix="remove-"))
+            entry.append(get_optheader(opt, prefix="clear-"))
+        else:
+            entry.append(get_optheader(opt))
+
         set_longest_length(entry)
         entries.append(entry)
 
@@ -125,7 +141,19 @@ def generate_local_help_output(args):
                 elif isinstance(opt, AnythingOption):
                     entry[i] += f"An unchecked option for '{opt.name}'"
                 elif isinstance(opt, FlagOption):
-                    entry[i] += f"An alias for -{opt.target.name}={opt.value}"
+                    if isinstance(opt.target, ListOption):
+                        entry[
+                            i
+                        ] += f"An alias for the '{opt.target.type.typename}' list option '{opt.target.name}' with the values '{opt.value}'"
+
+                    else:
+                        entry[
+                            i
+                        ] += f"An alias for -{opt.target.name}={opt.value}"
+                elif isinstance(opt, ListOption):
+                    entry[
+                        i
+                    ] += f"A repeatable (cumulative) '{opt.type.typename}' list option for '{opt.name}'"
                 elif isinstance(opt, SpecialOption):
                     if opt.name == "results":
                         entry[i] += "Number of search results returned"
