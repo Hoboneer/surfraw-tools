@@ -270,8 +270,8 @@ esac
 ## Entering list context for all the checking should be safe.
 __mkelvis_enter_list_ctx
 {% endif %}
-for val in ${{ enum.name|ns }}; do
-	{{ check_enum('val', enum.values, orig_var=enum.name|ns)|indent(4)|replace('    ', '\t') }}
+for val in ${{ enum_list.name|ns }}; do
+	{{ check_enum('val', enum_list.valid_enum_values, orig_var=enum_list.name|ns)|indent(4)|replace('    ', '\t') }}
 done
 {% if loop.last %}
 __mkelvis_exit_list_ctx
