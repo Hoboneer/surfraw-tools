@@ -388,7 +388,7 @@ def _resolve_aliases(args):
                     break
             else:
                 raise OptionResolutionError(
-                    f"alias {alias.name}'s target type does not match the alias target's type: {type(alias.target)}"
+                    f"alias {alias.name}'s target type does not match the alias target's type: {alias.target.typename}"
                 )
         elif alias.target_type == AliasOption:
             # This should be unreachable.
