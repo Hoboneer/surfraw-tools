@@ -347,6 +347,19 @@ for val in ${{ map.variable|ns }}; do
 	search_url="$search_url&{{ map.parameter|urlencode }}=$val"
 	{% endif %}
 done
+# Ensure parameter receives a null value if empty list.
+if null "${{ map.variable|ns }}"; then
+	{% if not map_ns.mapped %}
+	if ! ok mapped; then
+		search_url="${search_url}{{ map.parameter|urlencode }}="
+		mapped=yes
+	else
+		search_url="$search_url&{{ map.parameter|urlencode }}="
+	fi
+	{% else %}
+	search_url="$search_url&{{ map.parameter|urlencode }}="
+	{% endif %}
+fi
 {% if loop.last %}
 __mkelvis_exit_list_ctx
 {% endif %}
