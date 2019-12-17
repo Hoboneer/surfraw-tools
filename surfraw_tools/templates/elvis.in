@@ -1,6 +1,9 @@
 #!/bin/sh
 # elvis: {{ name }}	-- {{ description }}
 # Generated-By: {{ GENERATOR_PROGRAM }}
+# NOTE: Any double underscore-prefixed names (i.e., variables and functions)
+#       are reserved for `mkelvis` and are an implementation detail.
+#       Depend on at your own risk.
 . surfraw || exit 1
 
 w3_usage_hook ()
