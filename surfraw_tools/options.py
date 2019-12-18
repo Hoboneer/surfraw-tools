@@ -401,7 +401,6 @@ class MappingOption(Option):
         else:
             url_encode = False
         self.should_url_encode = url_encode
-        print(self)
 
     @property
     def variable(self):
