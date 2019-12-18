@@ -344,8 +344,8 @@ BASE_PARSER.add_argument(
     default=[],
     type=_wrap_parser(MappingOption.from_arg),
     dest="mappings",
-    metavar="VARIABLE_NAME:PARAMETER",
-    help="map a variable to a URL parameter",
+    metavar="VARIABLE_NAME:PARAMETER[:URL_ENCODE?]",
+    help="map a variable to a URL parameter; by default, `URL_ENCODE` is 'yes'",
 )
 BASE_PARSER.add_argument(
     "--list-map",
@@ -354,8 +354,8 @@ BASE_PARSER.add_argument(
     # Same object, different target
     type=_wrap_parser(MappingOption.from_arg),
     dest="list_mappings",
-    metavar="VARIABLE_NAME:PARAMETER",
-    help="map the values of a list variable to multiple URL parameters",
+    metavar="VARIABLE_NAME:PARAMETER[:URL_ENCODE?]",
+    help="map the values of a list variable to multiple URL parameters; by default, `URL_ENCODE` is 'yes'",
 )
 BASE_PARSER.add_argument(
     "--collapse",

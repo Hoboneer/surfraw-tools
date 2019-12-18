@@ -320,12 +320,17 @@ fi
 search_url="{{ search_url }}"
 {% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
+{% if map.should_url_encode %}
+	{% set param_value = '$(w3_url_escape "$' ~ map.variable|ns ~ '")' %}
+{% else %}
+	{% set param_value = '$' ~ map.variable|ns %}
+{% endif %}
 {# First param is special; don't be preceded by a '&' #}
 {% if not map_ns.mapped %}
-search_url="${search_url}{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+search_url="${search_url}{{ map.parameter|urlencode }}={{ param_value }}"
 {% set map_ns.mapped = True %}
 {% else %}
-search_url="$search_url&{{ map.parameter|urlencode }}=${{ map.variable|ns }}"
+search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
 {% endif %}
 {% endfor %}
 {% for map in list_mappings %}
@@ -339,15 +344,20 @@ mapped=no
 {% endif %}
 {% endif %}{# loop.first #}
 for val in ${{ map.variable|ns }}; do
+	{% if map.should_url_encode %}
+		{% set param_value = '$(w3_url_escape "$val")' %}
+	{% else %}
+		{% set param_value = '$val' %}
+	{% endif %}
 	{% if not map_ns.mapped %}
 	if ! ok mapped; then
-		search_url="${search_url}{{ map.parameter|urlencode }}=$val"
+		search_url="${search_url}{{ map.parameter|urlencode }}={{ param_value }}"
 		mapped=yes
 	else
-		search_url="$search_url&{{ map.parameter|urlencode }}=$val"
+		search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
 	fi
 	{% else %}
-	search_url="$search_url&{{ map.parameter|urlencode }}=$val"
+	search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
 	{% endif %}
 done
 # Ensure parameter receives a null value if empty list.

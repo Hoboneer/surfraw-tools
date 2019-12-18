@@ -392,11 +392,20 @@ class AliasOption(Option, SurfrawOption):
 
 
 class MappingOption(Option):
-    validators = [validate_name, no_validation]
+    validators = [validate_name, no_validation, [validate_bool]]
 
-    def __init__(self, variable, parameter):
+    def __init__(self, variable, parameter, url_encode=True):
         self.target = variable
         self.parameter = parameter
+        # Already a good value.
+        if isinstance(url_encode, bool):
+            pass
+        elif url_encode == "yes":
+            url_encode = True
+        else:
+            url_encode = False
+        self.should_url_encode = url_encode
+        print(self)
 
     @property
     def variable(self):
