@@ -122,13 +122,12 @@ class Option:
 
     @staticmethod
     def parse_args(raw_arg, validators, last_is_unlimited=False):
-        args = raw_arg.split(":")
+        args = deque(raw_arg.split(":"))
         valid_args = []
 
         curr_validators = deque(validators)
         num_required = len(curr_validators)
         group_num = 0
-        i = 0
         while curr_validators:
             new_group = False
             curr_validator = curr_validators.popleft()
@@ -149,30 +148,27 @@ class Option:
                 group_num += 1
                 new_group = True
             try:
-                arg = args[i]
+                arg = args.popleft()
             except IndexError:
                 if new_group:
                     # Not enough args but this is an optional group anyway.
                     break
                 else:
                     raise OptionParseError(
-                        f"current group {group_num} for option arg '{arg}' of '{raw_arg}' needs at least {num_required} colon-delimited parts",
+                        f"current group {group_num} for '{raw_arg}' needs at least {num_required} colon-delimited parts",
                         subject=raw_arg,
                         subject_type="option argument",
                     )
             else:
                 # Raise `OptionParseError` if invalid arg.
                 valid_args.append(curr_validator(arg))
-            i += 1
         # No more validators.
 
         # Continue until args exhausted.
-        if not new_group and last_is_unlimited:
-            i += 1
-            while i < len(args):
+        if last_is_unlimited:
+            while args:
                 # Raise `OptionParseError` if invalid arg.
-                valid_args.append(curr_validator(args[i]))
-                i += 1
+                valid_args.append(curr_validator(args.popleft()))
 
         return valid_args
 
