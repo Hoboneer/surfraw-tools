@@ -1,9 +1,9 @@
 import weakref
+from collections import deque
 from itertools import chain
 
 from .validation import (
     OptionParseError,
-    insufficient_spec_parts,
     list_of,
     no_validation,
     validate_bool,
@@ -124,24 +124,54 @@ class Option:
     def parse_args(raw_arg, validators, last_is_unlimited=False):
         args = raw_arg.split(":")
         valid_args = []
-        for i, valid_or_fail_func in enumerate(validators):
+
+        curr_validators = deque(validators)
+        num_required = len(curr_validators)
+        group_num = 0
+        i = 0
+        while curr_validators:
+            new_group = False
+            curr_validator = curr_validators.popleft()
+            # Then we are in an optional group.
+            if not callable(curr_validator):
+                curr_validators = deque(curr_validator)
+                num_required = len(curr_validators)
+                try:
+                    curr_validator = curr_validators.popleft()
+                except IndexError:
+                    raise ValueError(
+                        "validator groups must not be empty"
+                    ) from None
+                if not callable(curr_validator):
+                    raise TypeError(
+                        "optional validator groups must start with at least one callable"
+                    )
+                group_num += 1
+                new_group = True
             try:
                 arg = args[i]
             except IndexError:
-                # Raise `OptionParseError`
-                insufficient_spec_parts(raw_arg, num_required=len(validators))
+                if new_group:
+                    # Not enough args but this is an optional group anyway.
+                    break
+                else:
+                    raise OptionParseError(
+                        f"current group {group_num} for option arg '{arg}' of '{raw_arg}' needs at least {num_required} colon-delimited parts",
+                        subject=raw_arg,
+                        subject_type="option argument",
+                    )
             else:
                 # Raise `OptionParseError` if invalid arg.
-                result = valid_or_fail_func(arg)
-                valid_args.append(result)
+                valid_args.append(curr_validator(arg))
+            i += 1
+        # No more validators.
 
         # Continue until args exhausted.
-        if last_is_unlimited:
+        if not new_group and last_is_unlimited:
             i += 1
             while i < len(args):
                 # Raise `OptionParseError` if invalid arg.
-                result = valid_or_fail_func(args[i])
-                valid_args.append(result)
+                valid_args.append(curr_validator(args[i]))
                 i += 1
 
         return valid_args

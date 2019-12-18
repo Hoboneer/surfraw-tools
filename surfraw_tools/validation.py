@@ -8,14 +8,6 @@ class OptionParseError(Exception):
         self.subject_type = subject_type
 
 
-def insufficient_spec_parts(arg, num_required):
-    raise OptionParseError(
-        f"option arg '{arg}' needs at least {num_required} colon-delimited parts",
-        subject=arg,
-        subject_type="option argument",
-    )
-
-
 # NAME
 
 # This is purposely not in the full range of shell variable names because I am
