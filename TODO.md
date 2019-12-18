@@ -42,6 +42,7 @@ Perhaps the option would be shown to the user as:
 the error checking for this one be less strict?  i.e., should it ignore invalid
 values?
 	- `-clear-foo`: Clear the list.
-- Add a `--raw=VARIABLE_NAME` option.  This would specify any options whose
-  argument is *already* url encoded, so don't double encode.  By default, url
-encode everything that is mapped into a url.
+- Add an "ESCAPE?" argument to `--map` (bool).  This would specify any options
+  whose argument is *already* url encoded, so don't double encode.  By default,
+url encode everything that is mapped into a url.  For backwards compatibility,
+the new argument should be optional.
