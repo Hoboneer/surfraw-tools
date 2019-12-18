@@ -49,6 +49,7 @@ w3_config_hook ()
 	{% endfor %}
 
 	{% endif %}
+
 	# 'Anythings'
 	{% for anything in anythings %}
 	def {{ anything.name|ns }} {{ anything.default }}
