@@ -98,6 +98,8 @@ class SurfrawOption:
                 self.metavar = self.name.upper()
             else:
                 self.metavar = None
+        if not hasattr(self, "description"):
+            self.description = f"A {self.typename} option for '{self.name}'"
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -199,6 +201,9 @@ class FlagOption(Option, AliasTarget, SurfrawOption):
         self.name = name
         self.target = target
         self.value = value
+        # Need to override if target is a `ListOption` after resolving.
+        # `target` is a string at this point.
+        self.description = f"An alias for -{self.target}={self.value}"
         super().__init__()
 
 
@@ -237,6 +242,8 @@ class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
         self.default = default
         self.values = values
         super().__init__()
+        # "A enum" is incorrect.
+        self.description = re.sub("^A ", "An ", self.description)
 
     def resolve_flags(self):
         for flag in self.flags:
@@ -257,6 +264,7 @@ class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
     def __init__(self, name, default):
         self.name = name
         self.default = default
+        self.description = f"An unchecked option for '{self.name}'"
         super().__init__()
 
 
@@ -284,10 +292,14 @@ class SpecialOption(Option, AliasTarget, FlagTarget, SurfrawOption):
         if self.name == "results":
             # Match the rest of the elvi's metavars for -results=
             self.metavar = "NUM"
+            self.description = "Number of search results returned"
         elif self.name == "language":
             # Match the wikimedia elvi
             self.metavar = "ISOCODE"
-        # Use default metavar otherwise.
+            self.description = (
+                "Two letter language code (resembles ISO country codes)"
+            )
+        # Use default metavar and description otherwise.
 
         super().__init__()
 
@@ -372,6 +384,7 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
         elif issubclass(self.type, AnythingOption):
             # Nothing to check for 'anythings'.
             pass
+        self.description = f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'"
         super().__init__()
 
     def resolve_flags(self):
@@ -382,6 +395,7 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
                     raise OptionResolutionError(
                         f"enum list flag option {flag.name}'s value ('{flag.value}') must be a subset of its target's values ('{self.valid_enum_values}')"
                     )
+            flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
             # Don't need to check `AnythingOption`.
 
 

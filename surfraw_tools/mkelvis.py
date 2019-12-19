@@ -27,10 +27,7 @@ from .common import (
 )
 from .options import (
     VARIABLE_OPTIONS,
-    AnythingOption,
-    BoolOption,
     EnumOption,
-    FlagOption,
     ListOption,
     SpecialOption,
 )
@@ -123,45 +120,14 @@ def generate_local_help_output(args):
             if i == 0:
                 continue
             # Ensure alignment.
+            gap = " " * (longest_length - len(record))
             if i == 1:
-                entry[i] = (
-                    record + " " * (longest_length - len(record)) + "    "
-                )
-                if isinstance(opt, BoolOption):
-                    entry[i] += f"A yes-no option for '{opt.name}'"
-                elif isinstance(opt, EnumOption):
-                    entry[i] += f"An enum option for '{opt.name}'"
-                elif isinstance(opt, AnythingOption):
-                    entry[i] += f"An unchecked option for '{opt.name}'"
-                elif isinstance(opt, FlagOption):
-                    if isinstance(opt.target, ListOption):
-                        entry[
-                            i
-                        ] += f"An alias for the '{opt.target.type.typename}' list option '{opt.target.name}' with the values '{opt.value}'"
-
-                    else:
-                        entry[
-                            i
-                        ] += f"An alias for -{opt.target.name}={opt.value}"
-                elif isinstance(opt, ListOption):
-                    entry[
-                        i
-                    ] += f"A repeatable (cumulative) '{opt.type.typename}' list option for '{opt.name}'"
-                elif isinstance(opt, SpecialOption):
-                    if opt.name == "results":
-                        entry[i] += "Number of search results returned"
-                    elif opt.name == "language":
-                        entry[
-                            i
-                        ] += "Two letter language code (resembles ISO country codes)"
-                    else:
-                        entry[i] += "TODO special option help"
-                else:
-                    entry[i] += "TODO option help"
+                postgap = "    "
+                suffix = opt.description
             else:
-                entry[i] = (
-                    record + " " * (longest_length - len(record)) + "  | "
-                )
+                postgap = "  | "
+                suffix = ""
+            entry[i] = f"{record}{gap}{postgap}{suffix}"
         prefix = " " * longest_length + "    "
         if isinstance(opt, VARIABLE_OPTIONS["types"]):
             ns_name = args._namespacer(opt.name)
