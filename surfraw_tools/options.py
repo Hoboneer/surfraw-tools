@@ -332,6 +332,7 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
     ]
     last_arg_is_unlimited = True
 
+    creates_variable = True
     typename = "list"
 
     def __init__(self, name, type_, defaults, spec):
