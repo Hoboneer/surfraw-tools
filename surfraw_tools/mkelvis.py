@@ -25,12 +25,7 @@ from .common import (
     get_env,
     process_args,
 )
-from .options import (
-    VARIABLE_OPTIONS,
-    EnumOption,
-    ListOption,
-    SpecialOption,
-)
+from .options import VARIABLE_OPTIONS, EnumOption, ListOption, SpecialOption
 
 PROGRAM_NAME = "mkelvis"
 

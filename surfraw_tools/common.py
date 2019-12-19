@@ -16,6 +16,7 @@ from .options import (
     AnythingOption,
     BoolOption,
     CollapseOption,
+    DescribeOption,
     EnumOption,
     FlagOption,
     ListOption,
@@ -375,6 +376,15 @@ BASE_PARSER.add_argument(
     dest="metavars",
     metavar="VARIABLE_NAME:METAVAR",
     help="define a metavar for an option; it will be UPPERCASE in the generated elvis",
+)
+BASE_PARSER.add_argument(
+    "--describe",
+    action="append",
+    default=[],
+    type=_wrap_parser(DescribeOption.from_arg),
+    dest="descriptions",
+    metavar="VARIABLE_NAME:DESCRIPTION",
+    help="define a description for an option",
 )
 BASE_PARSER.add_argument(
     "--query-parameter",

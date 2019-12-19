@@ -481,6 +481,14 @@ class MetavarOption(Option):
         self.metavar = metavar.upper()
 
 
+class DescribeOption(Option):
+    validators = [validate_name, no_validation]
+
+    def __init__(self, variable, description):
+        self.variable = variable
+        self.description = description
+
+
 class OptionResolutionError(Exception):
     pass
 
@@ -650,3 +658,17 @@ def _resolve_metavars(args):
             )
         else:
             opt.metavar = metavar.metavar
+
+
+@_resolver
+def _resolve_option_descriptions(args):
+    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](args)}
+    for description in args.descriptions:
+        try:
+            opt = opts[description.variable]
+        except KeyError:
+            raise OptionResolutionError(
+                "description for '{description.variable}' targets a non-existent variable"
+            )
+        else:
+            opt.description = description.description
