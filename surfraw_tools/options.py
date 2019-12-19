@@ -76,7 +76,7 @@ _FORBIDDEN_OPTION_NAMES = {
 
 
 class SurfrawOption:
-    creates_variable = False
+    creates_variable = None
     typenames = {}
 
     def __init__(self):
@@ -101,6 +101,10 @@ class SurfrawOption:
     @classmethod
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+        if not hasattr(cls, "creates_variable"):
+            raise TypeError(
+                f"subclasses of SurfrawOption must define `creates_variable`"
+            )
         SurfrawOption.typenames[cls.typename] = cls
 
 
