@@ -90,6 +90,13 @@ class SurfrawOption:
             raise ValueError(
                 f"option name '{self.name}' is global, which cannot be overriden by elvi"
             )
+        # Define a default metavar.
+        # Non-variable creating options don't need one.
+        if not hasattr(self, "metavar"):
+            if self.creates_variable:
+                self.metavar = self.name.upper()
+            else:
+                self.metavar = None
 
     @classmethod
     def __init_subclass__(cls, **kwargs):
@@ -263,10 +270,20 @@ class SpecialOption(Option, AliasTarget, FlagTarget, SurfrawOption):
     # This class is not instantiated normally... maybe prepend name with underscore?
     def __init__(self, name, default=None):
         self.name = name
+
         if default is None:
             self.default = "$SURFRAW_" + name
         else:
             self.default = default
+
+        if self.name == "results":
+            # Match the rest of the elvi's metavars for -results=
+            self.metavar = "NUM"
+        elif self.name == "language":
+            # Match the wikimedia elvi
+            self.metavar = "ISOCODE"
+        # Use default metavar otherwise.
+
         super().__init__()
 
     def resolve_flags(self):

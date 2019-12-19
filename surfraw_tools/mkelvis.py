@@ -61,26 +61,17 @@ def generate_local_help_output(args):
 
     # Add aliases of options alongside main option, e.g.,
     #   -s=SORT, -sort=SORT
-    def get_optheader(opt, has_metavar=False, prefix=""):
+    def get_optheader(opt, prefix=""):
         optnames = [opt.name, *(alias.name for alias in opt.aliases)]
         optnames.sort()
-        if has_metavar:
-            # Match the rest of the elvi's metavars for -results=
-            if isinstance(opt, SpecialOption):
-                if opt.name == "results":
-                    metavar = "NUM"
-                elif opt.name == "language":
-                    # Match the wikimedia elvi
-                    metavar = "ISOCODE"
-            else:
-                metavar = opt.name.upper()
-            optheader = "  " + ", ".join(
-                f"-{prefix+name}={metavar}" for name in optnames
-            )
+        metavar = opt.metavar
+        if metavar is None:
+            suffix = ""
         else:
-            optheader = "  " + ", ".join(
-                f"-{prefix+name}" for name in optnames
-            )
+            suffix = f"={metavar}"
+        optheader = "  " + ", ".join(
+            f"-{prefix}{name}{suffix}" for name in optnames
+        )
         return optheader
 
     # Options that take arguments
@@ -89,13 +80,11 @@ def generate_local_help_output(args):
         entry.append(opt)
 
         if isinstance(opt, ListOption):
-            entry.append(get_optheader(opt, has_metavar=True, prefix="add-"))
-            entry.append(
-                get_optheader(opt, has_metavar=True, prefix="remove-")
-            )
-            entry.append(get_optheader(opt, has_metavar=True, prefix="clear-"))
+            entry.append(get_optheader(opt, prefix="add-"))
+            entry.append(get_optheader(opt, prefix="remove-"))
+            entry.append(get_optheader(opt, prefix="clear-"))
         else:
-            entry.append(get_optheader(opt, has_metavar=True))
+            entry.append(get_optheader(opt))
         optheader = entry[-1]
 
         # +1 to go past the '='
