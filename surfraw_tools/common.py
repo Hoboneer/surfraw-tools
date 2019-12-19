@@ -20,6 +20,7 @@ from .options import (
     FlagOption,
     ListOption,
     MappingOption,
+    MetavarOption,
     OptionResolutionError,
     SpecialOption,
     SurfrawOption,
@@ -365,6 +366,15 @@ BASE_PARSER.add_argument(
     dest="collapses",
     metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
     help="change groups of values of a variable to a single value",
+)
+BASE_PARSER.add_argument(
+    "--metavar",
+    action="append",
+    default=[],
+    type=_wrap_parser(MetavarOption.from_arg),
+    dest="metavars",
+    metavar="VARIABLE_NAME:METAVAR",
+    help="define a metavar for an option; it will be UPPERCASE in the generated elvis",
 )
 BASE_PARSER.add_argument(
     "--query-parameter",

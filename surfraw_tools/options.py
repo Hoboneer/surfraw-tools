@@ -1,3 +1,4 @@
+import re
 import weakref
 from collections import deque
 from itertools import chain
@@ -444,6 +445,28 @@ class CollapseOption(Option):
         return self.target
 
 
+_VALID_METAVAR_STR = "^[a-z]+$"
+_VALID_METAVAR = re.compile(_VALID_METAVAR_STR)
+
+
+def _validate_metavar(metavar):
+    if not _VALID_METAVAR.fullmatch(metavar):
+        raise OptionParseError(
+            f"metavar '{metavar}' must match the regex '{_VALID_METAVAR_STR}'",
+            subject=metavar,
+            subject_type="metavar",
+        )
+    return metavar
+
+
+class MetavarOption(Option):
+    validators = [validate_name, _validate_metavar]
+
+    def __init__(self, variable, metavar):
+        self.variable = variable
+        self.metavar = metavar
+
+
 class OptionResolutionError(Exception):
     pass
 
@@ -598,3 +621,18 @@ def _resolve_lists(args):
         lists.resolve()
     except Exception as e:
         raise OptionResolutionError(str(e)) from None
+
+
+@_resolver
+def _resolve_metavars(args):
+    # Is this still O(n^2)?
+    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](args)}
+    for metavar in args.metavars:
+        try:
+            opt = opts[metavar.variable]
+        except KeyError:
+            raise OptionResolutionError(
+                "metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
+            )
+        else:
+            opt.metavar = metavar.metavar
