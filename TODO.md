@@ -46,3 +46,7 @@ values?
   whose argument is *already* url encoded, so don't double encode.  By default,
 url encode everything that is mapped into a url.  For backwards compatibility,
 the new argument should be optional.
+- Either:
+	1. Allow special chars to mkelvis to be escaped; or
+	2. Allow changing the argument delimiter with an option like `--delimiter` (short: `-d`)
+- The first one would require a less fundamental change in the program's structure.
