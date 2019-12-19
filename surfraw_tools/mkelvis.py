@@ -128,8 +128,8 @@ def generate_local_help_output(args):
                 postgap = "  | "
                 suffix = ""
             entry[i] = f"{record}{gap}{postgap}{suffix}"
-        prefix = " " * longest_length + "    "
         if isinstance(opt, VARIABLE_OPTIONS["types"]):
+            prefix = " " * longest_length + "    "
             ns_name = args._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
