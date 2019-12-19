@@ -478,7 +478,7 @@ class MetavarOption(Option):
 
     def __init__(self, variable, metavar):
         self.variable = variable
-        self.metavar = metavar
+        self.metavar = metavar.upper()
 
 
 class OptionResolutionError(Exception):
