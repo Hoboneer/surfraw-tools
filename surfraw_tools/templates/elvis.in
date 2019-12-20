@@ -251,8 +251,6 @@ w3_parse_option_hook ()
 w3_config
 w3_parse_args "$@"
 
-escaped_args=$(w3_url_of_arg $w3_args)
-
 # Check enums
 {% macro check_enum(var, values, orig_var=None) %}
 case "${{ var }}" in
@@ -387,9 +385,40 @@ __mkelvis_exit_list_ctx
 {% endif %}
 
 # Add the search to url
-{# Mappings and a query parameter are necessarily inclusive #}
-{# `mkelvis` should prevent a situation where only one of the two are true #}
-{% if (mappings or list_mappings) and query_parameter is not none %}
+escaped_args="$(w3_url_of_arg $w3_args)"
+{% if inlines or list_inlines %}
+__mkelvis_inline_variable ()
+{
+	inline_var="$1"
+	keyword="$2"
+	# Quote if spaces present
+	case "$inline_var" in
+		*[[:space:]]*) setopt "$inline_var" "$(eval echo "\"\$$inline_var\"")" ;;
+	esac
+	__mkelvis_inline_val="$(eval echo "\$$inline_var")"
+	test -n "$__mkelvis_inline_val" && escaped_args="${escaped_args}$(w3_url_escape " $keyword:$__mkelvis_inline_val")"
+}
+{% endif %}
+# Map inline variables
+{% for inline in inlines %}
+val="${{ inline.variable|ns }}"
+__mkelvis_inline_variable val {{ inline.keyword }}
+{% endfor %}
+# Map inline list variables
+{% for inline in list_inlines %}
+{% if loop.first %}
+## Entering list context for all list mappings should be safe.
+__mkelvis_enter_list_ctx
+{% endif %}
+for val in ${{ inline.variable|ns }}; do
+	__mkelvis_inline_variable val {{ inline.keyword }}
+done
+{% if loop.last %}
+__mkelvis_exit_list_ctx
+{% endif %}
+{% endfor %}
+
+{% if query_parameter is not none %}
 search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
 {% else %}
 search_url="${search_url}${escaped_args}"

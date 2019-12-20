@@ -445,6 +445,19 @@ class MappingOption(Option):
         return self.target
 
 
+class InlineOption(Option):
+    validators = [validate_name, validate_name]
+
+    def __init__(self, variable, keyword):
+        self.target = variable
+        self.keyword = keyword
+
+    @property
+    def variable(self):
+        # To allow other code to continue to use this class unchanged
+        return self.target
+
+
 class CollapseOption(Option):
     validators = [validate_name, list_of(no_validation)]
     last_arg_is_unlimited = True
@@ -595,6 +608,24 @@ _resolver(
         "list_mappings",
         ("lists",),
         error_msg="URL parameter '{target.parameter}' does not target any existing variable",
+        assign_target=False,
+    )
+)
+# Resolve inlinings
+_resolver(
+    make_option_resolver(
+        "inlines",
+        VARIABLE_OPTIONS["strings"],
+        error_msg="inlining '{target.keyword}' does not target any existing variable",
+        assign_target=False,
+    )
+)
+# Resolve list inlinings
+_resolver(
+    make_option_resolver(
+        "list_inlines",
+        VARIABLE_OPTIONS["strings"],
+        error_msg="inlining '{target.keyword}' does not target any existing variable",
         assign_target=False,
     )
 )

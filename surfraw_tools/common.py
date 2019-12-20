@@ -19,6 +19,7 @@ from .options import (
     DescribeOption,
     EnumOption,
     FlagOption,
+    InlineOption,
     ListOption,
     MappingOption,
     MetavarOption,
@@ -360,6 +361,24 @@ BASE_PARSER.add_argument(
     help="map the values of a list variable to multiple URL parameters; by default, `URL_ENCODE` is 'yes'",
 )
 BASE_PARSER.add_argument(
+    "--inline",
+    action="append",
+    default=[],
+    type=_wrap_parser(InlineOption.from_arg),
+    dest="inlines",
+    metavar="VARIABLE_NAME:KEYWORD",
+    help="map a variable to a keyword in the search query (e.g., `filetype:pdf` or `site:example.com`)",
+)
+BASE_PARSER.add_argument(
+    "--list-inline",
+    action="append",
+    default=[],
+    type=_wrap_parser(InlineOption.from_arg),
+    dest="list_inlines",
+    metavar="VARIABLE_NAME:KEYWORD",
+    help="map the values of a list variable to multiple keywords in the search query (e.g., `foo bar query filetype:pdf filetype:xml`)",
+)
+BASE_PARSER.add_argument(
     "--collapse",
     action="append",
     default=[],
@@ -490,6 +509,8 @@ def get_env(args):
         # URL parameters
         "mappings": args.mappings,
         "list_mappings": args.list_mappings,
+        "inlines": args.inlines,
+        "list_inlines": args.list_inlines,
         "collapses": args.collapses,
         "query_parameter": args.query_parameter,
     }
