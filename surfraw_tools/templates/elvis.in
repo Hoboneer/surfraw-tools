@@ -399,14 +399,16 @@ __mkelvis_inline_variable ()
 	test -n "$__mkelvis_inline_val" && escaped_args="${escaped_args}$(w3_url_escape " $keyword:$__mkelvis_inline_val")"
 }
 {% endif %}
-# Map inline variables
 {% for inline in inlines %}
+{% if loop.first %}
+# Map inline variables
+{% endif %}
 val="${{ inline.variable|ns }}"
 __mkelvis_inline_variable val {{ inline.keyword }}
 {% endfor %}
-# Map inline list variables
 {% for inline in list_inlines %}
 {% if loop.first %}
+# Map inline list variables
 ## Entering list context for all list mappings should be safe.
 __mkelvis_enter_list_ctx
 {% endif %}
