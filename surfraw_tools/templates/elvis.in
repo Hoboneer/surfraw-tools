@@ -385,6 +385,8 @@ __mkelvis_exit_list_ctx
 {% endif %}
 
 # Add the search to url
+## Don't expand pathnames so that '*' characters are passed to browser verbatim.
+set -f
 escaped_args="$(w3_url_of_arg $w3_args)"
 {% if inlines or list_inlines %}
 __mkelvis_inline_variable ()
