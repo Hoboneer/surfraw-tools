@@ -395,8 +395,8 @@ __mkelvis_inline_variable ()
 	case "$inline_var" in
 		*[[:space:]]*) setopt "$inline_var" "$(eval echo "\"\$$inline_var\"")" ;;
 	esac
-	__mkelvis_inline_val="$(eval echo "\$$inline_var")"
-	test -n "$__mkelvis_inline_val" && escaped_args="${escaped_args}$(w3_url_escape " $keyword:$__mkelvis_inline_val")"
+	__mkelvis_inline__val="$(eval echo "\$$inline_var")"
+	test -n "$__mkelvis_inline__val" && escaped_args="${escaped_args}$(w3_url_escape " $keyword:$__mkelvis_inline__val")"
 }
 {% endif %}
 {% for inline in inlines %}
