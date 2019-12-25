@@ -39,7 +39,7 @@ def make_executable(path):
 
 
 # FIXME: This is very ugly, please... make it not so bad.
-def generate_local_help_output(args):
+def generate_local_help_output(ctx):
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
     entries = []
@@ -67,7 +67,7 @@ def generate_local_help_output(args):
         return optheader
 
     # Options that take arguments
-    for opt in VARIABLE_OPTIONS["iterable_func"](args):
+    for opt in VARIABLE_OPTIONS["iterable_func"](ctx):
         entry = []
         entry.append(opt)
 
@@ -93,7 +93,7 @@ def generate_local_help_output(args):
         entries.append(entry)
 
     # Aliases to one of the above options, but with an argument
-    for opt in args.flags:
+    for opt in ctx.flags:
         entry = []
         entry.append(opt)
 
@@ -125,7 +125,7 @@ def generate_local_help_output(args):
             entry[i] = f"{record}{gap}{postgap}{suffix}"
         if isinstance(opt, VARIABLE_OPTIONS["types"]):
             prefix = " " * longest_length + "    "
-            ns_name = args._namespacer(opt.name)
+            ns_name = ctx._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
             if isinstance(opt, SpecialOption):
@@ -145,7 +145,7 @@ def generate_local_help_output(args):
     )
 
 
-def main(args=None):
+def main(argv=None):
     """Main program to generate surfraw elvi.
 
     Exit codes correspond to the distro's `sysexits.h` file, which are the
@@ -158,30 +158,30 @@ def main(args=None):
     )
     ctx = Context()
     try:
-        args = parser.parse_args(args, namespace=ctx)
+        parser.parse_args(argv, namespace=ctx)
     except Exception as e:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    args._program_name = PROGRAM_NAME
+    ctx._program_name = PROGRAM_NAME
 
-    exit_code = process_args(args)
+    exit_code = process_args(ctx)
     if exit_code != EX_OK:
         return exit_code
 
     # Generate the elvis.
-    env, template_vars = get_env(args)
+    env, template_vars = get_env(ctx)
     template_vars["GENERATOR_PROGRAM"] = VERSION_FORMAT_STRING % {
         "prog": PROGRAM_NAME
     }
-    template_vars["local_help_output"] = generate_local_help_output(args)
+    template_vars["local_help_output"] = generate_local_help_output(ctx)
     elvis_template = env.get_template("elvis.in")
     elvis_program = elvis_template.render(template_vars)
 
     try:
-        with open(args.name, "w") as f:
+        with open(ctx.name, "w") as f:
             f.write(elvis_program)
-        make_executable(args.name)
+        make_executable(ctx.name)
     except OSError:
         # I'm not sure if this is the correct exit code, and if the two
         # actions above should be separated.

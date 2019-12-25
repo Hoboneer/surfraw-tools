@@ -508,8 +508,8 @@ class OptionResolutionError(Exception):
 
 _VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials", "lists")
 VARIABLE_OPTIONS = {
-    "iterable_func": lambda args: chain.from_iterable(
-        getattr(args, type_) for type_ in _VARIABLE_OPTION_TYPES
+    "iterable_func": lambda ctx: chain.from_iterable(
+        getattr(ctx, type_) for type_ in _VARIABLE_OPTION_TYPES
     ),
     "strings": _VARIABLE_OPTION_TYPES,
     "types": (
@@ -523,11 +523,11 @@ VARIABLE_OPTIONS = {
 
 
 def make_option_resolver(target_type, option_types, error_msg, assign_target):
-    def resolve_option(args):
-        # `args` is the parsed arguments
-        targets = getattr(args, target_type)
+    def resolve_option(ctx):
+        # `ctx` is the parsed arguments
+        targets = getattr(ctx, target_type)
         options = list(
-            chain.from_iterable(getattr(args, type_) for type_ in option_types)
+            chain.from_iterable(getattr(ctx, type_) for type_ in option_types)
         )
         for target in targets:
             for option in options:
@@ -566,14 +566,14 @@ _inner_resolve_aliases = make_option_resolver(
 
 
 @_resolver
-def _resolve_aliases(args):
-    _inner_resolve_aliases(args)
-    for alias in args.aliases:
+def _resolve_aliases(ctx):
+    _inner_resolve_aliases(ctx)
+    for alias in ctx.aliases:
         if not isinstance(alias.target, alias.target_type):
             # Find a matching target
             target_name = alias.target.name
             for opt in chain(
-                args.flags, VARIABLE_OPTIONS["iterable_func"](args)
+                ctx.flags, VARIABLE_OPTIONS["iterable_func"](ctx)
             ):
                 if (
                     isinstance(opt, alias.target_type)
@@ -652,24 +652,24 @@ _inner_resolve_flags = make_option_resolver(
 
 
 @_resolver
-def _resolve_flags(args):
-    _inner_resolve_flags(args)
-    flags = args.flags
+def _resolve_flags(ctx):
+    _inner_resolve_flags(ctx)
+    flags = ctx.flags
     try:
         flags.resolve()
     except Exception as e:
         raise OptionResolutionError(str(e)) from None
 
     try:
-        for flag_target in VARIABLE_OPTIONS["iterable_func"](args):
+        for flag_target in VARIABLE_OPTIONS["iterable_func"](ctx):
             flag_target.resolve_flags()
     except OptionParseError as e:
         raise OptionResolutionError(str(e)) from None
 
 
 @_resolver
-def _resolve_lists(args):
-    lists = args.lists
+def _resolve_lists(ctx):
+    lists = ctx.lists
     try:
         lists.resolve()
     except Exception as e:
@@ -677,10 +677,10 @@ def _resolve_lists(args):
 
 
 @_resolver
-def _resolve_metavars(args):
+def _resolve_metavars(ctx):
     # Is this still O(n^2)?
-    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](args)}
-    for metavar in args.metavars:
+    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](ctx)}
+    for metavar in ctx.metavars:
         try:
             opt = opts[metavar.variable]
         except KeyError:
@@ -692,9 +692,9 @@ def _resolve_metavars(args):
 
 
 @_resolver
-def _resolve_option_descriptions(args):
-    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](args)}
-    for description in args.descriptions:
+def _resolve_option_descriptions(ctx):
+    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](ctx)}
+    for description in ctx.descriptions:
         try:
             opt = opts[description.variable]
         except KeyError:

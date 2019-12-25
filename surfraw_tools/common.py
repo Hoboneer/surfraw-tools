@@ -412,39 +412,39 @@ BASE_PARSER.add_argument(
 )
 
 
-def process_args(args):
-    if args.description is None:
-        args.description = f"Search {args.name} ({args.base_url})"
+def process_args(ctx):
+    if ctx.description is None:
+        ctx.description = f"Search {ctx.name} ({ctx.base_url})"
     else:
-        args.description += f" ({args.base_url})"
+        ctx.description += f" ({ctx.base_url})"
 
-    if args.insecure:
+    if ctx.insecure:
         # Is this the right term?
         url_scheme = "http"
     else:
         url_scheme = "https"
 
-    args.base_url = f"{url_scheme}://{args.base_url}"
-    args.search_url = f"{url_scheme}://{args.search_url}"
+    ctx.base_url = f"{url_scheme}://{ctx.base_url}"
+    ctx.search_url = f"{url_scheme}://{ctx.search_url}"
 
-    if args.use_results_option:
-        args.specials.append(SpecialOption("results"))
-    if args.use_language_option:
+    if ctx.use_results_option:
+        ctx.specials.append(SpecialOption("results"))
+    if ctx.use_language_option:
         # If `SURFRAW_lang` is empty or unset, assume English.
-        args.specials.append(
+        ctx.specials.append(
             SpecialOption("language", default="${SURFRAW_lang:=en}")
         )
 
     try:
         for resolver in RESOLVERS:
-            resolver(args)
+            resolver(ctx)
     except OptionResolutionError as e:
-        print(f"{args._program_name}: {e}", file=sys.stderr)
+        print(f"{ctx._program_name}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    if (args.mappings or args.list_mappings) and args.query_parameter is None:
+    if (ctx.mappings or ctx.list_mappings) and ctx.query_parameter is None:
         print(
-            f"{args._program_name}: mapping variables without a defined --query-parameter is forbidden",
+            f"{ctx._program_name}: mapping variables without a defined --query-parameter is forbidden",
             file=sys.stderr,
         )
         # TODO: Use proper exit code.
@@ -460,7 +460,7 @@ def _make_namespace(prefix):
     return prefixer
 
 
-def get_env(args):
+def get_env(ctx):
     """Get a Jinja `Environment` and a dict of variables to base the code
     generator on.
 
@@ -475,11 +475,11 @@ def get_env(args):
     )
 
     # Add functions to jinja template
-    default_namespace = _make_namespace(f"SURFRAW_{args.name}")
+    default_namespace = _make_namespace(f"SURFRAW_{ctx.name}")
     env.filters["namespace"] = default_namespace
     # Short-hand for `namespace`
     env.filters["ns"] = default_namespace
-    args._namespacer = default_namespace
+    ctx._namespacer = default_namespace
 
     env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
     env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
@@ -492,27 +492,27 @@ def get_env(args):
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
         "any_options_defined": any(
-            True for _ in VARIABLE_OPTIONS["iterable_func"](args)
+            True for _ in VARIABLE_OPTIONS["iterable_func"](ctx)
         ),
-        "name": args.name,
-        "description": args.description,
-        "base_url": args.base_url,
-        "search_url": args.search_url,
+        "name": ctx.name,
+        "description": ctx.description,
+        "base_url": ctx.base_url,
+        "search_url": ctx.search_url,
         # Options to generate
-        "flags": args.flags,
-        "bools": args.bools,
-        "enums": args.enums,
-        "anythings": args.anythings,
-        "aliases": args.aliases,
-        "specials": args.specials,
-        "lists": args.lists,
+        "flags": ctx.flags,
+        "bools": ctx.bools,
+        "enums": ctx.enums,
+        "anythings": ctx.anythings,
+        "aliases": ctx.aliases,
+        "specials": ctx.specials,
+        "lists": ctx.lists,
         # URL parameters
-        "mappings": args.mappings,
-        "list_mappings": args.list_mappings,
-        "inlines": args.inlines,
-        "list_inlines": args.list_inlines,
-        "collapses": args.collapses,
-        "query_parameter": args.query_parameter,
+        "mappings": ctx.mappings,
+        "list_mappings": ctx.list_mappings,
+        "inlines": ctx.inlines,
+        "list_inlines": ctx.list_inlines,
+        "collapses": ctx.collapses,
+        "query_parameter": ctx.query_parameter,
     }
 
     return (env, template_variables)

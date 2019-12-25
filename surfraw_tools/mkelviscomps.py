@@ -9,13 +9,13 @@ PROGRAM_NAME = "mkelviscomps"
 #       This is likely to need support in the main surfraw completion script.
 
 
-def main(args=None):
+def main(argv=None):
     parser = argparse.ArgumentParser(
         PROGRAM_NAME,
         description="generate bash completions for a surfraw elvis",
         parents=[BASE_PARSER],
     )
-    args = parser.parse_args(args)
+    args = parser.parse_args(argv)
     args._program_name = PROGRAM_NAME
 
     exit_code = process_args(args)
