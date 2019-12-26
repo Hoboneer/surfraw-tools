@@ -135,7 +135,6 @@ def generate_local_help_output(ctx):
                     )
             else:
                 lines.append(prefix + f"Environment: {ns_name}")
-    # Flatten entries into a list of strings
     return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
 
