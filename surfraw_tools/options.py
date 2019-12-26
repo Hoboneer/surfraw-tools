@@ -183,9 +183,9 @@ class Option:
 
         # Continue until args exhausted.
         if last_is_unlimited:
-            while args:
-                # Raise `OptionParseError` if invalid arg.
-                valid_args.append(curr_validator(args.popleft()))
+            # Raise `OptionParseError` if invalid arg.
+            valid_args.extend(curr_validator(arg) for arg in args)
+            # `args` is "empty" now.
 
         return valid_args
 
