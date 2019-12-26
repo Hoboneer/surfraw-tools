@@ -438,8 +438,12 @@ class MappingOption(Option):
             pass
         elif url_encode == "yes":
             url_encode = True
-        else:
+        elif url_encode == "no":
             url_encode = False
+        else:
+            raise ValueError(
+                f"`url_encode` must be the string 'yes' or 'no', or of type `bool`"
+            )
         self.should_url_encode = url_encode
 
     @property
