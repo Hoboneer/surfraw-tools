@@ -54,15 +54,13 @@ def generate_local_help_output(ctx):
     # Add aliases of options alongside main option, e.g.,
     #   -s=SORT, -sort=SORT
     def get_optheader(opt, prefix=""):
-        optnames = [opt.name, *(alias.name for alias in opt.aliases)]
-        optnames.sort()
-        metavar = opt.metavar
-        if metavar is None:
+        if opt.metavar is None:
             suffix = ""
         else:
-            suffix = f"={metavar}"
+            suffix = f"={opt.metavar}"
         optheader = "  " + ", ".join(
-            f"-{prefix}{name}{suffix}" for name in optnames
+            f"-{prefix}{opt_.name}{suffix}"
+            for opt_ in sorted(chain([opt], opt.aliases), key=lambda x: x.name)
         )
         return optheader
 
