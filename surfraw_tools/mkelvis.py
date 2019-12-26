@@ -43,13 +43,6 @@ def generate_local_help_output(ctx):
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
     entries = []
-    longest_length = 0
-
-    def set_longest_length(entry):
-        nonlocal longest_length
-        longest_entry_line = max(len(line) for line in entry[1:])
-        if longest_entry_line > longest_length:
-            longest_length = longest_entry_line
 
     # Add aliases of options alongside main option, e.g.,
     #   -s=SORT, -sort=SORT
@@ -64,6 +57,17 @@ def generate_local_help_output(ctx):
         )
         return optheader
 
+    def get_optlines(opt):
+        if isinstance(opt, ListOption):
+            optlines = [
+                get_optheader(opt, prefix="add-"),
+                get_optheader(opt, prefix="remove-"),
+                get_optheader(opt, prefix="clear-"),
+            ]
+        else:
+            optlines = [get_optheader(opt)]
+        return optlines
+
     # Options that take arguments
     # Depends on subclass definition order.
     types_to_sort_order = {
@@ -72,81 +76,67 @@ def generate_local_help_output(ctx):
     for opt in sorted(
         ctx.variable_options, key=lambda x: types_to_sort_order[x.__class__]
     ):
-        entry = []
-        entry.append(opt)
+        lines = get_optlines(opt)
+        optheader = lines[-1]
 
-        if isinstance(opt, ListOption):
-            entry.append(get_optheader(opt, prefix="add-"))
-            entry.append(get_optheader(opt, prefix="remove-"))
-            entry.append(get_optheader(opt, prefix="clear-"))
+        if isinstance(opt, EnumOption):
+            valid_values = opt.values
+        elif isinstance(opt, ListOption) and issubclass(opt.type, EnumOption):
+            valid_values = opt.valid_enum_values
         else:
-            entry.append(get_optheader(opt))
-        optheader = entry[-1]
+            # Won't add any lines because empty list.
+            valid_values = []
 
         # +1 to go past the '='
         offset = optheader.rindex("=") + 1
-        if isinstance(opt, EnumOption):
-            # Add values of enum aligned with metavar
-            for value in opt.values:
-                entry.append(" " * offset + value)
-        elif isinstance(opt, ListOption) and issubclass(opt.type, EnumOption):
-            # Add values of enum aligned with metavar
-            for value in opt.valid_enum_values:
-                entry.append(" " * offset + value)
-        set_longest_length(entry)
-        entries.append(entry)
+        prefix = " " * offset
+        # Add values of enum aligned with metavar.
+        # Won't add any lines if not an enum or enum list.
+        lines.extend(f"{prefix}{value}" for value in valid_values)
+
+        entries.append((opt, lines))
 
     # Aliases to one of the above options, but with an argument
-    for opt in ctx.flags:
-        entry = []
-        entry.append(opt)
+    entries.extend((flag, get_optlines(flag)) for flag in ctx.flags)
 
-        if isinstance(opt, ListOption):
-            entry.append(get_optheader(opt, prefix="add-"))
-            entry.append(get_optheader(opt, prefix="remove-"))
-            entry.append(get_optheader(opt, prefix="clear-"))
-        else:
-            entry.append(get_optheader(opt))
-
-        set_longest_length(entry)
-        entries.append(entry)
+    # Nothing else to do.
+    if not entries:
+        return None
 
     # Include "  | "
-    for entry in entries:
-        opt = entry[0]
-        for i, record in enumerate(entry):
-            # The first element is the option object itself.
-            if i == 0:
-                continue
+    longest_length = max(
+        len(line)
+        for line in chain.from_iterable(lines for _, lines in entries)
+    )
+    for opt, lines in entries:
+        for i, line in enumerate(lines):
             # Ensure alignment.
-            gap = " " * (longest_length - len(record))
-            if i == 1:
-                postgap = "    "
+            padding = " " * (longest_length - len(line))
+            if i == 0:
+                gap = "    "
                 suffix = opt.description
             else:
-                postgap = "  | "
+                gap = "  | "
                 suffix = ""
-            entry[i] = f"{record}{gap}{postgap}{suffix}"
+            lines[i] = f"{line}{padding}{gap}{suffix}"
         if isinstance(opt, tuple(SurfrawOption.variable_options)):
             prefix = " " * longest_length + "    "
             ns_name = ctx._namespacer(opt.name)
-            entry.append(prefix + f"Default: ${ns_name}")
+            lines.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
             if isinstance(opt, SpecialOption):
                 if opt.name == "results":
-                    entry.append(
+                    lines.append(
                         prefix + f"Environment: {ns_name}, SURFRAW_results"
                     )
                 elif opt.name == "language":
-                    entry.append(
+                    lines.append(
                         prefix + f"Environment: {ns_name}, SURFRAW_lang"
                     )
             else:
-                entry.append(prefix + f"Environment: {ns_name}")
+                lines.append(prefix + f"Environment: {ns_name}")
     # Flatten entries into a list of strings
-    return "\n".join(
-        line for line in chain.from_iterable(entries) if isinstance(line, str)
-    )
+    return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
 
 def main(argv=None):
