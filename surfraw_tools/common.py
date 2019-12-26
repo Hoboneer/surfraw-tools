@@ -413,6 +413,12 @@ BASE_PARSER.add_argument(
     "-Q",
     help="define the parameter for the query arguments; needed with --map",
 )
+BASE_PARSER.add_argument(
+    "--num-tabs",
+    default=1,
+    type=int,
+    help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
+)
 
 
 def process_args(ctx):
@@ -437,6 +443,12 @@ def process_args(ctx):
         ctx.options.append(
             SpecialOption("language", default="${SURFRAW_lang:=en}")
         )
+
+    if ctx.num_tabs < 1:
+        print(
+            f"{ctx._program_name}: argument of `--num-tabs` must be at least '1'"
+        )
+        return EX_USAGE
 
     try:
         for resolver in RESOLVERS:
@@ -499,6 +511,7 @@ def get_env(ctx):
         "description": ctx.description,
         "base_url": ctx.base_url,
         "search_url": ctx.search_url,
+        "num_tabs": ctx.num_tabs,
         # Options to generate
         "flags": ctx.flags,
         "bools": ctx.bools,

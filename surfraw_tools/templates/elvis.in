@@ -1,5 +1,5 @@
 #!/bin/sh
-# elvis: {{ name }}	-- {{ description }}
+# elvis: {{ name }}{{ '\t' * num_tabs }}-- {{ description }}
 # Generated-By: {{ GENERATOR_PROGRAM }}
 # NOTE: Any double underscore-prefixed names (i.e., variables and functions)
 #       are reserved for `mkelvis` and are an implementation detail.
