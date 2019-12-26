@@ -446,7 +446,8 @@ def process_args(ctx):
 
     if ctx.num_tabs < 1:
         print(
-            f"{ctx._program_name}: argument of `--num-tabs` must be at least '1'"
+            f"{ctx._program_name}: argument of `--num-tabs` must be at least '1'",
+            file=sys.stderr,
         )
         return EX_USAGE
 
