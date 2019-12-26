@@ -79,6 +79,7 @@ _FORBIDDEN_OPTION_NAMES = {
 class SurfrawOption:
     creates_variable = None
     typenames = {}
+    variable_options = []
 
     def __init__(self):
         super().__init__()
@@ -109,6 +110,8 @@ class SurfrawOption:
                 f"subclasses of SurfrawOption must define `creates_variable`"
             )
         SurfrawOption.typenames[cls.typename] = cls
+        if cls.creates_variable:
+            SurfrawOption.variable_options.append(cls)
 
 
 class Option:
@@ -506,28 +509,15 @@ class OptionResolutionError(Exception):
     pass
 
 
-_VARIABLE_OPTION_TYPES = ("bools", "enums", "anythings", "specials", "lists")
-VARIABLE_OPTIONS = {
-    "iterable_func": lambda ctx: chain.from_iterable(
-        getattr(ctx, type_) for type_ in _VARIABLE_OPTION_TYPES
-    ),
-    "strings": _VARIABLE_OPTION_TYPES,
-    "types": (
-        BoolOption,
-        EnumOption,
-        AnythingOption,
-        SpecialOption,
-        ListOption,
-    ),
-}
-
-
 def make_option_resolver(target_type, option_types, error_msg, assign_target):
     def resolve_option(ctx):
         # `ctx` is the parsed arguments
         targets = getattr(ctx, target_type)
         options = list(
-            chain.from_iterable(getattr(ctx, type_) for type_ in option_types)
+            chain.from_iterable(
+                ctx.options.options[ctx.options.types_to_buckets[type_]]
+                for type_ in option_types
+            )
         )
         for target in targets:
             for option in options:
@@ -559,7 +549,7 @@ def _resolver(func):
 
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
-    ("flags", *VARIABLE_OPTIONS["strings"]),
+    (FlagOption, *SurfrawOption.variable_options),
     error_msg="alias '{target.name}' does not target any existing option",
     assign_target=True,
 )
@@ -572,9 +562,7 @@ def _resolve_aliases(ctx):
         if not isinstance(alias.target, alias.target_type):
             # Find a matching target
             target_name = alias.target.name
-            for opt in chain(
-                ctx.flags, VARIABLE_OPTIONS["iterable_func"](ctx)
-            ):
+            for opt in chain(ctx.flags, ctx.variable_options):
                 if (
                     isinstance(opt, alias.target_type)
                     and opt.name == target_name
@@ -597,7 +585,7 @@ def _resolve_aliases(ctx):
 _resolver(
     make_option_resolver(
         "mappings",
-        VARIABLE_OPTIONS["strings"],
+        SurfrawOption.variable_options,
         error_msg="URL parameter '{target.parameter}' does not target any existing variable",
         assign_target=False,
     )
@@ -606,7 +594,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "list_mappings",
-        ("lists",),
+        (ListOption,),
         error_msg="URL parameter '{target.parameter}' does not target any existing variable",
         assign_target=False,
     )
@@ -615,7 +603,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "inlines",
-        VARIABLE_OPTIONS["strings"],
+        SurfrawOption.variable_options,
         error_msg="inlining '{target.keyword}' does not target any existing variable",
         assign_target=False,
     )
@@ -624,7 +612,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "list_inlines",
-        VARIABLE_OPTIONS["strings"],
+        SurfrawOption.variable_options,
         error_msg="inlining '{target.keyword}' does not target any existing variable",
         assign_target=False,
     )
@@ -635,7 +623,7 @@ _resolver(
 _resolver(
     make_option_resolver(
         "collapses",
-        VARIABLE_OPTIONS["strings"],
+        SurfrawOption.variable_options,
         error_msg="'{target.variable}' is a non-existent variable so it cannot be collapsed",
         assign_target=False,
     )
@@ -644,7 +632,7 @@ _resolver(
 
 _inner_resolve_flags = make_option_resolver(
     "flags",
-    VARIABLE_OPTIONS["strings"],
+    SurfrawOption.variable_options,
     error_msg="flag option '{target.name}' does not target any existing "
     f"{VALID_FLAG_TYPES_STR} option",
     assign_target=True,
@@ -661,7 +649,8 @@ def _resolve_flags(ctx):
         raise OptionResolutionError(str(e)) from None
 
     try:
-        for flag_target in VARIABLE_OPTIONS["iterable_func"](ctx):
+        # TODO: Maybe merge flag targets and creates_variable options?
+        for flag_target in ctx.variable_options:
             flag_target.resolve_flags()
     except OptionParseError as e:
         raise OptionResolutionError(str(e)) from None
@@ -679,7 +668,7 @@ def _resolve_lists(ctx):
 @_resolver
 def _resolve_metavars(ctx):
     # Is this still O(n^2)?
-    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](ctx)}
+    opts = {opt.name: opt for opt in ctx.variable_options}
     for metavar in ctx.metavars:
         try:
             opt = opts[metavar.variable]
@@ -693,7 +682,7 @@ def _resolve_metavars(ctx):
 
 @_resolver
 def _resolve_option_descriptions(ctx):
-    opts = {opt.name: opt for opt in VARIABLE_OPTIONS["iterable_func"](ctx)}
+    opts = {opt.name: opt for opt in ctx.variable_options}
     for description in ctx.descriptions:
         try:
             opt = opts[description.variable]

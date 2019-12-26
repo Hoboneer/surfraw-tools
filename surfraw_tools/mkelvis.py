@@ -25,7 +25,7 @@ from .common import (
     get_env,
     process_args,
 )
-from .options import VARIABLE_OPTIONS, EnumOption, ListOption, SpecialOption
+from .options import EnumOption, ListOption, SpecialOption, SurfrawOption
 
 PROGRAM_NAME = "mkelvis"
 
@@ -67,7 +67,13 @@ def generate_local_help_output(ctx):
         return optheader
 
     # Options that take arguments
-    for opt in VARIABLE_OPTIONS["iterable_func"](ctx):
+    # Depends on subclass definition order.
+    types_to_sort_order = {
+        type_: i for i, type_ in enumerate(SurfrawOption.variable_options)
+    }
+    for opt in sorted(
+        ctx.variable_options, key=lambda x: types_to_sort_order[x.__class__]
+    ):
         entry = []
         entry.append(opt)
 
@@ -123,7 +129,7 @@ def generate_local_help_output(ctx):
                 postgap = "  | "
                 suffix = ""
             entry[i] = f"{record}{gap}{postgap}{suffix}"
-        if isinstance(opt, VARIABLE_OPTIONS["types"]):
+        if isinstance(opt, tuple(SurfrawOption.variable_options)):
             prefix = " " * longest_length + "    "
             ns_name = ctx._namespacer(opt.name)
             entry.append(prefix + f"Default: ${ns_name}")

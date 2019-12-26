@@ -11,7 +11,6 @@ from ._package import __version__
 from .options import (
     RESOLVERS,
     VALID_FLAG_TYPES_STR,
-    VARIABLE_OPTIONS,
     AliasOption,
     AnythingOption,
     BoolOption,
@@ -129,7 +128,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
         self.nonvariable_options = []
         self._seen_nonvariable_names = set()
 
-        self._types_to_buckets = {
+        self.types_to_buckets = {
             FlagOption: "flags",
             BoolOption: "bools",
             EnumOption: "enums",
@@ -166,7 +165,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
             raise TypeError(f"option '{option.name}' is not a surfraw option")
 
         try:
-            bucket = self._types_to_buckets[option.__class__]
+            bucket = self.types_to_buckets[option.__class__]
         except KeyError:
             raise RuntimeError(
                 f"could not route option '{option.name}' to a bucket; the code is out of sync with itself"
@@ -219,6 +218,10 @@ class Context(argparse.Namespace):
     @options.setter
     def options(self, val):
         self._surfraw_options = val
+
+    @property
+    def variable_options(self):
+        return self.options.variable_options
 
 
 def _wrap_parser(func):
@@ -428,10 +431,10 @@ def process_args(ctx):
     ctx.search_url = f"{url_scheme}://{ctx.search_url}"
 
     if ctx.use_results_option:
-        ctx.specials.append(SpecialOption("results"))
+        ctx.options.append(SpecialOption("results"))
     if ctx.use_language_option:
         # If `SURFRAW_lang` is empty or unset, assume English.
-        ctx.specials.append(
+        ctx.options.append(
             SpecialOption("language", default="${SURFRAW_lang:=en}")
         )
 
@@ -491,9 +494,7 @@ def get_env(ctx):
 
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
-        "any_options_defined": any(
-            True for _ in VARIABLE_OPTIONS["iterable_func"](ctx)
-        ),
+        "any_options_defined": any(True for _ in ctx.variable_options),
         "name": ctx.name,
         "description": ctx.description,
         "base_url": ctx.base_url,
