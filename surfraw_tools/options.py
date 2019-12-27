@@ -344,14 +344,14 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
         validate_name,
         validate_option_type,
         list_of(no_validation),
-        no_validation,
+        [no_validation],
     ]
     last_arg_is_unlimited = True
 
     creates_variable = True
     typename = "list"
 
-    def __init__(self, name, type_, defaults, spec):
+    def __init__(self, name, type_, defaults, spec=None):
         self.name = name
         self.type = type_
         # They are equivalent.
@@ -365,6 +365,10 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
 
         self.flag_value_validator = list_of(self.type.flag_value_validator)
         if issubclass(self.type, EnumOption):
+            if not spec:
+                raise TypeError(
+                    f"fourth argument to `--list` option must be provided for enum lists"
+                )
             # Ignore unused later values in `spec`.
             unparsed_enum_values, *_ = spec
 
