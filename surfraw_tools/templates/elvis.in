@@ -136,6 +136,9 @@ __mkelvis_clearlist ()
 	{% set suffix = "" %}
 	{% set varname = opt.target.name %}
 	{% set optarg = opt.value %}
+	{% if opt.target is list_option %}
+		{% set optarg = optarg|join(',') %}
+	{% endif %}
 {% else %}
 	{% set suffix = "=*" %}
 	{% set varname = opt.name %}
