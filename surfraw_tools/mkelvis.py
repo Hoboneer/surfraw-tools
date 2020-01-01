@@ -57,8 +57,10 @@ def generate_local_help_output(ctx):
         )
         return optheader
 
-    def get_optlines(opt):
-        if isinstance(opt, ListOption):
+    def get_optlines(opt, target=None):
+        if target is None:
+            target = opt
+        if isinstance(target, ListOption):
             optlines = [
                 get_optheader(opt, prefix="add-"),
                 get_optheader(opt, prefix="remove-"),
@@ -97,7 +99,9 @@ def generate_local_help_output(ctx):
         entries.append((opt, lines))
 
     # Aliases to one of the above options, but with an argument
-    entries.extend((flag, get_optlines(flag)) for flag in ctx.flags)
+    entries.extend(
+        (flag, get_optlines(flag, target=flag.target)) for flag in ctx.flags
+    )
 
     # Nothing else to do.
     if not entries:
