@@ -159,12 +159,16 @@ __mkelvis_clearlist ()
 	{% for name in opts|map(attribute='name')|sort %}
 		{% set ns.pattern0 = ns.pattern0 + ["-add-" ~ name ~ suffix] %}
 		{% set ns.pattern1 = ns.pattern1 + ["-remove-" ~ name ~ suffix] %}
-		{% set ns.pattern2 = ns.pattern2 + ["-clear-" ~ name] %}
+		{% if opt is not flag_option %}
+			{% set ns.pattern2 = ns.pattern2 + ["-clear-" ~ name] %}
+		{% endif %}
 	{% endfor %}
 	{# Now build up the lines #}
 	{% set ns.lines = ns.lines + [ns.pattern0|join('|') ~ ') ' ~ '__mkelvis_addlist' ~ ' '  ~ varname|ns ~ ' ' ~ optarg] %}
 	{% set ns.lines = ns.lines + [ns.pattern1|join('|') ~ ') ' ~ '__mkelvis_removelist' ~ ' '  ~ varname|ns ~ ' ' ~ optarg] %}
-	{% set ns.lines = ns.lines + [ns.pattern2|join('|') ~ ') ' ~ '__mkelvis_clearlist' ~ ' '  ~ varname|ns] %}
+	{% if opt is not flag_option %}
+		{% set ns.lines = ns.lines + [ns.pattern2|join('|') ~ ') ' ~ '__mkelvis_clearlist' ~ ' '  ~ varname|ns] %}
+	{% endif %}
 {% else %}
 	{% for name in opts|map(attribute='name')|sort %}
 		{% set ns.patterns = ns.patterns + ["-" ~ name ~ suffix] %}

@@ -25,7 +25,13 @@ from .common import (
     get_env,
     process_args,
 )
-from .options import EnumOption, ListOption, SpecialOption, SurfrawOption
+from .options import (
+    EnumOption,
+    FlagOption,
+    ListOption,
+    SpecialOption,
+    SurfrawOption,
+)
 
 PROGRAM_NAME = "mkelvis"
 
@@ -64,8 +70,9 @@ def generate_local_help_output(ctx):
             optlines = [
                 get_optheader(opt, prefix="add-"),
                 get_optheader(opt, prefix="remove-"),
-                get_optheader(opt, prefix="clear-"),
             ]
+            if not isinstance(opt, FlagOption):
+                optlines.append(get_optheader(opt, prefix="clear-"))
         else:
             optlines = [get_optheader(opt)]
         return optlines
