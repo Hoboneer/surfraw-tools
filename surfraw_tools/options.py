@@ -682,7 +682,7 @@ def _resolve_metavars(ctx):
             opt = opts[metavar.variable]
         except KeyError:
             raise OptionResolutionError(
-                "metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
+                f"metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
             )
         else:
             opt.metavar = metavar.metavar
@@ -696,7 +696,7 @@ def _resolve_option_descriptions(ctx):
             opt = opts[description.variable]
         except KeyError:
             raise OptionResolutionError(
-                "description for '{description.variable}' targets a non-existent variable"
+                f"description for '{description.variable}' targets a non-existent variable"
             )
         else:
             opt.description = description.description
