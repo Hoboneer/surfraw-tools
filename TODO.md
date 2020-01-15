@@ -56,3 +56,5 @@ the new argument should be optional.
   values be shown?  Maybe 'clear' could be moved to be the middle option?
 - Add `--list-collapse` option?  A backwards-incompatible change would have to
   made in order for symmetry with the other `--{list,}-*` options, however.
+- Add `--disable-auto-args` (TODO: get a better name)?  This would allow for
+  greater control in the `search_url`.
