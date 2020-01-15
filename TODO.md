@@ -54,3 +54,5 @@ the new argument should be optional.
   structure.
 - Rearrange `-local-help` output for enum list options.  Where should the valid
   values be shown?  Maybe 'clear' could be moved to be the middle option?
+- Add `--list-collapse` option?  A backwards-incompatible change would have to
+  made in order for symmetry with the other `--{list,}-*` options, however.
