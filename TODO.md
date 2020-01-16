@@ -58,3 +58,7 @@ the new argument should be optional.
   made in order for symmetry with the other `--{list,}-*` options, however.
 - Add `--disable-auto-args` (TODO: get a better name)?  This would allow for
   greater control in the `search_url`.
+- Add a "topic" variable akin to perl?  Should `$_` be its name?  It would
+  follow perl's case, but I'm not sure if this means what I think it means.
+This would allow the user to easily refer to the current "thing" being operated
+on (e.g., in each branch of --collapse, ...other examples?)
