@@ -50,10 +50,15 @@ def generate_local_help_output(ctx):
     # The local options part starts indented by two spaces.
     entries = []
 
-    # Add aliases of options alongside main option, e.g.,
-    #   -s=SORT, -sort=SORT
-    def get_optheader(opt, prefix=""):
-        if opt.metavar is None:
+    def get_optheader(opt, prefix="", force_no_metavar=False):
+        """Return representation of `opt` in `-local-help`.
+
+        These are in sorted order.
+
+        Example:
+          -s=SORT, -sort=SORT"""
+
+        if opt.metavar is None or force_no_metavar:
             suffix = ""
         else:
             suffix = f"={opt.metavar}"
@@ -67,12 +72,13 @@ def generate_local_help_output(ctx):
         if target is None:
             target = opt
         if isinstance(target, ListOption):
-            optlines = [
-                get_optheader(opt, prefix="add-"),
-                get_optheader(opt, prefix="remove-"),
-            ]
+            optlines = []
+            optlines.append(get_optheader(opt, prefix="add-"))
             if not isinstance(opt, FlagOption):
-                optlines.append(get_optheader(opt, prefix="clear-"))
+                optlines.append(
+                    get_optheader(opt, prefix="clear-", force_no_metavar=True)
+                )
+            optlines.append(get_optheader(opt, prefix="remove-"))
         else:
             optlines = [get_optheader(opt)]
         return optlines
