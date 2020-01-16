@@ -435,3 +435,4 @@ search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
 search_url="${search_url}${escaped_args}"
 {% endif %}
 w3_browse_url "$search_url"
+
