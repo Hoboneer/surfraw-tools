@@ -301,9 +301,8 @@ esac
 {% if collapse.variable in lists|map(attribute='name') %}
 # Collapse list variable
 __mkelvis_collapse_tmp=''
-vars="$(echo ${{ collapse.variable|ns }})"
 __mkelvis_enter_list_ctx
-for val in $vars; do
+for val in ${{ collapse.variable|ns }}; do
 	{# Exiting list context is necessary for users to be able to expand variables with behaviour they expect (only relevant when unquoted) #}
 	__mkelvis_exit_list_ctx
 	{{ collapse_variable('val', collapse.collapses)|indent(4)|replace('    ', '\t') }}
@@ -412,8 +411,7 @@ __mkelvis_inline_variable ()
 {% if loop.first %}
 # Map inline variables
 {% endif %}
-val="${{ inline.variable|ns }}"
-__mkelvis_inline_variable val {{ inline.keyword }}
+__mkelvis_inline_variable {{ inline.variable|ns }} {{ inline.keyword }}
 {% endfor %}
 {% for inline in list_inlines %}
 {% if loop.first %}
