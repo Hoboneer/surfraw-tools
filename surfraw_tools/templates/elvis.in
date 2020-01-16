@@ -105,8 +105,9 @@ __mkelvis_removelist ()
 	__mkelvis_removelist__toremove_re="$(echo "$2" | sed 's/,/\\|/g')"
 	__mkelvis_removelist__newlist=''
 
+	# Only split on ',' characters in the for-loop.
+	vars="$(eval echo \$$1)"
 	__mkelvis_enter_list_ctx
-	eval vars="$(echo \$$1)"
 	for val in $vars; do
 		# Add back to list if not in list of values to remove.
 		if ! echo $val | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
