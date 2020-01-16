@@ -47,7 +47,6 @@ w3_config_hook ()
 	{% else %}
 	## __mkelvis_deflist {{ 'listvar'|ns }} default_val1,default_val2,default_val3
 	{% endfor %}
-
 	{% endif %}
 
 	# 'Anythings'
