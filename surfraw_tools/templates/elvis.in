@@ -429,6 +429,7 @@ else
 	mappings="$mappings&{{ query_parameter|urlencode }}="
 fi
 {% endif %}
+_="$escaped_args"
 search_url="{{ search_url }}"
 search_url="${search_url}${mappings}"
 {% if append_search_args %}
