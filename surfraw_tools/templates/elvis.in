@@ -294,7 +294,7 @@ _="${{ var }}"
 case "$_" in
 	{% for branch in branches %}
 	{# Last in `branch` is the result #}
-	{{ '|'.join(branch[:-1]) }}) {{ var }}={{ branch[-1] }} ;;
+	{{ '|'.join(branch[:-1]) }}) {{ var }}="{{ branch[-1] }}" ;;
 	{% endfor %}
 esac
 {%- endmacro %}
