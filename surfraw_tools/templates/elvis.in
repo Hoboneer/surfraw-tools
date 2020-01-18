@@ -290,7 +290,8 @@ __mkelvis_exit_list_ctx
 # Collapse variables
 {# TODO: Name this better! #}
 {% macro collapse_variable(var, branches) %}
-case "${{ var }}" in
+_="${{ var }}"
+case "$_" in
 	{% for branch in branches %}
 	{# Last in `branch` is the result #}
 	{{ '|'.join(branch[:-1]) }}) {{ var }}={{ branch[-1] }} ;;
