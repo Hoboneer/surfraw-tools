@@ -322,7 +322,7 @@ if test -z "$w3_args"; then
 	exit
 fi
 # Map variables to parameters
-search_url="{{ search_url }}"
+mappings=''
 {% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
 {% if map.should_url_encode %}
@@ -332,10 +332,10 @@ search_url="{{ search_url }}"
 {% endif %}
 {# First param is special; don't be preceded by a '&' #}
 {% if not map_ns.mapped %}
-search_url="${search_url}{{ map.parameter|urlencode }}={{ param_value }}"
+mappings="{{ map.parameter|urlencode }}={{ param_value }}"
 {% set map_ns.mapped = True %}
 {% else %}
-search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
+mappings="$mappings&{{ map.parameter|urlencode }}={{ param_value }}"
 {% endif %}
 {% endfor %}
 {% for map in list_mappings %}
@@ -343,10 +343,6 @@ search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
 # Map each value of list variables to parameters
 ## Entering list context for all list mappings should be safe.
 __mkelvis_enter_list_ctx
-{% if not map_ns.mapped %}
-## Make sure the first parameter name isn't preceded by a '&'.
-mapped=no
-{% endif %}
 {% endif %}{# loop.first #}
 for val in ${{ map.variable|ns }}; do
 	{% if map.should_url_encode %}
@@ -355,27 +351,25 @@ for val in ${{ map.variable|ns }}; do
 		{% set param_value = '$val' %}
 	{% endif %}
 	{% if not map_ns.mapped %}
-	if ! ok mapped; then
-		search_url="${search_url}{{ map.parameter|urlencode }}={{ param_value }}"
-		mapped=yes
+	if [ -z "$mappings" ]; then
+		mappings="{{ map.parameter|urlencode }}={{ param_value }}"
 	else
-		search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
+		mappings="$mappings&{{ map.parameter|urlencode }}={{ param_value }}"
 	fi
 	{% else %}
-	search_url="$search_url&{{ map.parameter|urlencode }}={{ param_value }}"
+	mappings="$mappings&{{ map.parameter|urlencode }}={{ param_value }}"
 	{% endif %}
 done
 # Ensure parameter receives a null value if empty list.
 if null "${{ map.variable|ns }}"; then
 	{% if not map_ns.mapped %}
-	if ! ok mapped; then
-		search_url="${search_url}{{ map.parameter|urlencode }}="
-		mapped=yes
+	if [ -z "$mappings" ]; then
+		mappings="{{ map.parameter|urlencode }}="
 	else
-		search_url="$search_url&{{ map.parameter|urlencode }}="
+		mappings="$mappings&{{ map.parameter|urlencode }}="
 	fi
 	{% else %}
-	search_url="$search_url&{{ map.parameter|urlencode }}="
+	mappings="$mappings&{{ map.parameter|urlencode }}="
 	{% endif %}
 fi
 {% if loop.last %}
@@ -385,9 +379,9 @@ __mkelvis_exit_list_ctx
 {# Cannot check shell variable, so must check lists manually #}
 {% if not (mappings or list_mappings) %}
 ## First parameter
-##search_url="${search_url}param1=${{ 'variable1'|ns }}"
+##mappings="param1=${{ 'variable1'|ns }}"
 ## Successive parameters
-##search_url="$search_url&param2=${{ 'variable2'|ns }}"
+##mappings="$mappings&param2=${{ 'variable2'|ns }}"
 {% endif %}
 
 # Add the search to url
@@ -428,9 +422,14 @@ __mkelvis_exit_list_ctx
 {% endfor %}
 
 {% if query_parameter is not none %}
-search_url="$search_url&{{ query_parameter|urlencode }}=$escaped_args"
-{% else %}
-search_url="${search_url}${escaped_args}"
+if [ -z "$mappings" ]; then
+	mappings="{{ query_parameter|urlencode }}="
+else
+	mappings="$mappings&{{ query_parameter|urlencode }}="
+fi
 {% endif %}
+search_url="{{ search_url }}"
+search_url="${search_url}${mappings}"
+search_url="${search_url}${escaped_args}"
 w3_browse_url "$search_url"
 
