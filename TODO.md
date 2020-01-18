@@ -28,7 +28,3 @@ queries opened, but instead simply have the query string opened, with the
   structure.
 - Add `--list-collapse` option?  A backwards-incompatible change would have to
   made in order for symmetry with the other `--{list,}-*` options, however.
-- Add a "topic" variable akin to perl?  Should `$_` be its name?  It would
-  follow perl's case, but I'm not sure if this means what I think it means.
-This would allow the user to easily refer to the current "thing" being operated
-on (e.g., in each branch of --collapse, ...other examples?)
