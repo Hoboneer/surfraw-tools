@@ -430,6 +430,8 @@ fi
 {% endif %}
 search_url="{{ search_url }}"
 search_url="${search_url}${mappings}"
+{% if append_search_args %}
 search_url="${search_url}${escaped_args}"
+{% endif %}
 w3_browse_url "$search_url"
 

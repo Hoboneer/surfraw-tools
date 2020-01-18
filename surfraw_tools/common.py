@@ -409,15 +409,22 @@ BASE_PARSER.add_argument(
     help="define a description for an option",
 )
 BASE_PARSER.add_argument(
-    "--query-parameter",
-    "-Q",
-    help="define the parameter for the query arguments; needed with --map",
-)
-BASE_PARSER.add_argument(
     "--num-tabs",
     default=1,
     type=int,
     help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
+)
+_search_args_group = BASE_PARSER.add_mutually_exclusive_group()
+_search_args_group.add_argument(
+    "--query-parameter",
+    "-Q",
+    help="define the parameter for the query arguments; needed with --map",
+)
+_search_args_group.add_argument(
+    "--no-append-args",
+    action="store_false",
+    dest="append_search_args",
+    help="don't automatically append search to url",
 )
 
 
@@ -528,6 +535,7 @@ def get_env(ctx):
         "list_inlines": ctx.list_inlines,
         "collapses": ctx.collapses,
         "query_parameter": ctx.query_parameter,
+        "append_search_args": ctx.append_search_args,
     }
 
     return (env, template_variables)
