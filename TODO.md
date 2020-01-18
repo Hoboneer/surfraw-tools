@@ -34,7 +34,3 @@ queries opened, but instead simply have the query string opened, with the
   follow perl's case, but I'm not sure if this means what I think it means.
 This would allow the user to easily refer to the current "thing" being operated
 on (e.g., in each branch of --collapse, ...other examples?)
-- Map and inline options before expanding `search_url`.  This would allow
-  `escaped_args` and other variables to be referenced in `search_url` properly.
-- Assign mappings to some temp variable?  This is to help facilitate mapping
-  and inlining options before `search_url` is expanded.
