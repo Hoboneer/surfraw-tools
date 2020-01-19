@@ -326,19 +326,18 @@ fi
 {% if inlines or list_inlines %}
 __mkelvis_inline_variable ()
 {
-	inline_var="$1"
-	keyword="$2"
+	__mkelvis_inline__val="$1"
+	__mkelvis_inline__keyword="$2"
 	# Quote if spaces present
-	case "$(eval echo "\$$inline_var")" in
-		*[[:space:]]*) setopt "$inline_var" "\\\"$(eval echo \""\$$inline_var"\")\\\"" ;;
+	case "$__mkelvis_inline__val" in
+		*[[:space:]]*) __mkelvis_inline__val="\"$__mkelvis_inline__val\"" ;;
 	esac
-	__mkelvis_inline__val="$(eval echo "\$$inline_var")"
-	test -n "$__mkelvis_inline__val" && escaped_args="${escaped_args}$(w3_url_escape " $keyword:$__mkelvis_inline__val")"
+	test -n "$__mkelvis_inline__val" && escaped_args="${escaped_args}$(w3_url_escape " $__mkelvis_inline__keyword:$__mkelvis_inline__val")"
 }
 {% endif %}
 # Map inline variables
 {% for inline in inlines %}
-__mkelvis_inline_variable {{ inline.variable|ns }} {{ inline.keyword }}
+__mkelvis_inline_variable "${{ inline.variable|ns }}" {{ inline.keyword }}
 {% endfor %}
 # Map each value of inline list variables
 {% for inline in list_inlines %}
@@ -347,14 +346,14 @@ __mkelvis_inline_variable {{ inline.variable|ns }} {{ inline.keyword }}
 __mkelvis_enter_list_ctx
 {% endif %}
 for val in ${{ inline.variable|ns }}; do
-	__mkelvis_inline_variable val {{ inline.keyword }}
+	__mkelvis_inline_variable "$val" {{ inline.keyword }}
 done
 {% if loop.last %}
 __mkelvis_exit_list_ctx
 {% endif %}
 {% endfor %}
 {% if not (inlines or list_inlines) %}
-##__mkelvis_inline_variable {{ 'variable'|ns }} keyword
+##__mkelvis_inline_variable "${{ 'variable'|ns }}" keyword
 {% endif %}
 
 # Map variables to parameters
