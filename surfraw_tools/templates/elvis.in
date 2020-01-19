@@ -421,10 +421,6 @@ __mkelvis_exit_list_ctx
 {% endif %}
 
 # Add the search to url
-## Don't expand pathnames so that '*' characters are passed to browser verbatim.
-set -f
-escaped_args="$(w3_url_of_arg $w3_args)"
-
 {% if query_parameter is not none %}
 if [ -z "$mappings" ]; then
 	mappings="{{ query_parameter|urlencode }}="
@@ -432,6 +428,9 @@ else
 	mappings="$mappings&{{ query_parameter|urlencode }}="
 fi
 {% endif %}
+## Don't expand pathnames so that '*' characters are passed to browser verbatim.
+set -f
+escaped_args="$(w3_url_of_arg $w3_args)"
 _="$escaped_args"
 search_url="{{ search_url }}"
 search_url="${search_url}${mappings}"
