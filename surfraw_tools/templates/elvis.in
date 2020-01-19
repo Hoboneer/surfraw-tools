@@ -353,6 +353,9 @@ done
 __mkelvis_exit_list_ctx
 {% endif %}
 {% endfor %}
+{% if not (inlines or list_inlines) %}
+##__mkelvis_inline_variable {{ 'variable'|ns }} keyword
+{% endif %}
 
 # Map variables to parameters
 mappings=''
