@@ -332,7 +332,7 @@ __mkelvis_inline_variable ()
 	case "$__mkelvis_inline__val" in
 		*[[:space:]]*) __mkelvis_inline__val="\"$__mkelvis_inline__val\"" ;;
 	esac
-	test -n "$__mkelvis_inline__val" && escaped_args="${escaped_args}$(w3_url_escape " $__mkelvis_inline__keyword:$__mkelvis_inline__val")"
+	test -n "$__mkelvis_inline__val" && inlines="$inlines$(w3_url_escape " $__mkelvis_inline__keyword:$__mkelvis_inline__val")"
 }
 {% endif %}
 # Map inline variables
@@ -428,7 +428,11 @@ fi
 {% endif %}
 ## Don't expand pathnames so that '*' characters are passed to browser verbatim.
 set -f
+{% if inlines or list_inlines %}
+escaped_args="$(w3_url_of_arg $w3_args)$inlines"
+{% else %}
 escaped_args="$(w3_url_of_arg $w3_args)"
+{% endif %}
 _="$escaped_args"
 search_url="{{ search_url }}"
 {% if mappings or list_mappings or query_parameter is not none %}
