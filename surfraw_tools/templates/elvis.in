@@ -358,7 +358,6 @@ __mkelvis_exit_list_ctx
 {% endif %}
 
 # Map variables to parameters
-mappings=''
 {% set map_ns = namespace(mapped=False) %}
 {% for map in mappings %}
 {% if map.should_url_encode %}
@@ -433,9 +432,11 @@ set -f
 escaped_args="$(w3_url_of_arg $w3_args)"
 _="$escaped_args"
 search_url="{{ search_url }}"
-search_url="${search_url}${mappings}"
+{% if mappings or list_mappings or query_parameter is not none %}
+search_url="$search_url$mappings"
+{% endif %}
 {% if append_search_args %}
-search_url="${search_url}${escaped_args}"
+search_url="$search_url$escaped_args"
 {% endif %}
 w3_browse_url "$search_url"
 
