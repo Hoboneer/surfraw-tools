@@ -414,9 +414,9 @@ __mkelvis_exit_list_ctx
 {# Cannot check shell variable, so must check lists manually #}
 {% if not (mappings or list_mappings) %}
 ## First parameter
-##mappings="param1=${{ 'variable1'|ns }}"
+##mappings="param1=$(w3_url_escape "${{ 'variable1'|ns }}")"
 ## Successive parameters
-##mappings="$mappings&param2=${{ 'variable2'|ns }}"
+##mappings="$mappings&param2=$(w3_url_escape "${{ 'variable2'|ns }}")"
 {% endif %}
 
 # Add the search to url
