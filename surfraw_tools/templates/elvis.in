@@ -421,11 +421,11 @@ __mkelvis_exit_list_ctx
 
 # Add the search to url
 {% if query_parameter is not none %}
-if [ -z "$mappings" ]; then
-	mappings="{{ query_parameter|urlencode }}="
-else
-	mappings="$mappings&{{ query_parameter|urlencode }}="
-fi
+{% if mappings or list_mappings %}
+mappings="$mappings&{{ query_parameter|urlencode }}="
+{% else %}
+mappings="{{ query_parameter|urlencode }}="
+{% endif %}
 {% endif %}
 ## Don't expand pathnames so that '*' characters are passed to browser verbatim.
 set -f
