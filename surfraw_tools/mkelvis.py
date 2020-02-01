@@ -184,8 +184,7 @@ def main(argv=None):
         oflags = O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC
         with os.fdopen(os.open(ctx.name, oflags, mode=0o755), "w") as f:
             f.write(elvis_program)
-    except OSError:
-        # I'm not sure if this is the correct exit code, and if the two
-        # actions above should be separated.
+    except OSError as e:
+        print(e, file=sys.stderr)
         return EX_OSERR
     return EX_OK
