@@ -16,7 +16,7 @@ import argparse
 import os
 import sys
 from itertools import chain
-from os import EX_OK, EX_OSERR, EX_USAGE
+from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_TRUNC, O_WRONLY
 
 from .common import (
     BASE_PARSER,
@@ -34,14 +34,6 @@ from .options import (
 )
 
 PROGRAM_NAME = "mkelvis"
-
-
-# Taken from this stackoverflow answer:
-#   https://stackoverflow.com/questions/12791997/how-do-you-do-a-simple-chmod-x-from-within-python/30463972#30463972
-def make_executable(path):
-    mode = os.stat(path).st_mode
-    mode |= (mode & 0o444) >> 2  # copy R bits to X
-    os.chmod(path, mode)
 
 
 # FIXME: This is very ugly, please... make it not so bad.
@@ -189,9 +181,9 @@ def main(argv=None):
     elvis_program = elvis_template.render(template_vars)
 
     try:
-        with open(ctx.name, "w") as f:
+        oflags = O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC
+        with os.fdopen(os.open(ctx.name, oflags, mode=0o755), "w") as f:
             f.write(elvis_program)
-        make_executable(ctx.name)
     except OSError:
         # I'm not sure if this is the correct exit code, and if the two
         # actions above should be separated.
