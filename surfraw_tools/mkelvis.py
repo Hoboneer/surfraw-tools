@@ -15,8 +15,9 @@
 import argparse
 import os
 import sys
+from contextlib import suppress
 from itertools import chain
-from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_TRUNC, O_WRONLY
+from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_EXCL, O_WRONLY
 
 from .common import (
     BASE_PARSER,
@@ -180,11 +181,23 @@ def main(argv=None):
     elvis_template = env.get_template("elvis.in")
     elvis_program = elvis_template.render(template_vars)
 
+    filename = ctx.name
+    # Ensure a new file is created with the correct mode.
+    with suppress(OSError):
+        os.unlink(filename)
     try:
-        oflags = O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC
-        with os.fdopen(os.open(ctx.name, oflags, mode=0o755), "w") as f:
+        oflags = O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC
+        with os.fdopen(os.open(filename, oflags, mode=0o755), "w") as f:
             f.write(elvis_program)
+    except FileExistsError:
+        print(
+            f"{PROGRAM_NAME}: file '{filename}' was created between deleting and then remaking it",
+            file=sys.stderr,
+        )
+        # TODO: Which error code to return?
+        #       Maybe `EX_CANTCREAT`?
+        return EX_OSERR
     except OSError as e:
-        print(e, file=sys.stderr)
+        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_OSERR
     return EX_OK
