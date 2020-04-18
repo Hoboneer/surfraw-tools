@@ -2,11 +2,6 @@
 
 - Allow options to be specified (flags, yes/no options, options with fixed set
   of valid args)
-	- Generate bash completions
-		- Prevent a space being added when completing option names with
-		  arguments
-	- As part of this, perhaps ask surfraw devs to add completion support
-	  to all of the elvi (maybe get `mkelvis` used?)
 - Make installable via `pip`
 	- Upload to PyPI
 - Add more option types
