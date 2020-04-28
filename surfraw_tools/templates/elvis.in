@@ -129,7 +129,7 @@ __mkelvis_clearlist ()
 
 {# Readers beware.  This is an ugly monstrosity #}
 {% macro _parse_option(opt, setopt='setopt') %}
-{% set opts = [opt] + opt.aliases|list %}
+{% set opts = [opt] + opt.aliases|sort(attribute='name') %}
 {# All standalone, non-flag options have args #}
 {# Aliases are together with their target so it doesn't matter #}
 {% if opt is flag_option %}
@@ -255,7 +255,7 @@ w3_parse_option_hook ()
 }
 
 {% macro optcase(opt) %}
-{% set opts = [opt] + opt.aliases|list %}
+{% set opts = [opt] + opt.aliases|sort(attribute='name') %}
 {% if opt is not list_option %}
 -{{ opts|map(attribute='name')|join('=*|-') }}=*
 {%- else %}
@@ -292,21 +292,21 @@ w3_complete_hook_opt ()
 }
 # Options with arguments + their aliases
 {% for opt in bools|list + enums|list + anythings|list + specials|list %}
-{% set opts = [opt] + opt.aliases|list %}
+{% set opts = [opt] + opt.aliases|sort(attribute='name') %}
 mkopts {{ opts|map(attribute='name')|join('= ') }}=
 {% endfor %}
 
 # Flags + their aliases
 {% for opt in flags %}
 {% if opt.target is not list_option %}
-{% set opts = [opt] + opt.aliases|list %}
+{% set opts = [opt] + opt.aliases|sort(attribute='name') %}
 mkopts {{ opts|map(attribute='name')|join(' ') }}
 {% endif %}
 {% endfor %}
 
 # Lists + their aliases
 {% for list_opt in lists %}
-{% set opts = [list_opt] + list_opt.aliases|list %}
+{% set opts = [list_opt] + list_opt.aliases|sort(attribute='name') %}
 {% for opt in opts %}
 mkopts add-{{ opt.name }}= clear-{{ opt.name }} remove-{{ opt.name }}=
 {% endfor %}{# opts #}
@@ -314,7 +314,7 @@ mkopts add-{{ opt.name }}= clear-{{ opt.name }} remove-{{ opt.name }}=
 
 # Flags of lists + their aliases
 {% for list_flag in flags.lists %}
-{% set opts = [list_flag] + list_flag.aliases|list %}
+{% set opts = [list_flag] + list_flag.aliases|sort(attribute='name') %}
 {% for opt in opts %}
 mkopts add-{{ opt.name }} remove-{{ opt.name }}
 {% endfor %}{# opts #}
