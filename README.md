@@ -6,9 +6,8 @@ scripts easily.
 
 The following are currently provided:
 
-* `mkelvis`: Generate a single surfraw elvis per invocation.
-* `mkelviscomps`: Generate bash completions for elvi.  NOTE: This has not been
-  updated with recent changes to `mkelvis` and its elvis generation.
+* `mkelvis`: Generate a single surfraw elvis per invocation.  Code for
+  completions is also generated inside the output elvis.
 
 ## Quickstart
 
