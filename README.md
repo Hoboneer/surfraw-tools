@@ -23,6 +23,14 @@ This is intentional; it is where your search terms will be placed.
 The created elvis will be placed in the current directory with the name
 `yourelvisname`, and ready for installation (made executable, shebang added).
 
+### Caveats
+
+At the time of writing, this program generates completion code for surfraw elvi
+for my work-in-progress system of elvi-specific completions.  Check the merge
+requests in the [main surfraw repo](https://gitlab.com/surfraw/Surfraw).  If
+you don't want to use the WIP completions, go to a commit before the
+`integrated-completions` branch is merged to `master`.
+
 ## Adding options
 
 To add options to an elvis, you need to use one of the following to generate
