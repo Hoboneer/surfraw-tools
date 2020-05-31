@@ -14,7 +14,7 @@ The following are currently provided:
 Specify your elvis to generate with the three positional arguments as shown:
 
 ```sh
-mkelvis yourelvisname www.domain.com www.domain.com/search?q=
+	$ mkelvis yourelvisname www.domain.com www.domain.com/search?q=
 ```
 
 Notice that the final argument has an open query string for the `q` parameter.
