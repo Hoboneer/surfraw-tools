@@ -15,6 +15,7 @@ from .options import (
     AnythingOption,
     BoolOption,
     CollapseOption,
+    CreatesVariable,
     DescribeOption,
     EnumOption,
     FlagOption,
@@ -76,7 +77,7 @@ class _FlagContainer(_ChainContainer):
     types = ["bools", "enums", "anythings", "specials", "lists"]
 
     def resolve(self):
-        # XXX: Should this just check for an instance of `FlagTarget`?
+        # XXX: Should this just check for an instance of `CreatesVariable`?
         #      How to determine which "bucket" to place into then?
         if not self._unresolved_items:
             return
@@ -121,8 +122,7 @@ class _ListContainer(_ChainContainer):
 
 class _SurfrawOptionContainer(argparse.Namespace):
     def __init__(self):
-        # Options that create variables (corresponds to `creates_variable`)
-        # attribute on `SurfrawOption`).
+        # Options that create variables.
         self.variable_options = []
         self._seen_variable_names = set()
         self.nonvariable_options = []
@@ -176,7 +176,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
         self._notify_append(option)
 
     def _notify_append(self, option):
-        if option.creates_variable:
+        if isinstance(option, CreatesVariable):
             if option.name in self._seen_variable_names:
                 raise ValueError(
                     f"the variable name '{option.name}' is duplicated"

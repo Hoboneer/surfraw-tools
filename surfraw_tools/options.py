@@ -26,7 +26,9 @@ class AliasTarget:
         self.aliases.add(alias)
 
 
-class FlagTarget:
+class CreatesVariable:
+    """Superclass of options which create variables."""
+
     @staticmethod
     def flag_value_validator(_):
         raise NotImplementedError
@@ -77,8 +79,10 @@ _FORBIDDEN_OPTION_NAMES = {
 
 
 class SurfrawOption:
-    creates_variable = None
+    """Option for a Surfraw elvis."""
+
     typenames = {}
+    # Option types which create variables in output elvi.
     variable_options = []
 
     def __init__(self):
@@ -95,7 +99,7 @@ class SurfrawOption:
         # Define a default metavar.
         # Non-variable creating options don't need one.
         if not hasattr(self, "metavar"):
-            if self.creates_variable:
+            if isinstance(self, CreatesVariable):
                 self.metavar = self.name.upper()
             else:
                 self.metavar = None
@@ -105,12 +109,8 @@ class SurfrawOption:
     @classmethod
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
-        if not hasattr(cls, "creates_variable"):
-            raise TypeError(
-                f"subclasses of SurfrawOption must define `creates_variable`"
-            )
         SurfrawOption.typenames[cls.typename] = cls
-        if cls.creates_variable:
+        if issubclass(cls, CreatesVariable):
             SurfrawOption.variable_options.append(cls)
 
 
@@ -196,7 +196,6 @@ class Option:
 class FlagOption(Option, AliasTarget, SurfrawOption):
     validators = [validate_name, validate_name, no_validation]
 
-    creates_variable = False
     # This will break backwards-compatibility if 'member' isn't an alias
     typename = "flag"
 
@@ -210,11 +209,10 @@ class FlagOption(Option, AliasTarget, SurfrawOption):
         super().__init__()
 
 
-class BoolOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+class BoolOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     flag_value_validator = validate_bool
     validators = [validate_name, flag_value_validator]
 
-    creates_variable = True
     typename = "yes-no"
 
     def __init__(self, name, default):
@@ -223,7 +221,9 @@ class BoolOption(Option, AliasTarget, FlagTarget, SurfrawOption):
         super().__init__()
 
 
-class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
+class EnumOption(
+    Option, AliasTarget, CreatesVariable, SurfrawOption, ListType
+):
     flag_value_validator = validate_enum_value
     validators = [
         validate_name,
@@ -231,7 +231,6 @@ class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
         list_of(validate_enum_value),
     ]
 
-    creates_variable = True
     typename = "enum"
 
     def __init__(self, name, default, values):
@@ -257,11 +256,12 @@ class EnumOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
                 )
 
 
-class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
+class AnythingOption(
+    Option, AliasTarget, CreatesVariable, SurfrawOption, ListType
+):
     flag_value_validator = no_validation
     validators = [validate_name, flag_value_validator]
 
-    creates_variable = True
     typename = "anything"
 
     def __init__(self, name, default):
@@ -271,7 +271,7 @@ class AnythingOption(Option, AliasTarget, FlagTarget, SurfrawOption, ListType):
         super().__init__()
 
 
-class SpecialOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+class SpecialOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     """An option that depends on values of environment variables."""
 
     @staticmethod
@@ -280,7 +280,6 @@ class SpecialOption(Option, AliasTarget, FlagTarget, SurfrawOption):
             "This method should not have been called directly.  Use `resolve_flags` instead."
         )
 
-    creates_variable = True
     typename = "special"
 
     # This class is not instantiated normally... maybe prepend name with underscore?
@@ -336,7 +335,7 @@ def validate_option_type(option_type):
         return type_
 
 
-class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
+class ListOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     # XXX: I'm not sure if this is needed?
     flag_value_validator = no_validation
 
@@ -348,7 +347,6 @@ class ListOption(Option, AliasTarget, FlagTarget, SurfrawOption):
     ]
     last_arg_is_unlimited = True
 
-    creates_variable = True
     typename = "list"
 
     def __init__(self, name, type_, defaults, spec=None):
@@ -416,7 +414,6 @@ class AliasOption(Option, SurfrawOption):
 
     validators = [validate_name, validate_name, validate_option_type]
 
-    creates_variable = False
     typename = "alias"
 
     def __init__(self, name, target, target_type):
@@ -539,11 +536,7 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
     return resolve_option
 
 
-VALID_FLAG_TYPES = [
-    name
-    for name in SurfrawOption.typenames
-    if issubclass(SurfrawOption.typenames[name], FlagTarget)
-]
+VALID_FLAG_TYPES = [opt.typename for opt in SurfrawOption.variable_options]
 VALID_FLAG_TYPES_STR = ", ".join(
     f"'{typename}'" if typename != VALID_FLAG_TYPES[-1] else f"or '{typename}'"
     for i, typename in enumerate(VALID_FLAG_TYPES)
@@ -657,7 +650,6 @@ def _resolve_flags(ctx):
         raise OptionResolutionError(str(e)) from None
 
     try:
-        # TODO: Maybe merge flag targets and creates_variable options?
         for flag_target in ctx.variable_options:
             flag_target.resolve_flags()
     except OptionParseError as e:
