@@ -445,13 +445,11 @@ def get_env(ctx):
     env.filters["ns"] = default_namespace
     ctx._namespacer = default_namespace
 
-    env.tests["flag_option"] = lambda x: isinstance(x, FlagOption)
-    env.tests["bool_option"] = lambda x: isinstance(x, BoolOption)
-    env.tests["enum_option"] = lambda x: isinstance(x, EnumOption)
-    env.tests["anything_option"] = lambda x: isinstance(x, AnythingOption)
-    env.tests["special_option"] = lambda x: isinstance(x, SpecialOption)
-    env.tests["alias_option"] = lambda x: isinstance(x, AliasOption)
-    env.tests["list_option"] = lambda x: isinstance(x, ListOption)
+    for typename, opt_type in SurfrawOption.typenames.items():
+        # Account for late-binding.
+        env.tests[f"{typename}_option"] = partial(
+            lambda x, type_: isinstance(x, type_), type_=opt_type
+        )
 
     template_variables = {
         # Aliases and flags can only exist if any variable-creating options are defined.
