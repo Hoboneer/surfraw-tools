@@ -7,6 +7,7 @@ from .validation import (
     OptionParseError,
     list_of,
     no_validation,
+    parse_bool,
     validate_bool,
     validate_enum_value,
     validate_name,
@@ -435,22 +436,11 @@ class AliasOption(Option, SurfrawOption):
 
 
 class MappingOption(Option):
-    validators = [validate_name, no_validation, [validate_bool]]
+    validators = [validate_name, no_validation, [parse_bool]]
 
     def __init__(self, variable, parameter, url_encode=True):
         self.target = variable
         self.parameter = parameter
-        # Already a good value.
-        if isinstance(url_encode, bool):
-            pass
-        elif url_encode == "yes":
-            url_encode = True
-        elif url_encode == "no":
-            url_encode = False
-        else:
-            raise ValueError(
-                f"`url_encode` must be the string 'yes' or 'no', or of type `bool`"
-            )
         self.should_url_encode = url_encode
 
     @property

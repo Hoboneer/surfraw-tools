@@ -47,6 +47,20 @@ def validate_bool(bool_):
     return bool_
 
 
+def parse_bool(bool_):
+    if bool_ in _TRUE_WORDS:
+        return True
+    elif bool_ in _FALSE_WORDS:
+        return False
+    else:
+        valid_bools = ", ".join(sorted(_BOOL_WORDS))
+        raise OptionParseError(
+            f"bool '{bool_}' must be one of the following: {valid_bools}",
+            subject=bool_,
+            subject_type="bool",
+        )
+
+
 # OPTION TYPES is defined elsewhere to avoid circular imports.
 
 # ENUM VALUES
