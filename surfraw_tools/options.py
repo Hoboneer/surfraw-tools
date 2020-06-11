@@ -131,6 +131,14 @@ class SurfrawOption:
 
 
 class Option:
+    """Option to a command-line program with validated colon-delimited arguments.
+
+    Configure subclasses with these class attributes:
+
+        validators: A list of validator or parser functions from `.validation`, corresponding to its arguments in the command line.
+        last_arg_is_unlimited: Whether the last arg may be repeated.  (default: `False`)
+    """
+
     validators = []
     last_arg_is_unlimited = False
 
