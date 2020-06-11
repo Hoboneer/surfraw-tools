@@ -109,6 +109,20 @@ class SurfrawOption:
     @classmethod
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
+
+        subclass_re = r"([A-z]+)Option"
+        try:
+            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()
+        except IndexError:
+            raise RuntimeError(
+                f"subclasses of {__class__.__name__} must match the regex '{subclass_re}'"
+            ) from None
+        # Can't reference `AliasOption` here since it's not defined yet, but this will do.
+        if cls.typename == "alias":
+            cls.typename_plural = "aliases"
+        else:
+            cls.typename_plural = cls.typename + "s"
+
         SurfrawOption.typenames[cls.typename] = cls
         if issubclass(cls, CreatesVariable):
             SurfrawOption.variable_options.append(cls)
@@ -196,9 +210,6 @@ class Option:
 class FlagOption(Option, AliasTarget, SurfrawOption):
     validators = [validate_name, validate_name, no_validation]
 
-    # This will break backwards-compatibility if 'member' isn't an alias
-    typename = "flag"
-
     def __init__(self, name, target, value):
         self.name = name
         self.target = target
@@ -221,8 +232,6 @@ class BoolOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     flag_value_validator = validate_bool
     validators = [validate_name, flag_value_validator]
 
-    typename = "yes-no"
-
     def __init__(self, name, default):
         self.name = name
         self.default = default
@@ -238,8 +247,6 @@ class EnumOption(
         flag_value_validator,
         list_of(validate_enum_value),
     ]
-
-    typename = "enum"
 
     def __init__(self, name, default, values):
         self.name = name
@@ -270,8 +277,6 @@ class AnythingOption(
     flag_value_validator = no_validation
     validators = [validate_name, flag_value_validator]
 
-    typename = "anything"
-
     def __init__(self, name, default):
         self.name = name
         self.default = default
@@ -287,8 +292,6 @@ class SpecialOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
         raise RuntimeError(
             "This method should not have been called directly.  Use `resolve_flags` instead."
         )
-
-    typename = "special"
 
     # This class is not instantiated normally... maybe prepend name with underscore?
     def __init__(self, name, default=None):
@@ -355,8 +358,6 @@ class ListOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     ]
     last_arg_is_unlimited = True
 
-    typename = "list"
-
     def __init__(self, name, type_, defaults, spec=None):
         self.name = name
         self.type = type_
@@ -421,8 +422,6 @@ class AliasOption(Option, SurfrawOption):
     """
 
     validators = [validate_name, validate_name, validate_option_type]
-
-    typename = "alias"
 
     def __init__(self, name, target, type_):
         self.name = name
