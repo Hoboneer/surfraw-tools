@@ -330,7 +330,7 @@ class SpecialOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
             # many ISO language codes to match.
 
 
-def validate_option_type(option_type):
+def parse_option_type(option_type):
     # For backward compatibility.
     if option_type == "member":
         option_type = "flag"
@@ -353,7 +353,7 @@ class ListOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
 
     validators = [
         validate_name,
-        validate_option_type,
+        parse_option_type,
         list_of(no_validation),
         [no_validation],
     ]
@@ -422,7 +422,7 @@ class AliasOption(Option, SurfrawOption):
     the parser.
     """
 
-    validators = [validate_name, validate_name, validate_option_type]
+    validators = [validate_name, validate_name, parse_option_type]
 
     def __init__(self, name, target, type_):
         self.name = name
