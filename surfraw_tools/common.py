@@ -140,9 +140,6 @@ class Context(argparse.Namespace):
     # I'd prefer properties but argparse's "append" action doesn't append in
     # the way I expected it to.  It requires the ability to assign values...
     def __getattr__(self, name):
-        # For backward compatibility.
-        if name == "members":
-            name = "flags"
         # Delegate to `_SurfrawOptionContainer`.
         try:
             ret = self._surfraw_options.options[name]
