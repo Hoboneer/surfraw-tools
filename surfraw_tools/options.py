@@ -1,3 +1,4 @@
+import operator
 import re
 import weakref
 from collections import deque
@@ -513,10 +514,10 @@ class OptionResolutionError(Exception):
 def make_option_resolver(target_type, option_types, error_msg, assign_target):
     def resolve_option(ctx):
         # `ctx` is the parsed arguments
-        targets = getattr(ctx, target_type)
+        targets = operator.attrgetter(target_type)(ctx)
         options = list(
             chain.from_iterable(
-                ctx.options.options[ctx.options.types_to_buckets[type_]]
+                ctx.options.options[type_.typename_plural]
                 for type_ in option_types
             )
         )
