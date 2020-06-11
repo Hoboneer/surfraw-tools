@@ -1,6 +1,5 @@
 import argparse
 import sys
-from abc import ABCMeta, abstractmethod
 from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
@@ -29,20 +28,22 @@ from .options import (
 )
 
 
-class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
+class _ChainContainer(argparse.Namespace):
+    # List of `SurfrawOption`-derived classes.
     types = []
 
     def __init__(self):
         self._items = {type_: [] for type_ in self.types}
-        self._unresolved_items = []
-        self._resolved = False
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
         # Dynamically create getters.
-        for type_ in self.types:
+        for type_ in cls.types:
             setattr(
-                self.__class__,
-                type_,
-                # Account for late binding
+                cls,
+                type_.typename_plural,
                 property(
+                    # Account for late binding
                     partial(
                         lambda self_, saved_type: self_._items[
                             saved_type
@@ -52,20 +53,15 @@ class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
                 ),
             )
 
-    # For use with argparse's "append" action.
     def append(self, item):
-        self._unresolved_items.append(item)
-
-    @abstractmethod
-    def resolve(self):
-        """Place items into their corresponding buckets.
-
-        Remember to set `_resolved` to `True` afterward."""
-        raise NotImplementedError
+        try:
+            self._items[item.type].append(item)
+        except KeyError:
+            raise TypeError(
+                f"object '{item}' may not go into `{self.__class__.__name__}`s as it not a valid type"
+            ) from None
 
     def __iter__(self):
-        if not self._resolved:
-            return iter(self._unresolved_items)
         return chain.from_iterable(self._items.values())
 
     # `__bool__` automatically defined.  True if non-zero length.
@@ -74,50 +70,11 @@ class _ChainContainer(argparse.Namespace, metaclass=ABCMeta):
 
 
 class _FlagContainer(_ChainContainer):
-    types = ["bools", "enums", "anythings", "specials", "lists"]
-
-    def resolve(self):
-        # XXX: Should this just check for an instance of `CreatesVariable`?
-        #      How to determine which "bucket" to place into then?
-        if not self._unresolved_items:
-            return
-        for flag in self._unresolved_items:
-            if isinstance(flag.target, BoolOption):
-                self._items["bools"].append(flag)
-            elif isinstance(flag.target, EnumOption):
-                self._items["enums"].append(flag)
-            elif isinstance(flag.target, AnythingOption):
-                self._items["anythings"].append(flag)
-            elif isinstance(flag.target, SpecialOption):
-                self._items["specials"].append(flag)
-            elif isinstance(flag.target, ListOption):
-                self._items["lists"].append(flag)
-            else:
-                raise RuntimeError(
-                    "Invalid flag target type.  This should never be raised; the code is out of sync with itself."
-                )
-            flag.target.add_flag(flag)
-        self._unresolved_items.clear()
-        self._resolved = True
+    types = SurfrawOption.variable_options
 
 
 class _ListContainer(_ChainContainer):
-    types = ["enums", "anythings"]
-
-    def resolve(self):
-        if not self._unresolved_items:
-            return
-        for list_ in self._unresolved_items:
-            if issubclass(list_.type, EnumOption):
-                self._items["enums"].append(list_)
-            elif issubclass(list_.type, AnythingOption):
-                self._items["anythings"].append(list_)
-            else:
-                raise RuntimeError(
-                    "Invalid list target type.  This should never be raised; the code is out of sync with itself."
-                )
-        self._unresolved_items.clear()
-        self._resolved = True
+    types = [EnumOption, AnythingOption]
 
 
 class _SurfrawOptionContainer(argparse.Namespace):
@@ -267,9 +224,9 @@ BASE_PARSER.add_argument(
     "--flag",
     "-F",
     action="append",
-    default=argparse.SUPPRESS,
+    default=[],
     type=_wrap_parser(FlagOption.from_arg),
-    dest="options",
+    dest="unresolved_flags",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help=f"specify an alias to a value(s) of a defined {VALID_FLAG_TYPES_STR} option",
 )
@@ -299,7 +256,7 @@ BASE_PARSER.add_argument(
     action="append",
     default=argparse.SUPPRESS,
     type=_wrap_parser(FlagOption.from_arg),
-    dest="options",
+    dest="unresolved_flags",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
     help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )

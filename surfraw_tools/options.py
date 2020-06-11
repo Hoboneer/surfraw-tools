@@ -554,6 +554,33 @@ def _resolver(func):
     RESOLVERS.append(func)
 
 
+_inner_resolve_flags = make_option_resolver(
+    "unresolved_flags",
+    SurfrawOption.variable_options,
+    error_msg="flag option '{target.name}' does not target any existing "
+    f"{VALID_FLAG_TYPES_STR} option",
+    assign_target=True,
+)
+
+
+@_resolver
+def _resolve_flags(ctx):
+    _inner_resolve_flags(ctx)
+    # Every flag now has its `target` attribute set properly.
+
+    for flag in ctx.unresolved_flags:
+        flag.target.add_flag(flag)
+        # Append to `options` in order for the flag name to be checked.
+        ctx.options.append(flag)
+    del ctx.unresolved_flags
+
+    try:
+        for flag_target in ctx.variable_options:
+            flag_target.resolve_flags()
+    except OptionParseError as e:
+        raise OptionResolutionError(str(e)) from None
+
+
 _inner_resolve_aliases = make_option_resolver(
     "aliases",
     (FlagOption, *SurfrawOption.variable_options),
@@ -632,40 +659,6 @@ _resolver(
         assign_target=False,
     )
 )
-
-
-_inner_resolve_flags = make_option_resolver(
-    "flags",
-    SurfrawOption.variable_options,
-    error_msg="flag option '{target.name}' does not target any existing "
-    f"{VALID_FLAG_TYPES_STR} option",
-    assign_target=True,
-)
-
-
-@_resolver
-def _resolve_flags(ctx):
-    _inner_resolve_flags(ctx)
-    flags = ctx.flags
-    try:
-        flags.resolve()
-    except Exception as e:
-        raise OptionResolutionError(str(e)) from None
-
-    try:
-        for flag_target in ctx.variable_options:
-            flag_target.resolve_flags()
-    except OptionParseError as e:
-        raise OptionResolutionError(str(e)) from None
-
-
-@_resolver
-def _resolve_lists(ctx):
-    lists = ctx.lists
-    try:
-        lists.resolve()
-    except Exception as e:
-        raise OptionResolutionError(str(e)) from None
 
 
 @_resolver
