@@ -85,24 +85,14 @@ class _SurfrawOptionContainer(argparse.Namespace):
         self.nonvariable_options = []
         self._seen_nonvariable_names = set()
 
-        self.types_to_buckets = {
-            FlagOption: "flags",
-            BoolOption: "bools",
-            EnumOption: "enums",
-            AnythingOption: "anythings",
-            AliasOption: "aliases",
-            SpecialOption: "specials",
-            ListOption: "lists",
-        }
         self.options = {
-            "flags": _FlagContainer(),
-            "bools": [],
-            "enums": [],
-            "anythings": [],
-            "aliases": [],
-            "specials": [],
-            "lists": _ListContainer(),
+            type_.typename_plural: []
+            for type_ in SurfrawOption.typenames.values()
         }
+        # Flags and lists can be grouped by their target types.
+        self.options[FlagOption.typename_plural] = _FlagContainer()
+        self.options[ListOption.typename_plural] = _ListContainer()
+
         # Dynamically create getters.
         for type_ in self.options.keys():
             setattr(
@@ -118,21 +108,15 @@ class _SurfrawOptionContainer(argparse.Namespace):
             )
 
     def append(self, option):
-        if not isinstance(option, SurfrawOption):
-            raise TypeError(f"option '{option.name}' is not a surfraw option")
-
         try:
-            bucket = self.types_to_buckets[option.__class__]
+            bucket = self.options[option.typename_plural]
         except KeyError:
-            raise RuntimeError(
-                f"could not route option '{option.name}' to a bucket; the code is out of sync with itself"
-            )
-        else:
-            self.options[bucket].append(option)
+            raise TypeError(
+                f"option '{option.name}' is not a surfraw option"
+            ) from None
+        bucket.append(option)
 
-        self._notify_append(option)
-
-    def _notify_append(self, option):
+        # Keep track of variable names.
         if isinstance(option, CreatesVariable):
             if option.name in self._seen_variable_names:
                 raise ValueError(
