@@ -208,6 +208,14 @@ class FlagOption(Option, AliasTarget, SurfrawOption):
         self.description = f"An alias for -{self.target}={self.value}"
         super().__init__()
 
+    @property
+    def type(self):
+        if isinstance(self.target, str):
+            raise ValueError(
+                f"cannot access `type` attr of `{__class__.__name__}` if `self.target` is still a string (i.e., not resolved)"
+            )
+        return self.target.__class__
+
 
 class BoolOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
     flag_value_validator = validate_bool
@@ -416,15 +424,14 @@ class AliasOption(Option, SurfrawOption):
 
     typename = "alias"
 
-    def __init__(self, name, target, target_type):
+    def __init__(self, name, target, type_):
         self.name = name
         self.target = target
-        if not issubclass(target_type, AliasTarget):
+        if not issubclass(type_, AliasTarget):
             raise TypeError(
-                f"target type ('{target_type.__name__}') of alias '{self.name}' is not a valid alias target"
+                f"target type ('{type_.__name__}') of alias '{self.name}' is not a valid alias target"
             )
-        else:
-            self.target_type = target_type
+        self.type = type_
         super().__init__()
 
 
@@ -560,21 +567,18 @@ _inner_resolve_aliases = make_option_resolver(
 def _resolve_aliases(ctx):
     _inner_resolve_aliases(ctx)
     for alias in ctx.aliases:
-        if not isinstance(alias.target, alias.target_type):
+        if not isinstance(alias.target, alias.type):
             # Find a matching target
             target_name = alias.target.name
             for opt in chain(ctx.flags, ctx.variable_options):
-                if (
-                    isinstance(opt, alias.target_type)
-                    and opt.name == target_name
-                ):
+                if isinstance(opt, alias.type) and opt.name == target_name:
                     alias.target = opt
                     break
             else:
                 raise OptionResolutionError(
                     f"alias {alias.name}'s target type does not match the alias target's type: {alias.target.typename}"
                 )
-        elif alias.target_type == AliasOption:
+        elif alias.type == AliasOption:
             # This should be unreachable.
             raise OptionResolutionError(
                 f"alias '{alias.name}' targets another alias, which is forbidden; this should never be reached; this is a bug!"
