@@ -262,9 +262,7 @@ class EnumOption(
         self.name = name
         if default not in values:
             raise ValueError(
-                f"enum default value '{default}' must be within '{values}'",
-                subject=default,
-                subject_type="enum default value",
+                f"enum default value '{default}' must be within '{values}'"
             )
         self.default = default
         self.values = values
