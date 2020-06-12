@@ -521,20 +521,22 @@ def make_option_resolver(target_type, option_types, error_msg, assign_target):
     def resolve_option(ctx):
         # `ctx` is the parsed arguments
         targets = operator.attrgetter(target_type)(ctx)
-        options = list(
-            chain.from_iterable(
+        options = {
+            opt.name: opt
+            for opt in chain.from_iterable(
                 ctx.options.options[type_.typename_plural]
                 for type_ in option_types
             )
-        )
+        }
         for target in targets:
-            for option in options:
-                if target.target == option.name:
-                    if assign_target:
-                        target.target = option
-                    break
-            else:
-                raise OptionResolutionError(error_msg.format(target=target))
+            try:
+                opt = options[target.target]
+            except KeyError:
+                raise OptionResolutionError(
+                    error_msg.format(target=target)
+                ) from None
+            if assign_target:
+                target.target = opt
 
     return resolve_option
 
