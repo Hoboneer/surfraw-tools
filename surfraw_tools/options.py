@@ -382,7 +382,7 @@ class ListOption(Option, AliasTarget, CreatesVariable, SurfrawOption):
         if issubclass(self.type, EnumOption):
             if not spec:
                 raise TypeError(
-                    f"fourth argument to `--list` option must be provided for enum lists"
+                    "fourth argument to `--list` option must be provided for enum lists"
                 )
             # Ignore unused later values in `spec`.
             unparsed_enum_values, *_ = spec
