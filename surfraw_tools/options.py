@@ -112,7 +112,7 @@ class SurfrawOption:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        subclass_re = r"([A-z]+)Option"
+        subclass_re = r"([A-Z][a-z]+)Option"
         try:
             cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()
         except IndexError:
