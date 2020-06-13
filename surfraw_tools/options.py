@@ -1,8 +1,26 @@
-import operator
+from __future__ import annotations
+
 import re
 import weakref
 from collections import deque
+from dataclasses import dataclass, field
 from itertools import chain
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    Iterable,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
+
+from typing_extensions import Protocol
 
 from .validation import (
     OptionParseError,
