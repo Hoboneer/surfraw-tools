@@ -1,20 +1,32 @@
 import argparse
 import sys
+from argparse import _VersionAction
 from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Set,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from jinja2 import Environment, PackageLoader
+from typing_extensions import Protocol
 
 from ._package import __version__
 from .options import (
-    RESOLVERS,
     VALID_FLAG_TYPES_STR,
     AliasOption,
     AnythingOption,
     BoolOption,
     CollapseOption,
-    CreatesVariable,
     DescribeOption,
     EnumOption,
     FlagOption,
@@ -22,21 +34,37 @@ from .options import (
     ListOption,
     MappingOption,
     MetavarOption,
+    Option,
     OptionResolutionError,
-    SpecialOption,
+    SurfrawAnything,
+    SurfrawEnum,
+    SurfrawFlag,
+    SurfrawList,
     SurfrawOption,
+    SurfrawSpecial,
+    resolve_options,
 )
 
 
-class _ChainContainer(argparse.Namespace):
+class _HasType(Protocol):
+    @property
+    def type(self) -> Type[Any]:
+        ...
+
+
+T = TypeVar("T", bound=_HasType)
+
+
+class _ChainContainer(argparse.Namespace, Generic[T]):
     # List of `SurfrawOption`-derived classes.
-    types = []
+    types: List[Type[Any]] = []
 
-    def __init__(self):
-        self._items = {type_: [] for type_ in self.types}
+    def __init__(self) -> None:
+        self._items: Dict[Type[Any], List[T]] = {
+            type_: [] for type_ in self.types
+        }
 
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
+    def __init_subclass__(cls, **kwargs) -> None:
         # Dynamically create getters.
         for type_ in cls.types:
             setattr(
@@ -45,7 +73,7 @@ class _ChainContainer(argparse.Namespace):
                 property(
                     # Account for late binding
                     partial(
-                        lambda self_, saved_type: self_._items[
+                        lambda self_, saved_type: self_._items[  # type: ignore
                             saved_type
                         ].copy(),
                         saved_type=type_,
@@ -53,7 +81,7 @@ class _ChainContainer(argparse.Namespace):
                 ),
             )
 
-    def append(self, item):
+    def append(self, item: T) -> None:
         try:
             self._items[item.type].append(item)
         except KeyError:
@@ -69,29 +97,35 @@ class _ChainContainer(argparse.Namespace):
         return sum(len(types_) for types_ in self._items.values())
 
 
-class _FlagContainer(_ChainContainer):
+class _FlagContainer(_ChainContainer[SurfrawFlag]):
     types = SurfrawOption.variable_options
 
 
-class _ListContainer(_ChainContainer):
-    types = [EnumOption, AnythingOption]
+class _ListContainer(_ChainContainer[SurfrawList]):
+    types = [SurfrawEnum, SurfrawAnything]
+
+
+class _UnresolvedOptsContainer(_ChainContainer[Option]):
+    types = list(Option.__subclasses__())
 
 
 class _SurfrawOptionContainer(argparse.Namespace):
-    def __init__(self):
+    def __init__(self) -> None:
         # Options that create variables.
-        self.variable_options = []
-        self._seen_variable_names = set()
-        self.nonvariable_options = []
-        self._seen_nonvariable_names = set()
+        self.variable_options: List[SurfrawOption] = []
+        self._seen_variable_names: Set[str] = set()
+        self.nonvariable_options: List[SurfrawOption] = []
+        self._seen_nonvariable_names: Set[str] = set()
 
-        self.options = {
+        self.options: Dict[
+            str, Union[_FlagContainer, _ListContainer, List[SurfrawOption]]
+        ] = {
             type_.typename_plural: []
             for type_ in SurfrawOption.typenames.values()
         }
         # Flags and lists can be grouped by their target types.
-        self.options[FlagOption.typename_plural] = _FlagContainer()
-        self.options[ListOption.typename_plural] = _ListContainer()
+        self.options[SurfrawFlag.typename_plural] = _FlagContainer()
+        self.options[SurfrawList.typename_plural] = _ListContainer()
 
         # Dynamically create getters.
         for type_ in self.options.keys():
@@ -101,23 +135,23 @@ class _SurfrawOptionContainer(argparse.Namespace):
                 # Account for late binding
                 property(
                     partial(
-                        lambda self_, saved_type: self_.options[saved_type],
+                        lambda self_, saved_type: self_.options[saved_type],  # type: ignore
                         saved_type=type_,
                     )
                 ),
             )
 
-    def append(self, option):
+    def append(self, option: SurfrawOption) -> None:
         try:
             bucket = self.options[option.typename_plural]
         except KeyError:
             raise TypeError(
                 f"option '{option.name}' is not a surfraw option"
             ) from None
-        bucket.append(option)
+        bucket.append(option)  # type: ignore
 
         # Keep track of variable names.
-        if isinstance(option, CreatesVariable):
+        if option.creates_variable:
             if option.name in self._seen_variable_names:
                 raise ValueError(
                     f"the variable name '{option.name}' is duplicated"
@@ -134,8 +168,9 @@ class _SurfrawOptionContainer(argparse.Namespace):
 
 
 class Context(argparse.Namespace):
-    def __init__(self):
+    def __init__(self) -> None:
         self._surfraw_options = _SurfrawOptionContainer()
+        self.unresolved = _UnresolvedOptsContainer()
 
     # I'd prefer properties but argparse's "append" action doesn't append in
     # the way I expected it to.  It requires the ability to assign values...
@@ -162,7 +197,10 @@ class Context(argparse.Namespace):
         return self.options.variable_options
 
 
-def _wrap_parser(func):
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _wrap_parser(func: F) -> F:
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -171,14 +209,17 @@ def _wrap_parser(func):
             raise argparse.ArgumentTypeError(str(e)) from None
         return ret
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
-_VERSION_FORMAT_ACTION = BASE_PARSER.add_argument(
-    "--version",
-    action="version",
-    version=f"%(prog)s (surfraw-tools) {__version__}",
+_VERSION_FORMAT_ACTION = cast(
+    _VersionAction,
+    BASE_PARSER.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s (surfraw-tools) {__version__}",
+    ),
 )
 VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
 BASE_PARSER.add_argument("name", help="name for the elvis")
@@ -205,9 +246,8 @@ BASE_PARSER.add_argument(
     "--flag",
     "-F",
     action="append",
-    default=[],
     type=_wrap_parser(FlagOption.from_arg),
-    dest="unresolved_flags",
+    dest="unresolved",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help=f"specify an alias to a value(s) of a defined {VALID_FLAG_TYPES_STR} option",
 )
@@ -215,9 +255,8 @@ BASE_PARSER.add_argument(
     "--yes-no",
     "-Y",
     action="append",
-    default=argparse.SUPPRESS,
     type=_wrap_parser(BoolOption.from_arg),
-    dest="options",
+    dest="unresolved",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
     help="specify a boolean option for the elvis",
 )
@@ -225,9 +264,8 @@ BASE_PARSER.add_argument(
     "--enum",
     "-E",
     action="append",
-    default=argparse.SUPPRESS,
     type=_wrap_parser(EnumOption.from_arg),
-    dest="options",
+    dest="unresolved",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
 )
@@ -235,9 +273,8 @@ BASE_PARSER.add_argument(
     "--member",
     "-M",
     action="append",
-    default=argparse.SUPPRESS,
     type=_wrap_parser(FlagOption.from_arg),
-    dest="unresolved_flags",
+    dest="unresolved",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
     help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )
@@ -245,8 +282,7 @@ BASE_PARSER.add_argument(
     "--anything",
     "-A",
     action="append",
-    default=argparse.SUPPRESS,
-    dest="options",
+    dest="unresolved",
     type=_wrap_parser(AnythingOption.from_arg),
     metavar="VARIABLE_NAME:DEFAULT_VALUE",
     help="specify an option that is not checked",
@@ -254,9 +290,8 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--alias",
     action="append",
-    default=argparse.SUPPRESS,
     type=_wrap_parser(AliasOption.from_arg),
-    dest="options",
+    dest="unresolved",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
 )
@@ -264,7 +299,7 @@ BASE_PARSER.add_argument(
     "--list",
     action="append",
     type=_wrap_parser(ListOption.from_arg),
-    dest="options",
+    dest="unresolved",
     metavar="LIST_NAME:LIST_TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]",
     help="create a list of enum or 'anything' values as a repeatable (cumulative) option (e.g., `-add-foos=bar,baz,qux`)",
 )
@@ -382,11 +417,11 @@ def process_args(ctx):
     ctx.search_url = f"{url_scheme}://{ctx.search_url}"
 
     if ctx.use_results_option:
-        ctx.options.append(SpecialOption("results"))
+        ctx.options.append(SurfrawSpecial("results"))
     if ctx.use_language_option:
         # If `SURFRAW_lang` is empty or unset, assume English.
         ctx.options.append(
-            SpecialOption("language", default="${SURFRAW_lang:=en}")
+            SurfrawSpecial("language", default="${SURFRAW_lang:=en}")
         )
 
     if ctx.num_tabs < 1:
@@ -397,8 +432,7 @@ def process_args(ctx):
         return EX_USAGE
 
     try:
-        for resolver in RESOLVERS:
-            resolver(ctx)
+        resolve_options(ctx)
     except OptionResolutionError as e:
         print(f"{ctx._program_name}: {e}", file=sys.stderr)
         return EX_USAGE
