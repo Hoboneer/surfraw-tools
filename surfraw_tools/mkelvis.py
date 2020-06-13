@@ -27,11 +27,11 @@ from .common import (
     process_args,
 )
 from .options import (
-    EnumOption,
-    FlagOption,
-    ListOption,
-    SpecialOption,
+    SurfrawEnum,
+    SurfrawFlag,
+    SurfrawList,
     SurfrawOption,
+    SurfrawSpecial,
 )
 
 PROGRAM_NAME = "mkelvis"
@@ -64,10 +64,10 @@ def generate_local_help_output(ctx):
     def get_optlines(opt, target=None):
         if target is None:
             target = opt
-        if isinstance(target, ListOption):
+        if isinstance(target, SurfrawList):
             optlines = []
             optlines.append(get_optheader(opt, prefix="add-"))
-            if not isinstance(opt, FlagOption):
+            if not isinstance(opt, SurfrawFlag):
                 optlines.append(
                     get_optheader(opt, prefix="clear-", force_no_metavar=True)
                 )
@@ -87,10 +87,10 @@ def generate_local_help_output(ctx):
         lines = get_optlines(opt)
         optheader = lines[-1]
 
-        if isinstance(opt, EnumOption):
+        if isinstance(opt, SurfrawEnum) or (
+            isinstance(opt, SurfrawList) and issubclass(opt.type, SurfrawEnum)
+        ):
             valid_values = opt.values
-        elif isinstance(opt, ListOption) and issubclass(opt.type, EnumOption):
-            valid_values = opt.valid_enum_values
         else:
             # Won't add any lines because empty list.
             valid_values = []
@@ -134,7 +134,7 @@ def generate_local_help_output(ctx):
             ns_name = ctx._namespacer(opt.name)
             lines.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
-            if isinstance(opt, SpecialOption):
+            if isinstance(opt, SurfrawSpecial):
                 if opt.name == "results":
                     lines.append(
                         prefix + f"Environment: {ns_name}, SURFRAW_results"
