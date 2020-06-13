@@ -283,7 +283,7 @@ w3_complete_hook_opt ()
 		{% endfor %}
 		# Lists (enum type)
 		{% for list in lists.enums %}
-		{{ optcase(list) }}) echo {{ list.valid_enum_values|join(' ') }} ;;
+		{{ optcase(list) }}) echo {{ list.values|join(' ') }} ;;
 		{% else %}
 		##-add-list=*|-remove-list=*|-add-alias1=*|-remove-alias1=*) echo val1 val2 val3 ;;
 		{% endfor %}
@@ -347,7 +347,7 @@ esac
 __mkelvis_enter_list_ctx
 {% endif %}
 for val in ${{ enum_list.name|ns }}; do
-	{{ check_enum('val', enum_list.valid_enum_values, orig_var=enum_list.name|ns)|indent(4)|replace('    ', '\t') }}
+	{{ check_enum('val', enum_list.values, orig_var=enum_list.name|ns)|indent(4)|replace('    ', '\t') }}
 done
 {% if loop.last %}
 __mkelvis_exit_list_ctx
