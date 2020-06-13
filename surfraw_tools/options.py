@@ -523,13 +523,12 @@ class SurfrawAlias(SurfrawOption):
         self.target = target
 
 
+@dataclass(frozen=True)
 class MappingOption(Option):
     validators = [validate_name, no_validation, [parse_bool]]
-
-    def __init__(self, variable, parameter, url_encode=True):
-        self.target = variable
-        self.parameter = parameter
-        self.should_url_encode = url_encode
+    target: str
+    parameter: str
+    should_url_encode: bool = True
 
     @property
     def variable(self):
@@ -537,12 +536,11 @@ class MappingOption(Option):
         return self.target
 
 
+@dataclass(frozen=True)
 class InlineOption(Option):
     validators = [validate_name, validate_name]
-
-    def __init__(self, variable, keyword):
-        self.target = variable
-        self.keyword = keyword
+    target: str
+    keyword: str
 
     @property
     def variable(self):
@@ -550,13 +548,13 @@ class InlineOption(Option):
         return self.target
 
 
+@dataclass(frozen=True)
 class CollapseOption(Option):
     validators = [validate_name, list_of(no_validation)]
     last_arg_is_unlimited = True
 
-    def __init__(self, variable, collapses):
-        self.target = variable
-        self.collapses = collapses
+    target: str
+    collapses: List[str]
 
     @property
     def variable(self):
@@ -568,30 +566,30 @@ _VALID_METAVAR_STR = "^[a-z]+$"
 _VALID_METAVAR = re.compile(_VALID_METAVAR_STR)
 
 
-def _validate_metavar(metavar):
+def _validate_metavar(metavar: str) -> str:
     if not _VALID_METAVAR.fullmatch(metavar):
         raise OptionParseError(
-            f"metavar '{metavar}' must match the regex '{_VALID_METAVAR_STR}'",
-            subject=metavar,
-            subject_type="metavar",
+            f"metavar '{metavar}' must match the regex '{_VALID_METAVAR_STR}'"
         )
     return metavar
 
 
+# Treat this as immutable!
+@dataclass
 class MetavarOption(Option):
     validators = [validate_name, _validate_metavar]
+    variable: str
+    metavar: str
 
-    def __init__(self, variable, metavar):
-        self.variable = variable
-        self.metavar = metavar.upper()
+    def __post_init__(self):
+        self.metavar = self.metavar.upper()
 
 
+@dataclass(frozen=True)
 class DescribeOption(Option):
     validators = [validate_name, no_validation]
-
-    def __init__(self, variable, description):
-        self.variable = variable
-        self.description = description
+    variable: str
+    description: str
 
 
 class OptionResolutionError(Exception):
