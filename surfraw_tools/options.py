@@ -33,42 +33,6 @@ from .validation import (
 )
 
 
-class ListType:
-    pass
-
-
-class AliasTarget:
-    def __init__(self):
-        super().__init__()
-        self.aliases = weakref.WeakSet()
-
-    def add_alias(self, alias):
-        self.aliases.add(alias)
-
-
-class CreatesVariable:
-    """Superclass of options which create variables."""
-
-    @staticmethod
-    def flag_value_validator(_):
-        raise NotImplementedError
-
-    def __init__(self):
-        super().__init__()
-        # Preferably, flags should be listed in the order that they were
-        # defined in the command line.
-        self.flags = []
-
-    def add_flag(self, flag):
-        self.flags.append(flag)
-
-    def resolve_flags(self):
-        try:
-            for flag in self.flags:
-                flag.value = self.__class__.flag_value_validator(flag.value)
-        except OptionParseError as e:
-            raise OptionResolutionError(str(e)) from None
-
 
 # Options with non alphabetic characters are impossible
 _FORBIDDEN_OPTION_NAMES = {
