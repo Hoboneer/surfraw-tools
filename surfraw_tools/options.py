@@ -62,54 +62,70 @@ _FORBIDDEN_OPTION_NAMES = {
 }
 
 
+_FlagValidator = Callable[[Any], Any]
+
+
 class SurfrawOption:
-    """Option for a Surfraw elvis."""
+    creates_variable: ClassVar[bool]
+    flag_value_validator: _FlagValidator
 
-    typenames = {}
-    # Option types which create variables in output elvi.
-    variable_options = []
+    typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
+    typename: ClassVar[str]
+    typename_plural: ClassVar[str]
+    variable_options: ClassVar[List[Type[SurfrawOption]]] = []
 
-    def __init__(self):
-        super().__init__()
-        # Depends on `self.name` being defined by a subclass
-        if not hasattr(self, "name"):
-            raise RuntimeError(
-                f"tried to run __init__ method of `{self.__class__.__name__}` but `self.name` was not defined"
-            )
-        if self.name in _FORBIDDEN_OPTION_NAMES:
+    name: str
+    metavar: Optional[str]
+    description: str
+
+    def __init__(self, name: str, *args: Any, **kwargs: Any):
+        if name in _FORBIDDEN_OPTION_NAMES:
             raise ValueError(
-                f"option name '{self.name}' is global, which cannot be overriden by elvi"
+                f"option name '{name}' is global, which cannot be overriden by elvi"
             )
-        # Define a default metavar.
-        # Non-variable creating options don't need one.
+        self.name: str = name
         if not hasattr(self, "metavar"):
-            if isinstance(self, CreatesVariable):
+            if self.__class__.creates_variable:
                 self.metavar = self.name.upper()
             else:
                 self.metavar = None
         if not hasattr(self, "description"):
             self.description = f"A {self.typename} option for '{self.name}'"
+        # Aliases and flags.
+        self.aliases: weakref.WeakSet[SurfrawOption] = weakref.WeakSet()
+        # Flags should be listed in the order that they were defined in the command line.
+        self.flags: List[SurfrawFlag] = []
 
-    @classmethod
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        subclass_re = r"([A-Z][a-z]+)Option"
+    def __init_subclass__(cls, **kwargs) -> None:
+        subclass_re = r"Surfraw([A-Z][a-z]+)"
         try:
-            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()
+            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore
         except IndexError:
             raise RuntimeError(
-                f"subclasses of {__class__.__name__} must match the regex '{subclass_re}'"
+                f"subclasses of SurfrawOption must match the regex '{subclass_re}'"
             ) from None
-        # Can't reference `AliasOption` here since it's not defined yet, but this will do.
+        # Can't reference `SurfrawAlias` here since it's not defined yet, but this will do.
         if cls.typename == "alias":
             cls.typename_plural = "aliases"
         else:
             cls.typename_plural = cls.typename + "s"
 
         SurfrawOption.typenames[cls.typename] = cls
-        if issubclass(cls, CreatesVariable):
+        if cls.creates_variable:
             SurfrawOption.variable_options.append(cls)
+
+    def add_alias(self, alias: SurfrawOption) -> None:
+        self.aliases.add(alias)
+
+    def add_flag(self, flag: SurfrawFlag) -> None:
+        self.flags.append(flag)
+
+    def resolve_flags(self) -> None:
+        try:
+            for flag in self.flags:
+                flag.value = self.__class__.flag_value_validator(flag.value)
+        except OptionParseError as e:
+            raise OptionResolutionError(str(e)) from None
 
 
 class Option:
