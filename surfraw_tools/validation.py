@@ -2,10 +2,7 @@ import re
 
 
 class OptionParseError(Exception):
-    def __init__(self, msg, subject, subject_type):
-        super().__init__(msg)
-        self.subject = subject
-        self.subject_type = subject_type
+    pass
 
 
 # NAME
@@ -19,9 +16,7 @@ _VALID_SURFRAW_VAR_NAME = re.compile("^[a-z]+$")
 def validate_name(name):
     if not _VALID_SURFRAW_VAR_NAME.fullmatch(name):
         raise OptionParseError(
-            f"name '{name}' is an invalid variable name for an elvis",
-            subject=name,
-            subject_type="variable name",
+            f"name '{name}' is an invalid variable name for an elvis"
         )
     return name
 
@@ -40,9 +35,7 @@ def validate_bool(bool_):
     if bool_ not in _BOOL_WORDS:
         valid_bools = ", ".join(sorted(_BOOL_WORDS))
         raise OptionParseError(
-            f"bool '{bool_}' must be one of the following: {valid_bools}",
-            subject=bool_,
-            subject_type="bool",
+            f"bool '{bool_}' must be one of the following: {valid_bools}"
         )
     return bool_
 
@@ -55,9 +48,7 @@ def parse_bool(bool_):
     else:
         valid_bools = ", ".join(sorted(_BOOL_WORDS))
         raise OptionParseError(
-            f"bool '{bool_}' must be one of the following: {valid_bools}",
-            subject=bool_,
-            subject_type="bool",
+            f"bool '{bool_}' must be one of the following: {valid_bools}"
         )
 
 
@@ -72,9 +63,7 @@ _VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
 def validate_enum_value(value):
     if not _VALID_ENUM_VALUE.fullmatch(value):
         raise OptionParseError(
-            f"enum value '{value}' must match the regex '{_VALID_ENUM_VALUE_STR}'",
-            subject=value,
-            subject_type="enum value",
+            f"enum value '{value}' must match the regex '{_VALID_ENUM_VALUE_STR}'"
         )
     return value
 
