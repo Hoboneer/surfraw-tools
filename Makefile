@@ -32,6 +32,10 @@ format: .formatted
 lint:
 	flake8
 
+.PHONY: typecheck
+typecheck:
+	mypy -p surfraw_tools
+
 .PHONY: clean
 clean:
 	-rm -fr *.egg-info/
