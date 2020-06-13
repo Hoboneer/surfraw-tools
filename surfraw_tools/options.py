@@ -17,7 +17,9 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    TypeVar,
     Union,
+    cast,
 )
 
 from typing_extensions import Protocol
@@ -128,6 +130,10 @@ class SurfrawOption:
             raise OptionResolutionError(str(e)) from None
 
 
+_FlagValidatorsType = List[Union[List[_FlagValidator], _FlagValidator]]
+_O = TypeVar("_O", bound=Type["Option"])
+
+
 class Option:
     """Option to a command-line program with validated colon-delimited arguments.
 
@@ -137,32 +143,54 @@ class Option:
         last_arg_is_unlimited: Whether the last arg may be repeated.  (default: `False`)
     """
 
-    validators = []
+    validators: _FlagValidatorsType = []
     last_arg_is_unlimited = False
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}({', '.join(f'{name}={var!r}' for name, var in vars(self).items())})"
+    typename: ClassVar[str]
+    typename_plural: ClassVar[str]
+
+    def __init_subclass__(cls, **kwargs) -> None:
+        subclass_re = r"([A-Z][a-z]+)Option"
+        try:
+            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore
+        except IndexError:
+            raise RuntimeError(
+                f"subclasses of Option must match the regex '{subclass_re}'"
+            ) from None
+        # Can't reference `AliasOption` here since it's not defined yet, but this will do.
+        if cls.typename == "alias":
+            cls.typename_plural = "aliases"
+        else:
+            cls.typename_plural = cls.typename + "s"
+
+    @property
+    def type(self) -> Type[Option]:
+        return self.__class__
 
     @classmethod
-    def from_arg(cls, arg):
+    def from_arg(cls: _O, arg: str) -> _O:
         parsed_args = cls.parse_args(
             arg,
             validators=cls.validators,
             last_is_unlimited=cls.last_arg_is_unlimited,
         )
         if cls.last_arg_is_unlimited:
-            # `rest_args` is the positional arguments of `cls` and corresponds to the validators *before* the last one.
-            rest_args = parsed_args[: len(cls.validators) - 1]
-            # `normal_arg` is the list of validated args from the last validator.
-            normal_arg = parsed_args[len(cls.validators) - 1 :]
-            return cls(*rest_args, normal_arg)
+            normal_args = parsed_args[: len(cls.validators) - 1]
+            # `last_arg` is the list of validated args from the last validator.
+            last_arg = parsed_args[len(cls.validators) - 1 :]
+            # Too many arguments, according to mypy.  I know better!
+            return cast(_O, cls(*normal_args, last_arg))  # type: ignore
         else:
-            return cls(*parsed_args)
+            return cast(_O, cls(*parsed_args))
 
     @staticmethod
-    def parse_args(raw_arg, validators, last_is_unlimited=False):
+    def parse_args(
+        raw_arg: str,
+        validators: _FlagValidatorsType,
+        last_is_unlimited: bool = False,
+    ) -> List[Any]:
         args = deque(raw_arg.split(":"))
-        valid_args = []
+        valid_args: List[Any] = []
 
         curr_validators = deque(validators)
         num_required = len(curr_validators)
@@ -194,9 +222,7 @@ class Option:
                     break
                 else:
                     raise OptionParseError(
-                        f"current group {group_num} for '{raw_arg}' needs at least {num_required} colon-delimited parts",
-                        subject=raw_arg,
-                        subject_type="option argument",
+                        f"current group {group_num} for '{raw_arg}' needs at least {num_required} colon-delimited parts"
                     )
             else:
                 # Raise `OptionParseError` if invalid arg.
@@ -205,6 +231,7 @@ class Option:
 
         # Continue until args exhausted.
         if last_is_unlimited:
+            assert callable(curr_validator)
             # Raise `OptionParseError` if invalid arg.
             valid_args.extend(curr_validator(arg) for arg in args)
             # `args` is "empty" now.
