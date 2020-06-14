@@ -425,7 +425,9 @@ def process_args(ctx: Context) -> int:
     ctx.search_url = f"{url_scheme}://{ctx.search_url}"
 
     if ctx.use_results_option:
-        ctx.options.append(SurfrawSpecial("results"))
+        ctx.options.append(
+            SurfrawSpecial("results", default="$SURFRAW_results")
+        )
     if ctx.use_language_option:
         # If `SURFRAW_lang` is empty or unset, assume English.
         ctx.options.append(

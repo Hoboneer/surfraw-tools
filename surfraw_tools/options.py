@@ -304,18 +304,22 @@ class FlagOption(Option):
         return SurfrawFlag(self.name, resolved_target, self.value)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawFlag(SurfrawOption):
     creates_variable = False
+
+    target: SurfrawOption
+    value: Any
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
         raise RuntimeError("flags cannot have flags")
 
-    def __init__(self, name: str, target: SurfrawOption, value: Any):
-        super().__init__(name)
-        self.target = target
-        self.value = value
-        self.description = f"An alias for -{self.target.name}={self.value}"
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.set_metadata(
+            "description", f"An alias for -{self.target.name}={self.value}"
+        )
 
     @property
     def type(self) -> Type[SurfrawOption]:
@@ -332,13 +336,12 @@ class BoolOption(Option):
         return SurfrawBool(self.name, self.default)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawBool(SurfrawOption):
     creates_variable = True
+    # Don't need to make new flag objects after resolving.
     flag_value_validator = validate_bool
-
-    def __init__(self, name: str, default: str):
-        super().__init__(name)
-        self.default = default
+    default: str
 
 
 @dataclass(frozen=True)
@@ -350,34 +353,36 @@ class EnumOption(Option):
     ]
     name: str
     default: str
-    values: List[str]
+    values: List[str] = field(hash=False)
 
     def to_surfraw_opt(self) -> SurfrawEnum:
         return SurfrawEnum(self.name, self.default, self.values)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawEnum(SurfrawOption):
     creates_variable = True
     flag_value_validator = validate_enum_value
+    default: str
+    values: List[str] = field(hash=False)
 
-    def __init__(self, name: str, default: str, values: List[str]):
-        super().__init__(name)
-        if default not in values:
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if self.default not in self.values:
             raise ValueError(
-                f"enum default value '{default}' must be within '{values}'"
+                f"enum default value '{self.default}' must be within '{self.values}'"
             )
-        self.default = default
-        self.values = values
         # "A enum" is incorrect.
-        self.description = re.sub("^A ", "An ", self.description)
+        self.set_metadata(
+            "description", re.sub("^A ", "An ", self.description)
+        )
 
-    def resolve_flags(self) -> None:
-        for flag in self.flags:
-            flag.value = self.__class__.flag_value_validator(flag.value)
-            if flag.value not in self.values:
-                raise OptionResolutionError(
-                    f"enum flag option {flag.name}'s value ({flag.value}) is not contained in its target enum ({self.values})"
-                )
+    def _post_resolve_flags(self) -> None:
+        vals = set(self.values)
+        if (set(self._resolved_flag_values) | vals) > vals:
+            raise OptionResolutionError(
+                f"values of flags to enum '{self.name}' are a superset of the valid values ({self.values})'"
+            )
 
 
 @dataclass(frozen=True)
@@ -390,19 +395,25 @@ class AnythingOption(Option):
         return SurfrawAnything(self.name, self.default)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawAnything(SurfrawOption):
     creates_variable = True
+    # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
+    default: str
 
-    def __init__(self, name: str, default: str):
-        super().__init__(name)
-        self.default = default
-        self.description = f"An unchecked option for '{self.name}'"
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.set_metadata(
+            "description", f"An unchecked option for '{self.name}'"
+        )
 
 
 # This class is not instantiated normally... maybe prepend name with underscore?
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawSpecial(SurfrawOption):
     creates_variable = True
+    default: str
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
@@ -410,22 +421,20 @@ class SurfrawSpecial(SurfrawOption):
             "don't call `flag_value_validator` of `SurfrawSpecial` directly"
         )
 
-    def __init__(self, name: str, default: Optional[str] = None):
-        super().__init__(name)
-        if default is None:
-            self.default = "$SURFRAW_" + name
-        else:
-            self.default = default
-
+    def __post_init__(self) -> None:
+        super().__post_init__()
         if self.name == "results":
             # Match the rest of the elvi's metavars for -results=
-            self.metavar = "NUM"
-            self.description = "Number of search results returned"
+            self.set_metadata("metavar", "NUM")
+            self.set_metadata(
+                "description", "Number of search results returned"
+            )
         elif self.name == "language":
             # Match the wikimedia elvi
-            self.metavar = "ISOCODE"
-            self.description = (
-                "Two letter language code (resembles ISO country codes)"
+            self.set_metadata("metavar", "ISOCODE")
+            self.set_metadata(
+                "description",
+                "Two letter language code (resembles ISO country codes)",
             )
         else:
             raise ValueError(
@@ -434,16 +443,22 @@ class SurfrawSpecial(SurfrawOption):
         # Use default metavar and description otherwise.
 
     def resolve_flags(self) -> None:
+        new_flags = []
         for flag in self.flags:
             if flag.name == "results":
                 try:
-                    flag.value = int(flag.value)
+                    new_val = int(flag.value)
                 except ValueError:
                     raise OptionResolutionError(
                         "value for special 'results' option must be an integer"
                     ) from None
-            # The language option needn't be checked here.  There are way too
-            # many ISO language codes to match.
+                new_flags.append(SurfrawFlag(flag.name, flag.target, new_val))
+            else:
+                # The language option needn't be checked here.  There are way too
+                # many ISO language codes to match.
+                new_flags.append(flag)
+        self.flags.clear()
+        self.flags.extend(new_flags)
 
 
 def parse_option_type(option_type: str) -> Type[SurfrawOption]:
@@ -475,8 +490,8 @@ class ListOption(Option):
 
     name: str
     elem_type: Type[SurfrawOption]
-    defaults: List[str]
-    values: List[str] = field(default_factory=list)
+    defaults: List[str] = field(hash=False)
+    values: List[str] = field(default_factory=list, hash=False)
 
     def __post_init__(self) -> None:
         # They are equivalent.
@@ -505,8 +520,13 @@ class ListOption(Option):
 
 
 # XXX: Should this store validators for the type it has?
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawList(SurfrawOption):
     creates_variable = True
+
+    type: Type[SurfrawOption]
+    defaults: List[str] = field(hash=False)
+    values: List[str] = field(hash=False)
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
@@ -514,22 +534,16 @@ class SurfrawList(SurfrawOption):
             "don't call `flag_value_validator` of `SurfrawList` directly"
         )
 
-    def __init__(
-        self,
-        name: str,
-        type: Type[SurfrawOption],
-        defaults: List[str],
-        values: List[str],
-    ):
-        super().__init__(name)
-        self.type = type
-        self.defaults = defaults
-        self.values = values
-        self.description = f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'"
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.set_metadata(
+            "description",
+            f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'",
+        )
 
         if not issubclass(self.type, (SurfrawEnum, SurfrawAnything)):
             raise TypeError(
-                f"element type ('{self.type.__name__}') of list '{self.name}' is not a valid list type"
+                f"element type ('{self.type.typename}') of list '{self.name}' is not a valid list type"
             )
 
         if issubclass(self.type, SurfrawEnum):
@@ -539,14 +553,21 @@ class SurfrawList(SurfrawOption):
                 )
 
     def resolve_flags(self) -> None:
+        # Don't need to make new flag objects after resolving.
         for flag in self.flags:
             if issubclass(self.type, SurfrawEnum):
-                flag.value = list_of(validate_enum_value)(flag.value)
-                if not set(flag.value) <= set(self.values):
+                try:
+                    flag_values = list_of(validate_enum_value)(flag.value)
+                except OptionParseError as e:
+                    raise OptionResolutionError(str(e)) from None
+                if not set(flag_values) <= set(self.values):
                     raise OptionResolutionError(
-                        f"enum list flag option {flag.name}'s value ('{flag.value}') must be a subset of its target's values ('{self.values}')"
+                        f"enum list flag option {flag.name}'s value ('{flag_values}') must be a subset of its target's values ('{self.values}')"
                     )
-            flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
+            flag.set_metadata(
+                "description",
+                f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'",
+            )
             # Don't need to check `AnythingOption`.
 
 
@@ -562,18 +583,19 @@ class AliasOption(Option):
         return SurfrawAlias(self.name, resolved_target)
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawAlias(SurfrawOption):
     creates_variable = False
+    target: SurfrawOption
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
         raise RuntimeError("aliases cannot have flags")
 
-    def __init__(self, name: str, target: SurfrawOption):
-        super().__init__(name)
-        if isinstance(target, self.__class__):
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        if isinstance(self.target, self.__class__):
             raise TypeError("aliases cannot be aliases of other aliases")
-        self.target = target
 
 
 @dataclass(frozen=True)
@@ -607,7 +629,7 @@ class CollapseOption(Option):
     last_arg_is_unlimited = True
 
     target: str
-    collapses: List[str]
+    collapses: List[str] = field(hash=False)
 
     @property
     def variable(self) -> str:
@@ -736,7 +758,7 @@ def resolve_options(ctx: Context) -> None:
                 f"metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
             )
         else:
-            opt.metavar = metavar.metavar
+            opt.set_metadata("metavar", metavar.metavar)
     for desc in ctx.descriptions:
         try:
             opt = varopts[desc.variable]
@@ -745,7 +767,7 @@ def resolve_options(ctx: Context) -> None:
                 f"description for '{desc.variable}' targets a non-existent variable"
             )
         else:
-            opt.description = desc.description
+            opt.set_metadata("description", desc.description)
 
     # Check if options target variables that exist.
     var_checks: List[Tuple[Iterable[_HasTarget], str]] = [
