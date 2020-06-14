@@ -486,8 +486,7 @@ def parse_option_type(option_type: str) -> Type[SurfrawOption]:
         return type_
 
 
-# Can't freeze this class, but it should be treated as immutable.
-@dataclass
+@dataclass(frozen=True)
 class ListOption(Option):
     validators = [
         validate_name,
@@ -504,9 +503,9 @@ class ListOption(Option):
     def __post_init__(self) -> None:
         # They are equivalent.
         if len(self.defaults) == 1 and self.defaults[0] == "":
-            self.defaults = []
+            self.defaults.clear()
         if len(self.values) == 1 and self.values[0] == "":
-            self.values = []
+            self.values.clear()
 
         if issubclass(self.elem_type, SurfrawEnum):
             if not self.values:
@@ -515,7 +514,9 @@ class ListOption(Option):
                 )
 
             # Raise `OptionParseError` if invalid.
-            self.values = [validate_enum_value(val) for val in self.values]
+            new_vals = [validate_enum_value(val) for val in self.values]
+            self.values.clear()
+            self.values.extend(new_vals)
 
         elif issubclass(self.elem_type, SurfrawAnything):
             # Nothing to check for 'anythings'.
