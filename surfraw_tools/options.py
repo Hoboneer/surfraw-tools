@@ -676,7 +676,7 @@ def resolve_options(ctx: Context) -> None:
             alias_target, alias.ref_type
         ):
             raise OptionResolutionError(
-                f"alias '{alias.name}' does not target any options of matching type ('{alias.type.__name__}')"
+                f"alias '{alias.name}' does not target any options of matching type ('{alias.type.typename}')"
             ) from None
         _cleanup_flag_alias_resolve(ctx, alias, alias_target)
 
