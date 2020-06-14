@@ -14,6 +14,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Match,
     NoReturn,
     Optional,
     Tuple,
@@ -143,7 +144,11 @@ class SurfrawOption:
     def __init_subclass__(cls) -> None:
         subclass_re = r"Surfraw([A-Z][a-z]+)"
         try:
-            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore
+            cls.typename = (
+                cast(Match[str], re.match(subclass_re, cls.__name__))
+                .group(1)
+                .lower()
+            )
         except IndexError:
             raise RuntimeError(
                 f"subclasses of SurfrawOption must match the regex '{subclass_re}'"
@@ -203,7 +208,11 @@ class Option:
     def __init_subclass__(cls) -> None:
         subclass_re = r"([A-Z][a-z]+)Option"
         try:
-            cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore
+            cls.typename = (
+                cast(Match[str], re.match(subclass_re, cls.__name__))
+                .group(1)
+                .lower()
+            )
         except IndexError:
             raise RuntimeError(
                 f"subclasses of Option must match the regex '{subclass_re}'"
