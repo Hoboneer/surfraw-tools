@@ -91,7 +91,6 @@ class SurfrawOption:
     name: str
 
     # `_metadata` holds the true data.
-    # _metadata: Dict[str, Any] = field(default_factory=dict, init=False, compare=False)
     _metadata: SurfrawMetadata = field(
         default_factory=cast(
             Type["SurfrawMetadata"],
