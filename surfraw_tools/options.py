@@ -489,7 +489,7 @@ class SurfrawList(SurfrawOption):
 
     def resolve_flags(self) -> None:
         for flag in self.flags:
-            if issubclass(self.type, EnumOption):
+            if issubclass(self.type, SurfrawEnum):
                 flag.value = list_of(validate_enum_value)(flag.value)
                 if not set(flag.value) <= set(self.values):
                     raise OptionResolutionError(
