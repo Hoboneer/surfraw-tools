@@ -104,7 +104,7 @@ class SurfrawOption:
         # Flags should be listed in the order that they were defined in the command line.
         self.flags: List[SurfrawFlag] = []
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls) -> None:
         subclass_re = r"Surfraw([A-Z][a-z]+)"
         try:
             cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore
@@ -155,7 +155,7 @@ class Option:
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls) -> None:
         subclass_re = r"([A-Z][a-z]+)Option"
         try:
             cls.typename = re.match(subclass_re, cls.__name__).group(1).lower()  # type: ignore

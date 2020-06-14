@@ -68,7 +68,7 @@ class _ChainContainer(argparse.Namespace, Generic[T]):
             type_: [] for type_ in self.types
         }
 
-    def __init_subclass__(cls, **kwargs) -> None:
+    def __init_subclass__(cls) -> None:
         # Dynamically create getters.
         for type_ in cls.types:
             setattr(
