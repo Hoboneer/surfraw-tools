@@ -11,6 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Dict,
     Generic,
     Iterator,
@@ -55,46 +56,34 @@ if TYPE_CHECKING:
 
     class _HasType(Protocol):
         @property
-        def type(self) -> Type[Any]:
+        def type(self) -> Type[SurfrawOption]:
             ...
 
 
 T = TypeVar("T", bound="_HasType")
 
 
-class _ChainContainer(argparse.Namespace, Generic[T]):
-    # List of `SurfrawOption`-derived classes.
-    types: List[Type[Any]] = []
+# TODO: Name this better!
+@dataclass
+class _ChainContainer(Generic[T]):
+    types: ClassVar[List[Type[SurfrawOption]]] = []
+    _items: Dict[str, List[T]] = field(default_factory=dict, init=False)
 
-    def __init__(self) -> None:
-        self._items: Dict[Type[Any], List[T]] = {
-            type_: [] for type_ in self.types
-        }
-
-    def __init_subclass__(cls) -> None:
-        # Dynamically create getters.
-        for type_ in cls.types:
-            setattr(
-                cls,
-                type_.typename_plural,
-                property(
-                    # Account for late binding
-                    partial(
-                        lambda self_, saved_type: self_._items[  # type: ignore
-                            saved_type
-                        ].copy(),
-                        saved_type=type_,
-                    )
-                ),
-            )
+    def __post_init__(self) -> None:
+        self._items.update(
+            {type_.typename_plural: [] for type_ in self.__class__.types}
+        )
 
     def append(self, item: T) -> None:
         try:
-            self._items[item.type].append(item)
+            self._items[item.type.typename_plural].append(item)
         except KeyError:
             raise TypeError(
                 f"object '{item}' may not go into `{self.__class__.__name__}`s as it not a valid type"
             ) from None
+
+    def __getitem__(self, type_: str) -> List[T]:
+        return self._items[type_]
 
     def __iter__(self) -> Iterator[T]:
         return chain.from_iterable(self._items.values())
