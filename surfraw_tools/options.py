@@ -222,10 +222,6 @@ class Option:
         else:
             cls.typename_plural = cls.typename + "s"
 
-    @property
-    def type(self) -> Type[Option]:
-        return self.__class__
-
     @classmethod
     def from_arg(cls: _O, arg: str) -> _O:
         parsed_args = cls.parse_args(
@@ -496,7 +492,7 @@ class ListOption(Option):
     ]
 
     name: str
-    elem_type: Type[SurfrawOption]
+    type: Type[SurfrawOption]
     defaults: List[str] = field(hash=False)
     values: List[str] = field(default_factory=list, hash=False)
 
@@ -507,7 +503,7 @@ class ListOption(Option):
         if len(self.values) == 1 and self.values[0] == "":
             self.values.clear()
 
-        if issubclass(self.elem_type, SurfrawEnum):
+        if issubclass(self.type, SurfrawEnum):
             if not self.values:
                 raise OptionParseError(
                     "fourth argument to `--list` option must be provided for enum lists"
@@ -518,14 +514,12 @@ class ListOption(Option):
             self.values.clear()
             self.values.extend(new_vals)
 
-        elif issubclass(self.elem_type, SurfrawAnything):
+        elif issubclass(self.type, SurfrawAnything):
             # Nothing to check for 'anythings'.
             pass
 
     def to_surfraw_opt(self) -> SurfrawList:
-        return SurfrawList(
-            self.name, self.elem_type, self.defaults, self.values
-        )
+        return SurfrawList(self.name, self.type, self.defaults, self.values)
 
 
 # XXX: Should this store validators for the type it has?
@@ -585,7 +579,7 @@ class AliasOption(Option):
     validators = [validate_name, validate_name, parse_option_type]
     name: str
     target: str
-    ref_type: Type[SurfrawOption]
+    type: Type[SurfrawOption]
 
     def to_surfraw_opt(self, resolved_target: SurfrawOption) -> SurfrawAlias:
         # No longer need to store target type explicitly (it has a reference!).
@@ -734,19 +728,17 @@ def resolve_options(ctx: Context) -> None:
     }
     for alias in ctx.unresolved_aliases:
         # Check flags or aliases, depending on alias type.
-        if issubclass(alias.ref_type, SurfrawAlias):
+        if issubclass(alias.type, SurfrawAlias):
             raise OptionResolutionError(
                 f"alias '{alias.name}' targets another alias, which is not allowed"
             )
 
         alias_target: Optional[Union[SurfrawFlag, SurfrawOption]]
-        if issubclass(alias.ref_type, SurfrawFlag):
+        if issubclass(alias.type, SurfrawFlag):
             alias_target = flag_names.get(alias.target)
         else:
             alias_target = varopts.get(alias.target)
-        if alias_target is None or not isinstance(
-            alias_target, alias.ref_type
-        ):
+        if alias_target is None or not isinstance(alias_target, alias.type):
             raise OptionResolutionError(
                 f"alias '{alias.name}' does not target any options of matching type ('{alias.type.typename}')"
             ) from None
