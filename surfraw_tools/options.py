@@ -727,7 +727,7 @@ def resolve_options(ctx: Context) -> None:
 
     # Set `target` of aliases to an instance of `SurfrawOption`.
     flag_names: Dict[str, SurfrawFlag] = {
-        flag.name: flag for flag in ctx.flags
+        flag.name: flag for flag in ctx.options.flags
     }
     for alias in ctx.unresolved.aliases:
         # Check flags or aliases, depending on alias type.

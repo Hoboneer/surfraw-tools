@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 from argparse import _VersionAction
+from dataclasses import dataclass, field
 from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
@@ -12,7 +13,6 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
     Iterator,
     List,
     Optional,
@@ -175,33 +175,57 @@ class _SurfrawOptionContainer(argparse.Namespace):
             self.nonvariable_options.append(option)
 
 
-class Context(argparse.Namespace):
-    def __init__(self) -> None:
-        self._surfraw_options = _SurfrawOptionContainer()
-        self.unresolved = _UnresolvedOptsContainer()
+@dataclass
+class Context:
+    program_name: str
 
-    # I'd prefer properties but argparse's "append" action doesn't append in
-    # the way I expected it to.  It requires the ability to assign values...
-    def __getattr__(self, name):
-        # Delegate to `_SurfrawOptionContainer`.
-        try:
-            ret = self._surfraw_options.options[name]
-        except KeyError:
-            raise AttributeError from None
-        else:
-            return ret
+    name: str = field(default="", init=False)
+    base_url: str = field(default="", init=False)
+    search_url: str = field(default="", init=False)
+    description: Optional[str] = field(default=None, init=False)
+    query_parameter: Optional[str] = field(default=None, init=False)
+    append_search_args: bool = field(default=True, init=False)
+
+    insecure: bool = field(default=False, init=False)
+    num_tabs: int = field(default=1, init=False)
+
+    # Option containers
+    _surfraw_options: _SurfrawOptionContainer = field(
+        default_factory=_SurfrawOptionContainer, init=False
+    )
+    unresolved: _UnresolvedOptsContainer = field(
+        default_factory=_UnresolvedOptsContainer, init=False
+    )
+
+    mappings: List[MappingOption] = field(default_factory=list, init=False)
+    list_mappings: List[MappingOption] = field(
+        default_factory=list, init=False
+    )
+
+    inlines: List[InlineOption] = field(default_factory=list, init=False)
+    list_inlines: List[InlineOption] = field(default_factory=list, init=False)
+
+    collapses: List[CollapseOption] = field(default_factory=list, init=False)
+
+    metavars: List[MetavarOption] = field(default_factory=list, init=False)
+    descriptions: List[DescribeOption] = field(
+        default_factory=list, init=False
+    )
+
+    use_results_option: bool = field(default=False, init=False)
+    use_language_option: bool = field(default=False, init=False)
 
     @property
-    def options(self):
+    def options(self) -> _SurfrawOptionContainer:
         return self._surfraw_options
 
     # Again, needed for argparse's weirdness.
     @options.setter
-    def options(self, val):
+    def options(self, val: _SurfrawOptionContainer) -> None:
         self._surfraw_options = val
 
     @property
-    def variable_options(self):
+    def variable_options(self) -> List[SurfrawOption]:
         return self.options.variable_options
 
 
@@ -314,21 +338,18 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--use-results-option",
     action="store_true",
-    default=False,
     dest="use_results_option",
     help="define a 'results' variable and option",
 )
 BASE_PARSER.add_argument(
     "--use-language-option",
     action="store_true",
-    default=False,
     dest="use_language_option",
     help="define a 'language' variable and option",
 )
 BASE_PARSER.add_argument(
     "--map",
     action="append",
-    default=[],
     type=_wrap_parser(MappingOption.from_arg),
     dest="mappings",
     metavar="VARIABLE_NAME:PARAMETER[:URL_ENCODE?]",
@@ -337,7 +358,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--list-map",
     action="append",
-    default=[],
     # Same object, different target
     type=_wrap_parser(MappingOption.from_arg),
     dest="list_mappings",
@@ -347,7 +367,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--inline",
     action="append",
-    default=[],
     type=_wrap_parser(InlineOption.from_arg),
     dest="inlines",
     metavar="VARIABLE_NAME:KEYWORD",
@@ -356,7 +375,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--list-inline",
     action="append",
-    default=[],
     type=_wrap_parser(InlineOption.from_arg),
     dest="list_inlines",
     metavar="VARIABLE_NAME:KEYWORD",
@@ -365,7 +383,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--collapse",
     action="append",
-    default=[],
     type=_wrap_parser(CollapseOption.from_arg),
     dest="collapses",
     metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
@@ -374,7 +391,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--metavar",
     action="append",
-    default=[],
     type=_wrap_parser(MetavarOption.from_arg),
     dest="metavars",
     metavar="VARIABLE_NAME:METAVAR",
@@ -383,7 +399,6 @@ BASE_PARSER.add_argument(
 BASE_PARSER.add_argument(
     "--describe",
     action="append",
-    default=[],
     type=_wrap_parser(DescribeOption.from_arg),
     dest="descriptions",
     metavar="VARIABLE_NAME:DESCRIPTION",
@@ -391,7 +406,6 @@ BASE_PARSER.add_argument(
 )
 BASE_PARSER.add_argument(
     "--num-tabs",
-    default=1,
     type=int,
     help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
 )
@@ -436,7 +450,7 @@ def process_args(ctx: Context) -> int:
 
     if ctx.num_tabs < 1:
         print(
-            f"{ctx._program_name}: argument of `--num-tabs` must be at least '1'",
+            f"{ctx.program_name}: argument of `--num-tabs` must be at least '1'",
             file=sys.stderr,
         )
         return EX_USAGE
@@ -444,12 +458,12 @@ def process_args(ctx: Context) -> int:
     try:
         resolve_options(ctx)
     except OptionResolutionError as e:
-        print(f"{ctx._program_name}: {e}", file=sys.stderr)
+        print(f"{ctx.program_name}: {e}", file=sys.stderr)
         return EX_USAGE
 
     if (ctx.mappings or ctx.list_mappings) and ctx.query_parameter is None:
         print(
-            f"{ctx._program_name}: mapping variables without a defined --query-parameter is forbidden",
+            f"{ctx.program_name}: mapping variables without a defined --query-parameter is forbidden",
             file=sys.stderr,
         )
         # TODO: Use proper exit code.
@@ -465,7 +479,9 @@ def _make_namespace(prefix: str) -> Callable[[str], str]:
     return prefixer
 
 
-def get_env(ctx: Context) -> Tuple[Environment, Dict[str, Any]]:
+def get_env(
+    ctx: Context,
+) -> Tuple[Environment, Dict[str, Any], Callable[[str], str]]:
     """Get a Jinja `Environment` and a dict of variables to base the code
     generator on.
 
@@ -484,7 +500,6 @@ def get_env(ctx: Context) -> Tuple[Environment, Dict[str, Any]]:
     env.filters["namespace"] = default_namespace
     # Short-hand for `namespace`
     env.filters["ns"] = default_namespace
-    ctx._namespacer = default_namespace
 
     for typename, opt_type in SurfrawOption.typenames.items():
         # Account for late-binding.
@@ -501,13 +516,13 @@ def get_env(ctx: Context) -> Tuple[Environment, Dict[str, Any]]:
         "search_url": ctx.search_url,
         "num_tabs": ctx.num_tabs,
         # Options to generate
-        "flags": ctx.flags,
-        "bools": ctx.bools,
-        "enums": ctx.enums,
-        "anythings": ctx.anythings,
-        "aliases": ctx.aliases,
-        "specials": ctx.specials,
-        "lists": ctx.lists,
+        "flags": ctx.options.flags,
+        "bools": ctx.options.bools,
+        "enums": ctx.options.enums,
+        "anythings": ctx.options.anythings,
+        "aliases": ctx.options.aliases,
+        "specials": ctx.options.specials,
+        "lists": ctx.options.lists,
         # URL parameters
         "mappings": ctx.mappings,
         "list_mappings": ctx.list_mappings,
@@ -518,4 +533,4 @@ def get_env(ctx: Context) -> Tuple[Environment, Dict[str, Any]]:
         "append_search_args": ctx.append_search_args,
     }
 
-    return (env, template_variables)
+    return (env, template_variables, default_namespace)

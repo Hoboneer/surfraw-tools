@@ -20,7 +20,7 @@ import sys
 from contextlib import suppress
 from itertools import chain
 from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_EXCL, O_WRONLY
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from .common import (
     BASE_PARSER,
@@ -41,7 +41,9 @@ PROGRAM_NAME = "mkelvis"
 
 
 # FIXME: This is very ugly, please... make it not so bad.
-def generate_local_help_output(ctx: Context) -> Optional[str]:
+def generate_local_help_output(
+    ctx: Context, namespacer: Callable[[str], str]
+) -> Optional[str]:
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
     entries: List[Tuple[SurfrawOption, List[str]]] = []
@@ -113,7 +115,8 @@ def generate_local_help_output(ctx: Context) -> Optional[str]:
 
     # Aliases to one of the above options, but with an argument
     entries.extend(
-        (flag, get_optlines(flag, target=flag.target)) for flag in ctx.flags
+        (flag, get_optlines(flag, target=flag.target))
+        for flag in ctx.options.flags
     )
 
     # Nothing else to do.
@@ -138,7 +141,7 @@ def generate_local_help_output(ctx: Context) -> Optional[str]:
             lines[i] = f"{line}{padding}{gap}{suffix}"
         if isinstance(opt, tuple(SurfrawOption.variable_options)):
             prefix = " " * longest_length + "    "
-            ns_name = ctx._namespacer(opt.name)
+            ns_name = namespacer(opt.name)
             lines.append(prefix + f"Default: ${ns_name}")
             # TODO: Allow a generic way for options to depend on other variables.
             if isinstance(opt, SurfrawSpecial):
@@ -166,28 +169,28 @@ def main(argv: Optional[List[str]] = None) -> int:
         description="generate an elvis for surfraw",
         parents=[BASE_PARSER],
     )
-    ctx = Context()
+    ctx = Context(PROGRAM_NAME)
     try:
         parser.parse_args(argv, namespace=ctx)
     except Exception as e:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    ctx._program_name = PROGRAM_NAME
-
     exit_code = process_args(ctx)
     if exit_code != EX_OK:
         return exit_code
 
     # Generate the elvis.
-    env, template_vars = get_env(ctx)
+    env, template_vars, namespacer = get_env(ctx)
     assert (
         VERSION_FORMAT_STRING is not None
     ), "VERSION_FORMAT_STRING should be defined"
     template_vars["GENERATOR_PROGRAM"] = VERSION_FORMAT_STRING % {
         "prog": PROGRAM_NAME
     }
-    template_vars["local_help_output"] = generate_local_help_output(ctx)
+    template_vars["local_help_output"] = generate_local_help_output(
+        ctx, namespacer
+    )
     elvis_template = env.get_template("elvis.in")
     elvis_program = elvis_template.render(template_vars)
 
