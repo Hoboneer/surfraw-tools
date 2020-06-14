@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Callable, List, TypeVar
+from typing import Callable, List, TypeVar
 
 
 class OptionParseError(Exception):
@@ -80,8 +80,8 @@ def no_validation(arg: T) -> T:
     return arg
 
 
-def list_of(validator: Callable[..., Any]) -> Callable[..., List[Any]]:
-    def list_validator(arg: str) -> List[Any]:
+def list_of(validator: Callable[..., T]) -> Callable[..., List[T]]:
+    def list_validator(arg: str) -> List[T]:
         values = arg.split(",")
         # In case the validators return a different object from its input.
         new_values = []
