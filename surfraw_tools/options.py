@@ -4,6 +4,7 @@ import re
 import weakref
 from collections import deque
 from dataclasses import dataclass, field
+from functools import partial
 from itertools import chain
 from typing import (
     TYPE_CHECKING,
@@ -34,12 +35,16 @@ from .validation import (
 
 if TYPE_CHECKING:
     from .common import Context
-    from typing_extensions import Protocol
+    from typing_extensions import Protocol, TypedDict, Literal
 
     class _HasTarget(Protocol):
         @property
         def target(self) -> str:
             ...
+
+    class SurfrawMetadata(TypedDict):
+        metavar: Optional[str]
+        description: str
 
 
 # Options with non alphabetic characters are impossible
@@ -73,9 +78,10 @@ _FORBIDDEN_OPTION_NAMES = {
 _FlagValidator = Callable[[Any], Any]
 
 
+@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawOption:
     creates_variable: ClassVar[bool]
-    flag_value_validator: _FlagValidator
+    flag_value_validator: ClassVar[_FlagValidator]
 
     typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
     typename: ClassVar[str]
@@ -83,26 +89,56 @@ class SurfrawOption:
     variable_options: ClassVar[List[Type[SurfrawOption]]] = []
 
     name: str
-    metavar: Optional[str]
-    description: str
 
-    def __init__(self, name: str, *args: Any, **kwargs: Any):
-        if name in _FORBIDDEN_OPTION_NAMES:
+    # `_metadata` holds the true data.
+    # _metadata: Dict[str, Any] = field(default_factory=dict, init=False, compare=False)
+    _metadata: SurfrawMetadata = field(
+        default_factory=cast(
+            Type["SurfrawMetadata"],
+            partial(dict, metavar=None, description=None),
+        ),
+        init=False,
+        compare=False,
+    )
+
+    aliases: weakref.WeakSet[SurfrawOption] = field(
+        default_factory=weakref.WeakSet, init=False, compare=False, repr=False
+    )
+    # Flags should be listed in the order that they were defined in the command line.
+    flags: List[SurfrawFlag] = field(
+        default_factory=list, init=False, compare=False, repr=False
+    )
+    _resolved_flag_values: List[SurfrawFlag] = field(
+        default_factory=list, init=False, compare=False, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        if self.name in _FORBIDDEN_OPTION_NAMES:
             raise ValueError(
-                f"option name '{name}' is global, which cannot be overriden by elvi"
+                f"option name '{self.name}' is global, which cannot be overriden by elvi"
             )
-        self.name: str = name
-        if not hasattr(self, "metavar"):
-            if self.__class__.creates_variable:
-                self.metavar = self.name.upper()
-            else:
-                self.metavar = None
-        if not hasattr(self, "description"):
-            self.description = f"A {self.typename} option for '{self.name}'"
-        # Aliases and flags.
-        self.aliases: weakref.WeakSet[SurfrawOption] = weakref.WeakSet()
-        # Flags should be listed in the order that they were defined in the command line.
-        self.flags: List[SurfrawFlag] = []
+        if self.__class__.creates_variable:
+            self.set_metadata("metavar", self.name.upper())
+        else:
+            self.set_metadata("metavar", None)
+        self.set_metadata(
+            "description", f"A {self.typename} option for '{self.name}'"
+        )
+
+    @property
+    def metavar(self) -> Optional[str]:
+        return self._metadata["metavar"]
+
+    @property
+    def description(self) -> str:
+        return self._metadata["description"]
+
+    def set_metadata(
+        self,
+        key: Union[Literal["metavar"], Literal["description"]],
+        val: Optional[str],
+    ) -> None:
+        self._metadata[key] = val
 
     def __init_subclass__(cls) -> None:
         subclass_re = r"Surfraw([A-Z][a-z]+)"
@@ -128,12 +164,21 @@ class SurfrawOption:
     def add_flag(self, flag: SurfrawFlag) -> None:
         self.flags.append(flag)
 
+    # Flags should be resolved *before* aliases so that aliases' targets aren't dangling.
     def resolve_flags(self) -> None:
         try:
             for flag in self.flags:
-                flag.value = self.__class__.flag_value_validator(flag.value)
+                self._resolved_flag_values.append(
+                    self.__class__.flag_value_validator(flag.value)
+                )
         except OptionParseError as e:
             raise OptionResolutionError(str(e)) from None
+        self._post_resolve_flags()
+        # They're useless now.
+        self._resolved_flag_values.clear()
+
+    def _post_resolve_flags(self) -> None:
+        pass
 
 
 _FlagValidatorsType = List[Union[List[_FlagValidator], _FlagValidator]]
