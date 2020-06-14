@@ -22,8 +22,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Protocol
-
 from .validation import (
     OptionParseError,
     list_of,
@@ -36,6 +34,12 @@ from .validation import (
 
 if TYPE_CHECKING:
     from .common import Context
+    from typing_extensions import Protocol
+
+    class _HasTarget(Protocol):
+        @property
+        def target(self) -> str:
+            ...
 
 
 # Options with non alphabetic characters are impossible
@@ -616,12 +620,6 @@ def _cleanup_flag_alias_resolve(
     else:
         target.add_alias(real_opt)
     ctx.options.append(real_opt)
-
-
-class _HasTarget(Protocol):
-    @property
-    def target(self) -> str:
-        ...
 
 
 def resolve_options(ctx: Context) -> None:

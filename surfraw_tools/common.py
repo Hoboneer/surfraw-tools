@@ -7,6 +7,7 @@ from functools import partial, wraps
 from itertools import chain
 from os import EX_OK, EX_USAGE
 from typing import (
+    TYPE_CHECKING,
     Any,
     Callable,
     Dict,
@@ -20,7 +21,6 @@ from typing import (
 )
 
 from jinja2 import Environment, PackageLoader
-from typing_extensions import Protocol
 
 from ._package import __version__
 from .options import (
@@ -47,14 +47,16 @@ from .options import (
     resolve_options,
 )
 
+if TYPE_CHECKING:
+    from typing_extensions import Protocol
 
-class _HasType(Protocol):
-    @property
-    def type(self) -> Type[Any]:
-        ...
+    class _HasType(Protocol):
+        @property
+        def type(self) -> Type[Any]:
+            ...
 
 
-T = TypeVar("T", bound=_HasType)
+T = TypeVar("T", bound="_HasType")
 
 
 class _ChainContainer(argparse.Namespace, Generic[T]):
