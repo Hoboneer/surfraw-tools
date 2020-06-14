@@ -326,7 +326,7 @@ class SurfrawEnum(SurfrawOption):
         # "A enum" is incorrect.
         self.description = re.sub("^A ", "An ", self.description)
 
-    def resolve_flags(self):
+    def resolve_flags(self) -> None:
         for flag in self.flags:
             flag.value = self.__class__.flag_value_validator(flag.value)
             if flag.value not in self.values:
@@ -388,7 +388,7 @@ class SurfrawSpecial(SurfrawOption):
             )
         # Use default metavar and description otherwise.
 
-    def resolve_flags(self):
+    def resolve_flags(self) -> None:
         for flag in self.flags:
             if flag.name == "results":
                 try:
@@ -401,7 +401,7 @@ class SurfrawSpecial(SurfrawOption):
             # many ISO language codes to match.
 
 
-def parse_option_type(option_type):
+def parse_option_type(option_type: str) -> Type[SurfrawOption]:
     # For backward compatibility.
     if option_type == "member":
         option_type = "flag"
@@ -537,7 +537,7 @@ class MappingOption(Option):
     should_url_encode: bool = True
 
     @property
-    def variable(self):
+    def variable(self) -> str:
         # To allow other code to continue to use this class unchanged
         return self.target
 
@@ -549,7 +549,7 @@ class InlineOption(Option):
     keyword: str
 
     @property
-    def variable(self):
+    def variable(self) -> str:
         # To allow other code to continue to use this class unchanged
         return self.target
 
@@ -563,7 +563,7 @@ class CollapseOption(Option):
     collapses: List[str]
 
     @property
-    def variable(self):
+    def variable(self) -> str:
         # To allow other code to continue to use this class unchanged
         return self.target
 
@@ -587,7 +587,7 @@ class MetavarOption(Option):
     variable: str
     metavar: str
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.metavar = self.metavar.upper()
 
 

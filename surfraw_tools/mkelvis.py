@@ -20,6 +20,7 @@ import sys
 from contextlib import suppress
 from itertools import chain
 from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_EXCL, O_WRONLY
+from typing import List, Optional, Tuple
 
 from .common import (
     BASE_PARSER,
@@ -40,12 +41,14 @@ PROGRAM_NAME = "mkelvis"
 
 
 # FIXME: This is very ugly, please... make it not so bad.
-def generate_local_help_output(ctx):
+def generate_local_help_output(ctx: Context) -> Optional[str]:
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
-    entries = []
+    entries: List[Tuple[SurfrawOption, List[str]]] = []
 
-    def get_optheader(opt, prefix="", force_no_metavar=False):
+    def get_optheader(
+        opt: SurfrawOption, prefix: str = "", force_no_metavar: bool = False
+    ) -> str:
         """Return representation of `opt` in `-local-help`.
 
         These are in sorted order.
@@ -63,7 +66,9 @@ def generate_local_help_output(ctx):
         )
         return optheader
 
-    def get_optlines(opt, target=None):
+    def get_optlines(
+        opt: SurfrawOption, target: Optional[SurfrawOption] = None
+    ) -> List[str]:
         if target is None:
             target = opt
         if isinstance(target, SurfrawList):
@@ -150,7 +155,7 @@ def generate_local_help_output(ctx):
     return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
 
-def main(argv=None):
+def main(argv: Optional[List[str]] = None) -> int:
     """Main program to generate surfraw elvi.
 
     Exit codes correspond to the distro's `sysexits.h` file, which are the
@@ -176,6 +181,9 @@ def main(argv=None):
 
     # Generate the elvis.
     env, template_vars = get_env(ctx)
+    assert (
+        VERSION_FORMAT_STRING is not None
+    ), "VERSION_FORMAT_STRING should be defined"
     template_vars["GENERATOR_PROGRAM"] = VERSION_FORMAT_STRING % {
         "prog": PROGRAM_NAME
     }

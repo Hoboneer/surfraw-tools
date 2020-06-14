@@ -81,7 +81,7 @@ def no_validation(arg: T) -> T:
 
 
 def list_of(validator: Callable[..., Any]) -> Callable[..., List[Any]]:
-    def list_validator(arg):
+    def list_validator(arg: str) -> List[Any]:
         values = arg.split(",")
         # In case the validators return a different object from its input.
         new_values = []

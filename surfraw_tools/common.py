@@ -12,8 +12,12 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Iterable,
+    Iterator,
     List,
+    Optional,
     Set,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -93,11 +97,11 @@ class _ChainContainer(argparse.Namespace, Generic[T]):
                 f"object '{item}' may not go into `{self.__class__.__name__}`s as it not a valid type"
             ) from None
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T]:
         return chain.from_iterable(self._items.values())
 
     # `__bool__` automatically defined.  True if non-zero length.
-    def __len__(self):
+    def __len__(self) -> int:
         return sum(len(types_) for types_ in self._items.values())
 
 
@@ -206,7 +210,7 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 def _wrap_parser(func: F) -> F:
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         try:
             ret = func(*args, **kwargs)
         except Exception as e:
@@ -405,7 +409,7 @@ _search_args_group.add_argument(
 )
 
 
-def process_args(ctx):
+def process_args(ctx: Context) -> int:
     if ctx.description is None:
         ctx.description = f"Search {ctx.name} ({ctx.base_url})"
     else:
@@ -452,14 +456,14 @@ def process_args(ctx):
     return EX_OK
 
 
-def _make_namespace(prefix):
-    def prefixer(name):
+def _make_namespace(prefix: str) -> Callable[[str], str]:
+    def prefixer(name: str) -> str:
         return f"{prefix}_{name}"
 
     return prefixer
 
 
-def get_env(ctx):
+def get_env(ctx: Context) -> Tuple[Environment, Dict[str, Any]]:
     """Get a Jinja `Environment` and a dict of variables to base the code
     generator on.
 
