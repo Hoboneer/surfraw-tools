@@ -40,7 +40,6 @@ from .options import (
     ListOption,
     MappingOption,
     MetavarOption,
-    Option,
     OptionResolutionError,
     SurfrawAnything,
     SurfrawEnum,
@@ -111,10 +110,6 @@ class _FlagContainer(_ChainContainer[SurfrawFlag]):
 
 class _ListContainer(_ChainContainer[SurfrawList]):
     types = [SurfrawEnum, SurfrawAnything]
-
-
-class _UnresolvedOptsContainer(_ChainContainer[Option]):
-    types = list(Option.__subclasses__())
 
 
 class _SurfrawOptionContainer(argparse.Namespace):
@@ -193,8 +188,14 @@ class Context:
     _surfraw_options: _SurfrawOptionContainer = field(
         default_factory=_SurfrawOptionContainer, init=False
     )
-    unresolved: _UnresolvedOptsContainer = field(
-        default_factory=_UnresolvedOptsContainer, init=False
+    unresolved_varopts: List[
+        Union[BoolOption, EnumOption, AnythingOption, ListOption]
+    ] = field(default_factory=list, init=False)
+    unresolved_flags: List[FlagOption] = field(
+        default_factory=list, init=False
+    )
+    unresolved_aliases: List[AliasOption] = field(
+        default_factory=list, init=False
     )
 
     mappings: List[MappingOption] = field(default_factory=list, init=False)
@@ -279,7 +280,7 @@ BASE_PARSER.add_argument(
     "-F",
     action="append",
     type=_wrap_parser(FlagOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_flags",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
     help=f"specify an alias to a value(s) of a defined {VALID_FLAG_TYPES_STR} option",
 )
@@ -288,7 +289,7 @@ BASE_PARSER.add_argument(
     "-Y",
     action="append",
     type=_wrap_parser(BoolOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_varopts",
     metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
     help="specify a boolean option for the elvis",
 )
@@ -297,7 +298,7 @@ BASE_PARSER.add_argument(
     "-E",
     action="append",
     type=_wrap_parser(EnumOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_varopts",
     metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
     help="specify an option with an argument from a range of values",
 )
@@ -306,7 +307,7 @@ BASE_PARSER.add_argument(
     "-M",
     action="append",
     type=_wrap_parser(FlagOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_flags",
     metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
     help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
 )
@@ -314,7 +315,7 @@ BASE_PARSER.add_argument(
     "--anything",
     "-A",
     action="append",
-    dest="unresolved",
+    dest="unresolved_varopts",
     type=_wrap_parser(AnythingOption.from_arg),
     metavar="VARIABLE_NAME:DEFAULT_VALUE",
     help="specify an option that is not checked",
@@ -323,7 +324,7 @@ BASE_PARSER.add_argument(
     "--alias",
     action="append",
     type=_wrap_parser(AliasOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_aliases",
     metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
     help="make an alias to another defined option",
 )
@@ -331,7 +332,7 @@ BASE_PARSER.add_argument(
     "--list",
     action="append",
     type=_wrap_parser(ListOption.from_arg),
-    dest="unresolved",
+    dest="unresolved_varopts",
     metavar="LIST_NAME:LIST_TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]",
     help="create a list of enum or 'anything' values as a repeatable (cumulative) option (e.g., `-add-foos=bar,baz,qux`)",
 )

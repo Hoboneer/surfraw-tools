@@ -5,7 +5,6 @@ import weakref
 from collections import deque
 from dataclasses import dataclass, field
 from functools import partial
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -702,13 +701,7 @@ def _cleanup_flag_alias_resolve(
 
 def resolve_options(ctx: Context) -> None:
     # Resolve variable options.
-    unresolved_opt: Union[BoolOption, EnumOption, AnythingOption, ListOption]
-    for unresolved_opt in chain(
-        ctx.unresolved.bools,
-        ctx.unresolved.enums,
-        ctx.unresolved.anythings,
-        ctx.unresolved.lists,
-    ):
+    for unresolved_opt in ctx.unresolved_varopts:
         # Register name with central container.
         ctx.options.append(unresolved_opt.to_surfraw_opt())
 
@@ -718,7 +711,7 @@ def resolve_options(ctx: Context) -> None:
     }
 
     # Set `target` of flags to an instance of `SurfrawOption`.
-    for flag in ctx.unresolved.flags:
+    for flag in ctx.unresolved_flags:
         try:
             target: SurfrawOption = varopts[flag.target]
         except KeyError:
@@ -738,7 +731,7 @@ def resolve_options(ctx: Context) -> None:
     flag_names: Dict[str, SurfrawFlag] = {
         flag.name: flag for flag in ctx.options.flags
     }
-    for alias in ctx.unresolved.aliases:
+    for alias in ctx.unresolved_aliases:
         # Check flags or aliases, depending on alias type.
         if issubclass(alias.ref_type, SurfrawAlias):
             raise OptionResolutionError(
