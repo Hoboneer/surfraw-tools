@@ -1,7 +1,8 @@
 REQUIREMENTS_DIR := requirements
 
 PACKAGE_DIR := surfraw_tools
-SOURCE_FILES := $(shell find "$(PACKAGE_DIR)" -type f -name '*.py')
+SOURCE_FILES := $(wildcard $(PACKAGE_DIR)/*.py)
+CHECK_FILES := $(SOURCE_FILES) setup.py jinjac.py
 
 # Do nothing.
 .PHONY: all
@@ -19,7 +20,7 @@ tags: $(SOURCE_FILES)
 	ctags $(SOURCE_FILES)
 
 # Ensure that `isort` and `black` are not run unnecessarily.
-.formatted: $(SOURCE_FILES) setup.py
+.formatted: $(CHECK_FILES)
 	isort $?
 	black $?
 	$(MAKE) tags
@@ -30,7 +31,7 @@ format: .formatted
 
 .PHONY: lint
 lint:
-	flake8
+	flake8 $(CHECK_FILES)
 
 .PHONY: typecheck
 typecheck:

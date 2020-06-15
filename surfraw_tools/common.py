@@ -6,6 +6,7 @@ import sys
 from argparse import _VersionAction
 from dataclasses import dataclass, field
 from functools import partial, wraps
+from importlib import resources as imp
 from itertools import chain
 from os import EX_OK, EX_USAGE
 from typing import (
@@ -27,7 +28,16 @@ from typing import (
     cast,
 )
 
-from jinja2 import Environment, PackageLoader
+from jinja2 import (
+    BaseLoader,
+    ChoiceLoader,
+    Environment,
+    ModuleLoader,
+    PackageLoader,
+    contextfilter,
+)
+from jinja2.runtime import Context as JContext
+from pkg_resources import DistributionNotFound
 
 from ._package import __version__
 from .options import (
@@ -483,27 +493,37 @@ def _make_namespace(prefix: str) -> Callable[[str], str]:
     return prefixer
 
 
+@contextfilter
+def jinja_namespacer(ctx: JContext, basename: str) -> str:
+    return f"SURFRAW_{ctx['name']}_{basename}"
+
+
 def get_env(
     ctx: Context,
 ) -> Tuple[Environment, Dict[str, Any], Callable[[str], str]]:
-    """Get a Jinja `Environment` and a dict of variables to base the code
-    generator on.
+    """Get a Jinja `Environment`, a dict of variables to base the code
+    generator on, and a function to namespace variables.
 
     The calling code should add entries to the `template_variables` dict and
     simply render get a template and render it like so:
     `template.render(variables)` for simple uses.
     """
-    env = Environment(
-        loader=PackageLoader("surfraw_tools"),
-        trim_blocks=True,
-        lstrip_blocks=True,
-    )
+    pkg_loader: BaseLoader = PackageLoader("surfraw_tools")
+    try:
+        with imp.path("surfraw_tools", "templates") as path:
+            precompiled_templates_dir = os.path.join(path, "compiled")
+    except DistributionNotFound:
+        loader = pkg_loader
+    else:
+        loader = ChoiceLoader(
+            [ModuleLoader(precompiled_templates_dir), pkg_loader]
+        )
+    env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
 
     # Add functions to jinja template
-    default_namespace = _make_namespace(f"SURFRAW_{ctx.name}")
-    env.filters["namespace"] = default_namespace
+    env.filters["namespace"] = jinja_namespacer
     # Short-hand for `namespace`
-    env.filters["ns"] = default_namespace
+    env.filters["ns"] = jinja_namespacer
 
     for typename, opt_type in SurfrawOption.typenames.items():
         # Account for late-binding.
@@ -537,4 +557,4 @@ def get_env(
         "append_search_args": ctx.append_search_args,
     }
 
-    return (env, template_variables, default_namespace)
+    return (env, template_variables, _make_namespace(f"SURFRAW_{ctx.name}"))
