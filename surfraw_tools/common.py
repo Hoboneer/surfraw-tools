@@ -17,6 +17,7 @@ from typing import (
     Generic,
     Iterator,
     List,
+    NewType,
     Optional,
     Set,
     Tuple,
@@ -160,11 +161,14 @@ class _SurfrawOptionContainer(argparse.Namespace):
             self.nonvariable_options.append(option)
 
 
+_ElvisName = NewType("_ElvisName", str)
+
+
 @dataclass
 class Context:
     program_name: str
 
-    name: str = field(default="", init=False)
+    name: _ElvisName = field(default=_ElvisName("DEFAULT"), init=False)
     base_url: str = field(default="", init=False)
     search_url: str = field(default="", init=False)
     description: Optional[str] = field(default=None, init=False)
@@ -235,11 +239,11 @@ def _wrap_parser(func: F) -> F:
     return cast(F, wrapper)
 
 
-def _validate_elvis_name(name: str) -> str:
+def _parse_elvis_name(name: str) -> _ElvisName:
     dirs, _ = os.path.split(name)
     if dirs:
         raise argparse.ArgumentTypeError("elvis names may not be paths")
-    return name
+    return _ElvisName(name)
 
 
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
@@ -253,7 +257,7 @@ _VERSION_FORMAT_ACTION = cast(
 )
 VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
 BASE_PARSER.add_argument(
-    "name", type=_validate_elvis_name, help="name for the elvis"
+    "name", type=_parse_elvis_name, help="name for the elvis"
 )
 BASE_PARSER.add_argument(
     "base_url",
