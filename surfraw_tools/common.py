@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from argparse import _VersionAction
 from dataclasses import dataclass, field
@@ -234,6 +235,13 @@ def _wrap_parser(func: F) -> F:
     return cast(F, wrapper)
 
 
+def _validate_elvis_name(name: str) -> str:
+    dirs, _ = os.path.split(name)
+    if dirs:
+        raise argparse.ArgumentTypeError("elvis names may not be paths")
+    return name
+
+
 BASE_PARSER = argparse.ArgumentParser(add_help=False)
 _VERSION_FORMAT_ACTION = cast(
     _VersionAction,
@@ -244,7 +252,9 @@ _VERSION_FORMAT_ACTION = cast(
     ),
 )
 VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
-BASE_PARSER.add_argument("name", help="name for the elvis")
+BASE_PARSER.add_argument(
+    "name", type=_validate_elvis_name, help="name for the elvis"
+)
 BASE_PARSER.add_argument(
     "base_url",
     help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",

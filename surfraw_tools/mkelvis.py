@@ -17,9 +17,9 @@ from __future__ import annotations
 import argparse
 import os
 import sys
-from contextlib import suppress
 from itertools import chain
-from os import EX_OK, EX_OSERR, EX_USAGE, O_CLOEXEC, O_CREAT, O_EXCL, O_WRONLY
+from os import EX_OK, EX_OSERR, EX_USAGE
+from tempfile import NamedTemporaryFile
 from typing import Callable, List, Optional, Tuple
 
 from .common import (
@@ -194,22 +194,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     elvis_template = env.get_template("elvis.in")
     elvis_program = elvis_template.render(template_vars)
 
-    filename = ctx.name
-    # Ensure a new file is created with the correct mode.
-    with suppress(OSError):
-        os.unlink(filename)
+    # Atomically write output file.
     try:
-        oflags = O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC
-        with os.fdopen(os.open(filename, oflags, mode=0o755), "w") as f:
+        with NamedTemporaryFile(mode="w", delete=False, dir=os.getcwd()) as f:
+            fd = f.fileno()
             f.write(elvis_program)
-    except FileExistsError:
-        print(
-            f"{PROGRAM_NAME}: file '{filename}' was created between deleting and then remaking it",
-            file=sys.stderr,
-        )
-        # TODO: Which error code to return?
-        #       Maybe `EX_CANTCREAT`?
-        return EX_OSERR
+            f.flush()
+            os.fsync(fd)
+            os.fchmod(fd, 0o755)
+            os.rename(f.name, ctx.name)
     except OSError as e:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_OSERR
