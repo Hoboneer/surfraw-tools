@@ -496,12 +496,6 @@ class ListOption(Option):
     values: List[str] = field(default_factory=list, hash=False)
 
     def __post_init__(self) -> None:
-        # They are equivalent.
-        if len(self.defaults) == 1 and self.defaults[0] == "":
-            self.defaults.clear()
-        if len(self.values) == 1 and self.values[0] == "":
-            self.values.clear()
-
         if issubclass(self.type, SurfrawEnum):
             if not self.values:
                 raise OptionParseError(
