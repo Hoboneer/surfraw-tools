@@ -683,9 +683,13 @@ def _cleanup_flag_alias_resolve(
 
 def resolve_options(ctx: Context) -> None:
     # Resolve variable options.
-    for unresolved_opt in ctx.unresolved_varopts:
-        # Register name with central container.
-        ctx.options.append(unresolved_opt.to_surfraw_opt())
+    try:
+        for unresolved_opt in ctx.unresolved_varopts:
+            real_opt = unresolved_opt.to_surfraw_opt()
+            # Register name with central container.
+            ctx.options.append(real_opt)
+    except Exception as e:
+        raise OptionResolutionError(str(e)) from None
 
     # Symbol table.
     varopts: Dict[str, SurfrawOption] = {
