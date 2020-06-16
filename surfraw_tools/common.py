@@ -518,7 +518,10 @@ def get_env(
         loader = ChoiceLoader(
             [ModuleLoader(precompiled_templates_dir), pkg_loader]
         )
-    env = Environment(loader=loader, trim_blocks=True, lstrip_blocks=True)
+    # Only need to get a template once.
+    env = Environment(
+        loader=loader, cache_size=0, trim_blocks=True, lstrip_blocks=True
+    )
 
     # Add functions to jinja template
     env.filters["namespace"] = jinja_namespacer
