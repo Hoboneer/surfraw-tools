@@ -371,6 +371,10 @@ class SurfrawEnum(SurfrawOption):
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        if not self.values:
+            raise ValueError(
+                f"enum '{self.name}' must specify its valid values"
+            )
         if self.default not in self.values:
             raise ValueError(
                 f"enum default value '{self.default}' must be within '{self.values}'"
