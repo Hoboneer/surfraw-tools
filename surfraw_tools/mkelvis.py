@@ -191,15 +191,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     template_vars["local_help_output"] = generate_local_help_output(
         ctx, namespacer
     )
-    elvis_template = env.get_template("elvis.in")
-    elvis_program = elvis_template.render(template_vars)
 
     # Atomically write output file.
     try:
         with NamedTemporaryFile(mode="w", delete=False, dir=os.getcwd()) as f:
-            fd = f.fileno()
-            f.write(elvis_program)
+            env.get_template("elvis.in").stream(template_vars).dump(f)
             f.flush()
+            fd = f.fileno()
             os.fsync(fd)
             os.fchmod(fd, 0o755)
             os.rename(f.name, ctx.name)
