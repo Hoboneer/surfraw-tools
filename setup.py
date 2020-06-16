@@ -1,6 +1,8 @@
 import os
 from distutils import log
 
+from mypyc.build import mypycify
+
 # I hate setuptools.  I hate distutils.  Why must this be so needlessly difficult?!
 from setuptools import setup
 from setuptools.command.build_py import build_py
@@ -21,4 +23,8 @@ class PrecompiledJinja(build_py):
             jinjac.generate(templates_dir)
 
 
-setup(cmdclass={"build_py": PrecompiledJinja})
+compiled_modules = ["surfraw_tools/validation.py"]
+setup(
+    ext_modules=mypycify(compiled_modules),
+    cmdclass={"build_py": PrecompiledJinja},
+)

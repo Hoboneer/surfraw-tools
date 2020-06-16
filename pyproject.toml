@@ -1,5 +1,5 @@
 [build-system]
-requires = ['setuptools', 'wheel', 'jinja2']
+requires = ['setuptools', 'wheel', 'jinja2', 'mypy']
 
 [tool.black]
 line-length = 79
