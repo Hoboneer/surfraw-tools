@@ -146,13 +146,9 @@ class _SurfrawOptionContainer(argparse.Namespace):
             )
 
     def append(self, option: SurfrawOption) -> None:
-        try:
-            bucket = self.options[option.typename_plural]
-        except KeyError:
-            raise TypeError(
-                f"option '{option.name}' is not a surfraw option"
-            ) from None
-        bucket.append(option)  # type: ignore
+        # All values of `option` are valid.
+        # The result container should accept `option` (since it's OK at this point).
+        self.options[option.typename_plural].append(option)  # type: ignore
 
         # Keep track of variable names.
         if option.creates_variable:
