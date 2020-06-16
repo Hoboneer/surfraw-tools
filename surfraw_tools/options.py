@@ -497,9 +497,9 @@ class ListOption(Option):
                     "fourth argument to `--list` option must be provided for enum lists"
                 )
 
-            for i, val in enumerate(self.values):
+            for val in self.values:
                 # Raise `OptionParseError` if invalid.
-                self.values[i] = validate_enum_value(val)
+                validate_enum_value(val)
 
         elif issubclass(self.type, SurfrawAnything):
             # Nothing to check for 'anythings'.
