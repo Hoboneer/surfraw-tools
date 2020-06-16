@@ -1,6 +1,4 @@
 """Pre-compile Jinja2 templates for faster runtime execution."""
-import os
-
 from jinja2 import FileSystemLoader
 
 from surfraw_tools.common import Context, get_env
