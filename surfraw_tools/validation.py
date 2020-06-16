@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Callable, List, TypeVar
+from typing import TYPE_CHECKING, Callable, List, TypeVar, cast
 
 if TYPE_CHECKING:
     from typing_extensions import Final
@@ -89,10 +89,10 @@ def list_of(validator: Callable[[str], T]) -> Callable[[str], List[T]]:
         if arg == "":
             return []
         values = arg.split(",")
-        # In case the validators return a different object from its input.
-        new_values = []
-        for value in values:
-            new_values.append(validator(value))
-        return new_values
+        # In case the validators return a different object from its input (i.e., parsers).
+        for i, value in enumerate(values):
+            # Mutating it is fine here.
+            values[i] = validator(value)  # type: ignore
+        return cast(List[T], values)
 
     return list_validator

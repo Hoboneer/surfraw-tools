@@ -446,8 +446,7 @@ class SurfrawSpecial(SurfrawOption):
         # Use default metavar and description otherwise.
 
     def resolve_flags(self) -> None:
-        new_flags = []
-        for flag in self.flags:
+        for i, flag in enumerate(self.flags):
             if flag.name == "results":
                 try:
                     new_val = int(flag.value)
@@ -455,13 +454,9 @@ class SurfrawSpecial(SurfrawOption):
                     raise OptionResolutionError(
                         "value for special 'results' option must be an integer"
                     ) from None
-                new_flags.append(SurfrawFlag(flag.name, flag.target, new_val))
-            else:
-                # The language option needn't be checked here.  There are way too
-                # many ISO language codes to match.
-                new_flags.append(flag)
-        self.flags.clear()
-        self.flags.extend(new_flags)
+                self.flags[i] = SurfrawFlag(flag.name, flag.target, new_val)
+            # The language option needn't be checked here.  There are way too
+            # many ISO language codes to match.
 
 
 def parse_option_type(option_type: str) -> Type[SurfrawOption]:
@@ -502,10 +497,9 @@ class ListOption(Option):
                     "fourth argument to `--list` option must be provided for enum lists"
                 )
 
-            # Raise `OptionParseError` if invalid.
-            new_vals = [validate_enum_value(val) for val in self.values]
-            self.values.clear()
-            self.values.extend(new_vals)
+            for i, val in enumerate(self.values):
+                # Raise `OptionParseError` if invalid.
+                self.values[i] = validate_enum_value(val)
 
         elif issubclass(self.type, SurfrawAnything):
             # Nothing to check for 'anythings'.
