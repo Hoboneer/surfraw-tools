@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import re
-from typing import Callable, List, TypeVar
+from typing import TYPE_CHECKING, Callable, List, TypeVar
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
 
 
 class OptionParseError(Exception):
@@ -13,7 +16,7 @@ class OptionParseError(Exception):
 # This is purposely not in the full range of shell variable names because I am
 # trying to encourage a particular naming convention. That is,
 # `SURFRAW_elvisname_onewordvar` is what the script would generate.
-_VALID_SURFRAW_VAR_NAME = re.compile("^[a-z]+$")
+_VALID_SURFRAW_VAR_NAME: Final = re.compile("^[a-z]+$")
 
 
 def validate_name(name: str) -> str:
@@ -29,9 +32,9 @@ def validate_name(name: str) -> str:
 # TODO: Should the yes-no option take the other forms?
 # TRUE_WORDS = {"yes", "on", "1"}
 # FALSE_WORDS = {"no", "off", "0"}
-_TRUE_WORDS = {"yes"}
-_FALSE_WORDS = {"no"}
-_BOOL_WORDS = _TRUE_WORDS | _FALSE_WORDS
+_TRUE_WORDS: Final = {"yes"}
+_FALSE_WORDS: Final = {"no"}
+_BOOL_WORDS: Final = _TRUE_WORDS | _FALSE_WORDS
 
 
 def validate_bool(bool_: str) -> str:
@@ -59,8 +62,8 @@ def parse_bool(bool_: str) -> bool:
 
 # ENUM VALUES
 
-_VALID_ENUM_VALUE_STR = "^[a-z0-9][a-z0-9_+-]*$"
-_VALID_ENUM_VALUE = re.compile(_VALID_ENUM_VALUE_STR)
+_VALID_ENUM_VALUE_STR: Final = "^[a-z0-9][a-z0-9_+-]*$"
+_VALID_ENUM_VALUE: Final = re.compile(_VALID_ENUM_VALUE_STR)
 
 
 def validate_enum_value(value: str) -> str:

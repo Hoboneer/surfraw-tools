@@ -20,7 +20,7 @@ import sys
 from itertools import chain
 from os import EX_OK, EX_OSERR, EX_USAGE
 from tempfile import NamedTemporaryFile
-from typing import Callable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
 
 from .common import (
     BASE_PARSER,
@@ -37,7 +37,10 @@ from .options import (
     SurfrawSpecial,
 )
 
-PROGRAM_NAME = "mkelvis"
+if TYPE_CHECKING:
+    from typing_extensions import Final
+
+PROGRAM_NAME: Final = "mkelvis"
 
 
 # FIXME: This is very ugly, please... make it not so bad.
