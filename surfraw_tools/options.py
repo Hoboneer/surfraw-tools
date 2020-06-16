@@ -100,7 +100,7 @@ class SurfrawOption:
         compare=False,
     )
 
-    aliases: weakref.WeakSet[SurfrawOption] = field(
+    aliases: weakref.WeakSet[SurfrawAlias] = field(
         default_factory=weakref.WeakSet, init=False, compare=False, repr=False
     )
     # Flags should be listed in the order that they were defined in the command line.
@@ -161,7 +161,7 @@ class SurfrawOption:
         if cls.creates_variable:
             SurfrawOption.variable_options.append(cls)
 
-    def add_alias(self, alias: SurfrawOption) -> None:
+    def add_alias(self, alias: SurfrawAlias) -> None:
         self.aliases.add(alias)
 
     def add_flag(self, flag: SurfrawFlag) -> None:
