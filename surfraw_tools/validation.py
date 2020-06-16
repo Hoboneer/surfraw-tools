@@ -76,14 +76,15 @@ def validate_enum_value(value: str) -> str:
 
 # MISC.
 
-T = TypeVar("T")
 
-
-def no_validation(arg: T) -> T:
+def no_validation(arg: str) -> str:
     return arg
 
 
-def list_of(validator: Callable[..., T]) -> Callable[..., List[T]]:
+T = TypeVar("T")
+
+
+def list_of(validator: Callable[[str], T]) -> Callable[[str], List[T]]:
     def list_validator(arg: str) -> List[T]:
         if arg == "":
             return []
