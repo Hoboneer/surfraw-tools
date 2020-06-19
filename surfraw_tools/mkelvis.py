@@ -97,22 +97,16 @@ def generate_local_help_output(
         ctx.variable_options, key=lambda x: types_to_sort_order[x.__class__]
     ):
         lines = get_optlines(opt)
-        optheader = lines[-1]
 
+        # Add values of enum aligned with last metavar.
         if isinstance(opt, SurfrawEnum) or (
             isinstance(opt, SurfrawList) and issubclass(opt.type, SurfrawEnum)
         ):
-            valid_values = opt.values
-        else:
-            # Won't add any lines because empty list.
-            valid_values = []
-
-        # +1 to go past the '='
-        offset = optheader.rindex("=") + 1
-        prefix = " " * offset
-        # Add values of enum aligned with metavar.
-        # Won't add any lines if not an enum or enum list.
-        lines.extend(f"{prefix}{value}" for value in valid_values)
+            optheader = lines[-1]
+            # +1 to go past the '='
+            offset = optheader.rindex("=") + 1
+            prefix = " " * offset
+            lines.extend(f"{prefix}{value}" for value in opt.values)
 
         entries.append((opt, lines))
 
