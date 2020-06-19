@@ -43,6 +43,45 @@ if TYPE_CHECKING:
 PROGRAM_NAME: Final = "mkelvis"
 
 
+def get_optheader(
+    opt: SurfrawOption, prefix: str = "", force_no_metavar: bool = False
+) -> str:
+    """Return representation of `opt` in `-local-help`.
+
+    These are in sorted order.
+
+    Example:
+      -s=SORT, -sort=SORT"""
+
+    if opt.metavar is None or force_no_metavar:
+        suffix = ""
+    else:
+        suffix = f"={opt.metavar}"
+    optheader = "  " + ", ".join(
+        f"-{prefix}{opt_.name}{suffix}"
+        for opt_ in sorted(chain([opt], opt.aliases), key=lambda x: x.name)
+    )
+    return optheader
+
+
+def get_optlines(
+    opt: SurfrawOption, target: Optional[SurfrawOption] = None
+) -> List[str]:
+    if target is None:
+        target = opt
+    if isinstance(target, SurfrawList):
+        optlines = []
+        optlines.append(get_optheader(opt, prefix="add-"))
+        if not isinstance(opt, SurfrawFlag):
+            optlines.append(
+                get_optheader(opt, prefix="clear-", force_no_metavar=True)
+            )
+        optlines.append(get_optheader(opt, prefix="remove-"))
+    else:
+        optlines = [get_optheader(opt)]
+    return optlines
+
+
 # FIXME: This is very ugly, please... make it not so bad.
 def generate_local_help_output(
     ctx: Context, namespacer: Callable[[str], str]
@@ -50,43 +89,6 @@ def generate_local_help_output(
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
     entries: List[Tuple[SurfrawOption, List[str]]] = []
-
-    def get_optheader(
-        opt: SurfrawOption, prefix: str = "", force_no_metavar: bool = False
-    ) -> str:
-        """Return representation of `opt` in `-local-help`.
-
-        These are in sorted order.
-
-        Example:
-          -s=SORT, -sort=SORT"""
-
-        if opt.metavar is None or force_no_metavar:
-            suffix = ""
-        else:
-            suffix = f"={opt.metavar}"
-        optheader = "  " + ", ".join(
-            f"-{prefix}{opt_.name}{suffix}"
-            for opt_ in sorted(chain([opt], opt.aliases), key=lambda x: x.name)
-        )
-        return optheader
-
-    def get_optlines(
-        opt: SurfrawOption, target: Optional[SurfrawOption] = None
-    ) -> List[str]:
-        if target is None:
-            target = opt
-        if isinstance(target, SurfrawList):
-            optlines = []
-            optlines.append(get_optheader(opt, prefix="add-"))
-            if not isinstance(opt, SurfrawFlag):
-                optlines.append(
-                    get_optheader(opt, prefix="clear-", force_no_metavar=True)
-                )
-            optlines.append(get_optheader(opt, prefix="remove-"))
-        else:
-            optlines = [get_optheader(opt)]
-        return optlines
 
     # Options that take arguments
     # Depends on subclass definition order.
