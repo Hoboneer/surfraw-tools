@@ -46,7 +46,7 @@ PROGRAM_NAME: Final = "mkelvis"
 # FIXME: This is very ugly, please... make it not so bad.
 def generate_local_help_output(
     ctx: Context, namespacer: Callable[[str], str]
-) -> Optional[str]:
+) -> str:
     """Return the 'Local options' part of `sr $elvi -local-help`."""
     # The local options part starts indented by two spaces.
     entries: List[Tuple[SurfrawOption, List[str]]] = []
@@ -115,10 +115,6 @@ def generate_local_help_output(
         (flag, get_optlines(flag, target=flag.target))
         for flag in ctx.options.flags
     )
-
-    # Nothing else to do.
-    if not entries:
-        return None
 
     # Include "  | "
     longest_length = max(
