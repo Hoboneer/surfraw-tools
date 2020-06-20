@@ -11,12 +11,10 @@ from typing import (
     Callable,
     ClassVar,
     Dict,
-    Iterable,
     List,
     Match,
     NoReturn,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
@@ -25,6 +23,7 @@ from typing import (
 
 from .validation import (
     OptionParseError,
+    OptionResolutionError,
     list_of,
     no_validation,
     parse_bool,
@@ -34,14 +33,7 @@ from .validation import (
 )
 
 if TYPE_CHECKING:
-    from .common import Context
-    from typing_extensions import Protocol, TypedDict, Literal
-
-    class _HasTarget(Protocol):
-        @property
-        def target(self) -> str:
-            ...
-
+    from typing_extensions import TypedDict, Literal
     class SurfrawMetadata(TypedDict):
         metavar: Optional[str]
         description: str
@@ -659,117 +651,3 @@ class DescribeOption(Option):
     validators = [validate_name, no_validation]
     variable: str
     description: str
-
-
-class OptionResolutionError(Exception):
-    pass
-
-
-VALID_FLAG_TYPES = [opt.typename for opt in SurfrawOption.variable_options]
-VALID_FLAG_TYPES_STR = ", ".join(
-    f"'{typename}'" if typename != VALID_FLAG_TYPES[-1] else f"or '{typename}'"
-    for i, typename in enumerate(VALID_FLAG_TYPES)
-)
-
-
-def _cleanup_flag_alias_resolve(
-    ctx: Context,
-    flag_or_alias: Union[FlagOption, AliasOption],
-    target: SurfrawOption,
-) -> None:
-    real_opt = flag_or_alias.to_surfraw_opt(target)
-    if isinstance(real_opt, SurfrawFlag):
-        target.add_flag(real_opt)
-    else:
-        target.add_alias(real_opt)
-    ctx.options.append(real_opt)
-
-
-def resolve_options(ctx: Context) -> None:
-    # Resolve variable options.
-    try:
-        for unresolved_opt in ctx.unresolved_varopts:
-            real_opt = unresolved_opt.to_surfraw_opt()
-            # Register name with central container.
-            ctx.options.append(real_opt)
-    except Exception as e:
-        raise OptionResolutionError(str(e)) from None
-
-    # Symbol table.
-    varopts: Dict[str, SurfrawOption] = {
-        opt.name: opt for opt in ctx.options.variable_options
-    }
-
-    # Set `target` of flags to an instance of `SurfrawOption`.
-    for flag in ctx.unresolved_flags:
-        try:
-            target: SurfrawOption = varopts[flag.target]
-        except KeyError:
-            raise OptionResolutionError(
-                f"flag option '{flag.name}' does not target any existing {VALID_FLAG_TYPES_STR} option"
-            ) from None
-        _cleanup_flag_alias_resolve(ctx, flag, target)
-
-    # Check if flag values are valid for their target type.
-    try:
-        for flag_target in varopts.values():
-            flag_target.resolve_flags()
-    except OptionParseError as e:
-        raise OptionResolutionError(str(e)) from None
-
-    # Set `target` of aliases to an instance of `SurfrawOption`.
-    flag_names: Dict[str, SurfrawFlag] = {
-        flag.name: flag for flag in ctx.options.flags
-    }
-    for alias in ctx.unresolved_aliases:
-        # Check flags or aliases, depending on alias type.
-        if issubclass(alias.type, SurfrawAlias):
-            raise OptionResolutionError(
-                f"alias '{alias.name}' targets another alias, which is not allowed"
-            )
-
-        alias_target: Optional[Union[SurfrawFlag, SurfrawOption]]
-        if issubclass(alias.type, SurfrawFlag):
-            alias_target = flag_names.get(alias.target)
-        else:
-            alias_target = varopts.get(alias.target)
-        if alias_target is None or not isinstance(alias_target, alias.type):
-            raise OptionResolutionError(
-                f"alias '{alias.name}' does not target any options of matching type ('{alias.type.typename}')"
-            ) from None
-        _cleanup_flag_alias_resolve(ctx, alias, alias_target)
-
-    # Metavars + descriptions
-    for metavar in ctx.metavars:
-        try:
-            opt = varopts[metavar.variable]
-        except KeyError:
-            raise OptionResolutionError(
-                f"metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
-            )
-        else:
-            opt.set_metadata("metavar", metavar.metavar)
-    for desc in ctx.descriptions:
-        try:
-            opt = varopts[desc.variable]
-        except KeyError:
-            raise OptionResolutionError(
-                f"description for '{desc.variable}' targets a non-existent variable"
-            )
-        else:
-            opt.set_metadata("description", desc.description)
-
-    # Check if options target variables that exist.
-    var_checks: List[Tuple[Iterable[_HasTarget], str]] = [
-        (ctx.mappings, "URL parameter"),
-        (ctx.list_mappings, "URL parameter"),
-        (ctx.inlines, "inlining"),
-        (ctx.list_inlines, "inlining"),
-        (ctx.collapses, "collapse"),
-    ]
-    for topts, subject_name in var_checks:
-        for topt in topts:
-            if topt.target not in varopts:
-                raise OptionResolutionError(
-                    f"{subject_name} '{topt.target}' does not target any existing variable"
-                )

@@ -11,6 +11,10 @@ class OptionParseError(Exception):
     pass
 
 
+class OptionResolutionError(Exception):
+    pass
+
+
 # NAME
 
 # This is purposely not in the full range of shell variable names because I am
