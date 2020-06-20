@@ -248,17 +248,17 @@ def _parse_elvis_name(name: str) -> _ElvisName:
     return _ElvisName(name)
 
 
-VALID_FLAG_TYPES = [
+VALID_FLAG_TYPES: Final = [
     opt.typename for opt in SurfrawOption.variable_options
 ]
-VALID_FLAG_TYPES_STR = ", ".join(
+VALID_FLAG_TYPES_STR: Final = ", ".join(
     f"'{typename}'" if typename != VALID_FLAG_TYPES[-1] else f"or '{typename}'"
     for i, typename in enumerate(VALID_FLAG_TYPES)
 )
 
 
-BASE_PARSER = argparse.ArgumentParser(add_help=False)
-_VERSION_FORMAT_ACTION = cast(
+BASE_PARSER: Final = argparse.ArgumentParser(add_help=False)
+_VERSION_FORMAT_ACTION: Final = cast(
     _VersionAction,
     BASE_PARSER.add_argument(
         "--version",
@@ -266,7 +266,7 @@ _VERSION_FORMAT_ACTION = cast(
         version=f"%(prog)s (surfraw-tools) {__version__}",
     ),
 )
-VERSION_FORMAT_STRING = _VERSION_FORMAT_ACTION.version
+VERSION_FORMAT_STRING: Final = _VERSION_FORMAT_ACTION.version
 BASE_PARSER.add_argument(
     "name", type=_parse_elvis_name, help="name for the elvis"
 )
