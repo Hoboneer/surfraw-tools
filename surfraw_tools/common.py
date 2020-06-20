@@ -57,6 +57,7 @@ from .cliopts import (
 from .options import (
     SurfrawAlias,
     SurfrawAnything,
+    SurfrawBool,
     SurfrawEnum,
     SurfrawFlag,
     SurfrawList,
@@ -118,35 +119,27 @@ class _SurfrawOptionContainer(argparse.Namespace):
         self.nonvariable_options: List[SurfrawOption] = []
         self._seen_nonvariable_names: Set[str] = set()
 
-        self.options: Dict[
-            str, Union[_FlagContainer, _ListContainer, List[SurfrawOption]]
-        ] = {
-            type_.typename_plural: []
-            for type_ in SurfrawOption.typenames.values()
+        self.bools: List[SurfrawBool] = []
+        self.enums: List[SurfrawEnum] = []
+        self.anythings: List[SurfrawAnything] = []
+        self.specials: List[SurfrawSpecial] = []
+        self.lists = _ListContainer()
+        self._varopts = {
+            "bools": self.bools,
+            "enums": self.enums,
+            "anythings": self.anythings,
+            "specials": self.specials,
+            "lists": self.lists,
         }
-        # Flags and lists can be grouped by their target types.
-        self.options[SurfrawFlag.typename_plural] = _FlagContainer()
-        self.options[SurfrawList.typename_plural] = _ListContainer()
 
-        # Dynamically create getters.
-        for type_ in self.options.keys():
-            setattr(
-                self.__class__,
-                type_,
-                # Account for late binding
-                property(
-                    partial(
-                        lambda self_, saved_type: self_.options[saved_type],  # type: ignore
-                        saved_type=type_,
-                    )
-                ),
-            )
+        self.aliases: List[SurfrawAlias] = []
+        self.flags = _FlagContainer()
+        self._nonvaropts = {
+            "aliases": self.aliases,
+            "flags": self.flags,
+        }
 
     def append(self, option: SurfrawOption) -> None:
-        # All values of `option` are valid.
-        # The result container should accept `option` (since it's OK at this point).
-        self.options[option.typename_plural].append(option)  # type: ignore
-
         # Keep track of variable names.
         if isinstance(option, SurfrawVarOption):
             if option.name in self._seen_variable_names:
@@ -155,6 +148,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
                 )
             self._seen_variable_names.add(option.name)
             self.variable_options.append(option)
+            self._varopts[option.typename_plural].append(option)  # type: ignore
         else:
             if option.name in self._seen_nonvariable_names:
                 raise ValueError(
@@ -162,6 +156,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
                 )
             self._seen_nonvariable_names.add(option.name)
             self.nonvariable_options.append(option)
+            self._nonvaropts[option.typename_plural].append(option)  # type: ignore
 
 
 _ElvisName = NewType("_ElvisName", str)
