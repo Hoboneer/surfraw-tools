@@ -2,17 +2,7 @@
 import re
 from collections import deque
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    ClassVar,
-    List,
-    Match,
-    Sequence,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, ClassVar, List, Sequence, Type, TypeVar, Union, cast
 
 from .options import (
     SurfrawAlias,
@@ -52,24 +42,6 @@ class Option:
 
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
-
-    def __init_subclass__(cls) -> None:
-        subclass_re = r"([A-Z][a-z]+)Option"
-        try:
-            cls.typename = (
-                cast(Match[str], re.match(subclass_re, cls.__name__))
-                .group(1)
-                .lower()
-            )
-        except IndexError:
-            raise RuntimeError(
-                f"subclasses of Option must match the regex '{subclass_re}'"
-            ) from None
-        # Can't reference `AliasOption` here since it's not defined yet, but this will do.
-        if cls.typename == "alias":
-            cls.typename_plural = "aliases"
-        else:
-            cls.typename_plural = cls.typename + "s"
 
     @classmethod
     def from_arg(cls: _O, arg: str) -> _O:
