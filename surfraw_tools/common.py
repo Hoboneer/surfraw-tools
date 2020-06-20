@@ -66,15 +66,9 @@ from .options import (
 from .validation import OptionParseError, OptionResolutionError
 
 if TYPE_CHECKING:
-    from typing_extensions import Protocol
+    from typing_extensions import Final
 
-    class _HasType(Protocol):
-        @property
-        def type(self) -> Type[SurfrawOption]:
-            ...
-
-
-T = TypeVar("T", bound="_HasType")
+T = TypeVar("T", SurfrawFlag, SurfrawList)
 
 
 # TODO: Name this better!
