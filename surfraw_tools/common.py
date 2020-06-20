@@ -41,7 +41,7 @@ from jinja2.runtime import Context as JContext
 from pkg_resources import DistributionNotFound
 
 from ._package import __version__
-from .options import (
+from .cliopts import (
     AliasOption,
     AnythingOption,
     BoolOption,
