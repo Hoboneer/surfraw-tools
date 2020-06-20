@@ -30,6 +30,7 @@ from .validation import (
 
 if TYPE_CHECKING:
     from typing_extensions import TypedDict, Literal
+
     class SurfrawMetadata(TypedDict):
         metavar: Optional[str]
         description: str
@@ -68,9 +69,6 @@ _FlagValidator = Callable[[Any], Any]
 
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawOption:
-    creates_variable: ClassVar[bool]
-    flag_value_validator: ClassVar[_FlagValidator]
-
     typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
@@ -91,23 +89,12 @@ class SurfrawOption:
     aliases: weakref.WeakSet[SurfrawAlias] = field(
         default_factory=weakref.WeakSet, init=False, compare=False, repr=False
     )
-    # Flags should be listed in the order that they were defined in the command line.
-    flags: List[SurfrawFlag] = field(
-        default_factory=list, init=False, compare=False, repr=False
-    )
-    _resolved_flag_values: List[SurfrawFlag] = field(
-        default_factory=list, init=False, compare=False, repr=False
-    )
 
     def __post_init__(self) -> None:
         if self.name in _FORBIDDEN_OPTION_NAMES:
             raise ValueError(
                 f"option name '{self.name}' is global, which cannot be overriden by elvi"
             )
-        if self.__class__.creates_variable:
-            self.set_metadata("metavar", self.name.upper())
-        else:
-            self.set_metadata("metavar", None)
         self.set_metadata(
             "description", f"A {self.typename} option for '{self.name}'"
         )
@@ -128,6 +115,10 @@ class SurfrawOption:
         self._metadata[key] = val
 
     def __init_subclass__(cls) -> None:
+        if cls.__name__ == "SurfrawVarOption":
+            # This is just a superclass.  It won't be used.
+            # FIXME: Special case.  Refactor?
+            return
         subclass_re = r"Surfraw([A-Z][a-z]+)"
         try:
             cls.typename = (
@@ -146,11 +137,32 @@ class SurfrawOption:
             cls.typename_plural = cls.typename + "s"
 
         SurfrawOption.typenames[cls.typename] = cls
-        if cls.creates_variable:
-            SurfrawOption.variable_options.append(cls)
 
     def add_alias(self, alias: SurfrawAlias) -> None:
         self.aliases.add(alias)
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class SurfrawVarOption(SurfrawOption):
+    """Superclass for options that create variables in elvi."""
+
+    flag_value_validator: ClassVar[_FlagValidator]
+
+    # Flags should be listed in the order that they were defined in the command line.
+    flags: List[SurfrawFlag] = field(
+        default_factory=list, init=False, compare=False, repr=False
+    )
+    _resolved_flag_values: List[SurfrawFlag] = field(
+        default_factory=list, init=False, compare=False, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        super().__post_init__()
+        self.set_metadata("metavar", self.name.upper())
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        SurfrawOption.variable_options.append(cls)
 
     def add_flag(self, flag: SurfrawFlag) -> None:
         self.flags.append(flag)
@@ -177,17 +189,12 @@ class SurfrawOption:
 
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawFlag(SurfrawOption):
-    creates_variable = False
-
-    target: SurfrawOption
+    target: SurfrawVarOption
     value: Any
-
-    @staticmethod
-    def flag_value_validator(_: Any) -> NoReturn:
-        raise RuntimeError("flags cannot have flags")
 
     def __post_init__(self) -> None:
         super().__post_init__()
+        self.set_metadata("metavar", None)
         self.set_metadata(
             "description", f"An alias for -{self.target.name}={self.value}"
         )
@@ -198,16 +205,14 @@ class SurfrawFlag(SurfrawOption):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawBool(SurfrawOption):
-    creates_variable = True
+class SurfrawBool(SurfrawVarOption):
     # Don't need to make new flag objects after resolving.
     flag_value_validator = validate_bool
     default: str
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawEnum(SurfrawOption):
-    creates_variable = True
+class SurfrawEnum(SurfrawVarOption):
     flag_value_validator = validate_enum_value
     default: str
     values: List[str] = field(hash=False)
@@ -236,8 +241,7 @@ class SurfrawEnum(SurfrawOption):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawAnything(SurfrawOption):
-    creates_variable = True
+class SurfrawAnything(SurfrawVarOption):
     # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
     default: str
@@ -251,8 +255,7 @@ class SurfrawAnything(SurfrawOption):
 
 # This class is not instantiated normally... maybe prepend name with underscore?
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawSpecial(SurfrawOption):
-    creates_variable = True
+class SurfrawSpecial(SurfrawVarOption):
     default: str
 
     @staticmethod
@@ -298,9 +301,7 @@ class SurfrawSpecial(SurfrawOption):
 
 # XXX: Should this store validators for the type it has?
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawList(SurfrawOption):
-    creates_variable = True
-
+class SurfrawList(SurfrawVarOption):
     type: Type[SurfrawOption]
     defaults: List[str] = field(hash=False)
     values: List[str] = field(hash=False)
@@ -350,14 +351,8 @@ class SurfrawList(SurfrawOption):
 
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawAlias(SurfrawOption):
-    creates_variable = False
-    target: SurfrawOption
-
-    @staticmethod
-    def flag_value_validator(_: Any) -> NoReturn:
-        raise RuntimeError("aliases cannot have flags")
+    target: Union[SurfrawVarOption, SurfrawFlag]
 
     def __post_init__(self) -> None:
         super().__post_init__()
-        if isinstance(self.target, self.__class__):
-            raise TypeError("aliases cannot be aliases of other aliases")
+        self.set_metadata("metavar", None)

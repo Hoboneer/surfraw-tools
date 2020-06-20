@@ -62,6 +62,7 @@ from .options import (
     SurfrawList,
     SurfrawOption,
     SurfrawSpecial,
+    SurfrawVarOption,
 )
 from .validation import OptionParseError, OptionResolutionError
 
@@ -112,7 +113,7 @@ class _ListContainer(_ChainContainer[SurfrawList]):
 class _SurfrawOptionContainer(argparse.Namespace):
     def __init__(self) -> None:
         # Options that create variables.
-        self.variable_options: List[SurfrawOption] = []
+        self.variable_options: List[SurfrawVarOption] = []
         self._seen_variable_names: Set[str] = set()
         self.nonvariable_options: List[SurfrawOption] = []
         self._seen_nonvariable_names: Set[str] = set()
@@ -147,7 +148,7 @@ class _SurfrawOptionContainer(argparse.Namespace):
         self.options[option.typename_plural].append(option)  # type: ignore
 
         # Keep track of variable names.
-        if option.creates_variable:
+        if isinstance(option, SurfrawVarOption):
             if option.name in self._seen_variable_names:
                 raise ValueError(
                     f"the variable name '{option.name}' is duplicated"
@@ -222,7 +223,7 @@ class Context:
         self._surfraw_options = val
 
     @property
-    def variable_options(self) -> List[SurfrawOption]:
+    def variable_options(self) -> List[SurfrawVarOption]:
         return self.options.variable_options
 
 
@@ -438,19 +439,6 @@ _search_args_group.add_argument(
 )
 
 
-def _cleanup_flag_alias_resolve(
-    ctx: Context,
-    flag_or_alias: Union[FlagOption, AliasOption],
-    target: SurfrawOption,
-) -> None:
-    real_opt = flag_or_alias.to_surfraw_opt(target)
-    if isinstance(real_opt, SurfrawFlag):
-        target.add_flag(real_opt)
-    else:
-        target.add_alias(real_opt)
-    ctx.options.append(real_opt)
-
-
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]
 
 
@@ -465,19 +453,19 @@ def resolve_options(ctx: Context) -> None:
         raise OptionResolutionError(str(e)) from None
 
     # Symbol table.
-    varopts: Dict[str, SurfrawOption] = {
-        opt.name: opt for opt in ctx.options.variable_options
-    }
+    varopts = {opt.name: opt for opt in ctx.options.variable_options}
 
     # Set `target` of flags to an instance of `SurfrawOption`.
     for flag in ctx.unresolved_flags:
         try:
-            target: SurfrawOption = varopts[flag.target]
+            target = varopts[flag.target]
         except KeyError:
             raise OptionResolutionError(
                 f"flag option '{flag.name}' does not target any existing {VALID_FLAG_TYPES_STR} option"
             ) from None
-        _cleanup_flag_alias_resolve(ctx, flag, target)
+        real_flag = flag.to_surfraw_opt(target)
+        target.add_flag(real_flag)
+        ctx.options.append(real_flag)
 
     # Check if flag values are valid for their target type.
     try:
@@ -497,7 +485,7 @@ def resolve_options(ctx: Context) -> None:
                 f"alias '{alias.name}' targets another alias, which is not allowed"
             )
 
-        alias_target: Optional[Union[SurfrawFlag, SurfrawOption]]
+        alias_target: Optional[Union[SurfrawFlag, SurfrawVarOption]]
         if issubclass(alias.type, SurfrawFlag):
             alias_target = flag_names.get(alias.target)
         else:
@@ -506,7 +494,9 @@ def resolve_options(ctx: Context) -> None:
             raise OptionResolutionError(
                 f"alias '{alias.name}' does not target any options of matching type ('{alias.type.typename}')"
             ) from None
-        _cleanup_flag_alias_resolve(ctx, alias, alias_target)
+        real_alias = alias.to_surfraw_opt(alias_target)
+        alias_target.add_alias(real_alias)
+        ctx.options.append(real_alias)
 
     # Metavars + descriptions
     for metavar in ctx.metavars:

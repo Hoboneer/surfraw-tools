@@ -12,6 +12,7 @@ from .options import (
     SurfrawFlag,
     SurfrawList,
     SurfrawOption,
+    SurfrawVarOption,
     _FlagValidator,
 )
 from .validation import (
@@ -122,7 +123,7 @@ class FlagOption(Option):
     target: str
     value: str
 
-    def to_surfraw_opt(self, resolved_target: SurfrawOption) -> SurfrawFlag:
+    def to_surfraw_opt(self, resolved_target: SurfrawVarOption) -> SurfrawFlag:
         return SurfrawFlag(self.name, resolved_target, self.value)
 
 
@@ -218,7 +219,9 @@ class AliasOption(Option):
     target: str
     type: Type[SurfrawOption]
 
-    def to_surfraw_opt(self, resolved_target: SurfrawOption) -> SurfrawAlias:
+    def to_surfraw_opt(
+        self, resolved_target: Union[SurfrawVarOption, SurfrawFlag]
+    ) -> SurfrawAlias:
         # No longer need to store target type explicitly (it has a reference!).
         return SurfrawAlias(self.name, resolved_target)
 
