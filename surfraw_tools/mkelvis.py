@@ -183,9 +183,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     template_vars["GENERATOR_PROGRAM"] = VERSION_FORMAT_STRING % {
         "prog": PROGRAM_NAME
     }
-    template_vars["local_help_output"] = generate_local_help_output(
-        ctx, namespacer
-    )
+    if template_vars["any_options_defined"]:
+        template_vars["local_help_output"] = generate_local_help_output(
+            ctx, namespacer
+        )
 
     # Atomically write output file.
     try:
