@@ -2,7 +2,7 @@ REQUIREMENTS_DIR := requirements
 
 PACKAGE_DIR := surfraw_tools
 SOURCE_FILES := $(wildcard $(PACKAGE_DIR)/*.py)
-CHECK_FILES := $(SOURCE_FILES) setup.py jinjac.py
+CHECK_FILES := $(SOURCE_FILES) setup.py
 
 # Do nothing.
 .PHONY: all
