@@ -457,11 +457,6 @@ def _resolve_aliases(
     }
     for alias in ctx.unresolved_aliases:
         # Check flags or aliases, depending on alias type.
-        if issubclass(alias.type, SurfrawAlias):
-            raise OptionResolutionError(
-                f"alias '{alias.name}' targets another alias, which is not allowed"
-            )
-
         target: Optional[Union[SurfrawFlag, SurfrawVarOption]]
         if issubclass(alias.type, SurfrawFlag):
             target = flag_names.get(alias.target)
@@ -469,7 +464,7 @@ def _resolve_aliases(
             target = variable_options.get(alias.target)
         if target is None or not isinstance(target, alias.type):
             raise OptionResolutionError(
-                f"alias '{alias.name}' does not target any options of matching type ('{alias.type.typename}')"
+                f"alias '{alias.name}' does not target any option of matching type ('{alias.type.typename}')"
             ) from None
         real_alias = alias.to_surfraw_opt(target)
         target.add_alias(real_alias)

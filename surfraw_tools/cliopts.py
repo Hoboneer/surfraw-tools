@@ -165,21 +165,6 @@ class AnythingOption(Option):
         return SurfrawAnything(self.name, self.default)
 
 
-def parse_option_type(option_type: str) -> Type[SurfrawOption]:
-    # For backward compatibility.
-    if option_type == "yes-no":
-        option_type = "bool"
-    try:
-        type_ = SurfrawOption.typenames[option_type]
-    except KeyError:
-        valid_option_types = ", ".join(sorted(SurfrawOption.typenames))
-        raise OptionParseError(
-            f"option type '{option_type}' must be one of the following: {valid_option_types}"
-        ) from None
-    else:
-        return type_
-
-
 def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
     try:
         type_ = SurfrawListType.typenames[list_type]
@@ -224,12 +209,38 @@ class ListOption(Option):
         return SurfrawList(self.name, self.type, self.defaults, self.values)
 
 
+def _parse_alias_type(
+    alias_type: str,
+) -> Union[Type[SurfrawVarOption], Type[SurfrawFlag]]:
+    if alias_type == SurfrawAlias.typename:
+        raise OptionParseError("aliases may not target other aliases")
+    # For backward compatibility.
+    if alias_type == "yes-no":
+        alias_type = "bool"
+
+    try:
+        type_ = SurfrawOption.typenames[alias_type]
+    except KeyError:
+        valid_option_types = ", ".join(
+            sorted(
+                typename
+                for typename, type_ in SurfrawOption.typenames.items()
+                if not issubclass(type_, SurfrawAlias)
+            )
+        )
+        raise OptionParseError(
+            f"alias type '{alias_type}' must be one of the following: {valid_option_types}"
+        )
+    else:
+        return cast(Union[Type[SurfrawVarOption], Type[SurfrawFlag]], type_)
+
+
 @dataclass(frozen=True)
 class AliasOption(Option):
-    validators = (validate_name, validate_name, parse_option_type)
+    validators = (validate_name, validate_name, _parse_alias_type)
     name: str
     target: str
-    type: Type[SurfrawOption]
+    type: Union[Type[SurfrawVarOption], Type[SurfrawFlag]]
 
     def to_surfraw_opt(
         self, resolved_target: Union[SurfrawVarOption, SurfrawFlag]
