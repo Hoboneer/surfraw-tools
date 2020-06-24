@@ -1,4 +1,6 @@
 """Represent options from cli as object."""
+from __future__ import annotations
+
 import re
 from collections import deque
 from dataclasses import dataclass, field
@@ -11,6 +13,7 @@ from .options import (
     SurfrawEnum,
     SurfrawFlag,
     SurfrawList,
+    SurfrawListType,
     SurfrawOption,
     SurfrawVarOption,
     _FlagValidator,
@@ -177,17 +180,28 @@ def parse_option_type(option_type: str) -> Type[SurfrawOption]:
         return type_
 
 
+def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
+    try:
+        type_ = SurfrawListType.typenames[list_type]
+    except KeyError:
+        raise OptionParseError(
+            f"list type '{list_type}' must be one of the following: {', '.join(sorted(SurfrawListType.typenames))}"
+        ) from None
+    else:
+        return cast(Type[SurfrawListType], type_)
+
+
 @dataclass(frozen=True)
 class ListOption(Option):
     validators = [
         validate_name,
-        parse_option_type,
+        _parse_list_type,
         list_of(no_validation),
         [list_of(no_validation)],
     ]
 
     name: str
-    type: Type[SurfrawOption]
+    type: Type[SurfrawListType]
     defaults: List[str] = field(hash=False)
     values: List[str] = field(default_factory=list, hash=False)
 

@@ -115,7 +115,7 @@ class SurfrawOption:
         self._metadata[key] = val
 
     def __init_subclass__(cls) -> None:
-        if cls.__name__ == "SurfrawVarOption":
+        if cls.__name__ in ("SurfrawVarOption", "SurfrawListType"):
             # This is just a superclass.  It won't be used.
             # FIXME: Special case.  Refactor?
             return
@@ -162,7 +162,8 @@ class SurfrawVarOption(SurfrawOption):
 
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
-        SurfrawOption.variable_options.append(cls)
+        if cls.__name__ != "SurfrawListType":
+            SurfrawOption.variable_options.append(cls)
 
     def add_flag(self, flag: SurfrawFlag) -> None:
         self.flags.append(flag)
@@ -182,6 +183,17 @@ class SurfrawVarOption(SurfrawOption):
 
     def _post_resolve_flags(self) -> None:
         pass
+
+
+@dataclass(frozen=True, unsafe_hash=True)
+class SurfrawListType(SurfrawVarOption):
+    # This should only contain subclasses of `SurfrawListType`.
+    # mypy doesn't seem to like having values of `typenames` to subclasses of this class.
+    typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
+
+    def __init_subclass__(cls) -> None:
+        super().__init_subclass__()
+        SurfrawListType.typenames[cls.typename] = cls
 
 
 # Concrete option types follow
@@ -212,7 +224,7 @@ class SurfrawBool(SurfrawVarOption):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawEnum(SurfrawVarOption):
+class SurfrawEnum(SurfrawListType):
     flag_value_validator = validate_enum_value
     default: str
     values: List[str] = field(hash=False)
@@ -241,7 +253,7 @@ class SurfrawEnum(SurfrawVarOption):
 
 
 @dataclass(frozen=True, unsafe_hash=True)
-class SurfrawAnything(SurfrawVarOption):
+class SurfrawAnything(SurfrawListType):
     # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
     default: str
@@ -302,7 +314,7 @@ class SurfrawSpecial(SurfrawVarOption):
 # XXX: Should this store validators for the type it has?
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawList(SurfrawVarOption):
-    type: Type[SurfrawOption]
+    type: Type[SurfrawListType]
     defaults: List[str] = field(hash=False)
     values: List[str] = field(hash=False)
 
@@ -318,11 +330,6 @@ class SurfrawList(SurfrawVarOption):
             "description",
             f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'",
         )
-
-        if not issubclass(self.type, (SurfrawEnum, SurfrawAnything)):
-            raise TypeError(
-                f"element type ('{self.type.typename}') of list '{self.name}' is not a valid list type"
-            )
 
         if issubclass(self.type, SurfrawEnum):
             if not set(self.defaults) <= set(self.values):
