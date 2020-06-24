@@ -164,9 +164,7 @@ class AnythingOption(Option):
 
 def parse_option_type(option_type: str) -> Type[SurfrawOption]:
     # For backward compatibility.
-    if option_type == "member":
-        option_type = "flag"
-    elif option_type == "yes-no":
+    if option_type == "yes-no":
         option_type = "bool"
     try:
         type_ = SurfrawOption.typenames[option_type]

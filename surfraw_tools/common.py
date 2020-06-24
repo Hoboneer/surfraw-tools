@@ -313,15 +313,6 @@ BASE_PARSER.add_argument(
     help="specify an option with an argument from a range of values",
 )
 BASE_PARSER.add_argument(
-    "--member",
-    "-M",
-    action="append",
-    type=_wrap_parser(FlagOption.from_arg),
-    dest="unresolved_flags",
-    metavar="OPTION_NAME:ENUM_VARIABLE_NAME:VALUE",
-    help="specify an option that is an alias to a member of a defined --enum. DEPRECATED; now does the same thing as the more general --flag option",
-)
-BASE_PARSER.add_argument(
     "--anything",
     "-A",
     action="append",
