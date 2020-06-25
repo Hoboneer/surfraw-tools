@@ -29,7 +29,7 @@ from .validation import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypedDict, Literal
+    from typing_extensions import TypedDict, Literal, Final
 
     class SurfrawMetadata(TypedDict):
         metavar: Optional[str]
@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 
 # Options with non alphabetic characters are impossible
-_FORBIDDEN_OPTION_NAMES = {
+_FORBIDDEN_OPTION_NAMES: Final = {
     "browser",
     "elvi",
     "g",

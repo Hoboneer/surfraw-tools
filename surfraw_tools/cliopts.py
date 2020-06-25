@@ -4,7 +4,17 @@ from __future__ import annotations
 import re
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, ClassVar, List, Sequence, Type, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    List,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from .options import (
     SurfrawAlias,
@@ -27,6 +37,9 @@ from .validation import (
     validate_enum_value,
     validate_name,
 )
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
 
 _FlagValidatorsType = Sequence[Union[Sequence[_FlagValidator], _FlagValidator]]
 _O = TypeVar("_O", bound=Type["Option"])
@@ -288,8 +301,8 @@ class CollapseOption(Option):
         return self.target
 
 
-_VALID_METAVAR_STR = "^[a-z]+$"
-_VALID_METAVAR = re.compile(_VALID_METAVAR_STR)
+_VALID_METAVAR_STR: Final = "^[a-z]+$"
+_VALID_METAVAR: Final = re.compile(_VALID_METAVAR_STR)
 
 
 def _validate_metavar(metavar: str) -> str:
