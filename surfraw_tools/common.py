@@ -210,7 +210,7 @@ class Context:
     use_language_option: bool = field(default=False, init=False)
 
     @property
-    def variable_options(self) -> List[SurfrawVarOption]:
+    def variable_options(self) -> Iterable[SurfrawVarOption]:
         return self.options.variable_options
 
 
