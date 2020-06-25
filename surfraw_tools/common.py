@@ -178,7 +178,7 @@ class Context:
     num_tabs: int = field(default=1, init=False)
 
     # Option containers
-    _surfraw_options: _SurfrawOptionContainer = field(
+    options: _SurfrawOptionContainer = field(
         default_factory=_SurfrawOptionContainer, init=False
     )
     unresolved_varopts: List[
@@ -208,15 +208,6 @@ class Context:
 
     use_results_option: bool = field(default=False, init=False)
     use_language_option: bool = field(default=False, init=False)
-
-    @property
-    def options(self) -> _SurfrawOptionContainer:
-        return self._surfraw_options
-
-    # Again, needed for argparse's weirdness.
-    @options.setter
-    def options(self, val: _SurfrawOptionContainer) -> None:
-        self._surfraw_options = val
 
     @property
     def variable_options(self) -> List[SurfrawVarOption]:
