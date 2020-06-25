@@ -155,11 +155,11 @@ class BoolOption(Option):
 
 @dataclass(frozen=True)
 class EnumOption(Option):
-    validators = [
+    validators = (
         validate_name,
         validate_enum_value,
         list_of(validate_enum_value),
-    ]
+    )
     name: str
     default: str
     values: List[str] = field(hash=False)
@@ -191,12 +191,12 @@ def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
 
 @dataclass(frozen=True)
 class ListOption(Option):
-    validators = [
+    validators = (
         validate_name,
         _parse_list_type,
         list_of(no_validation),
-        [list_of(no_validation)],
-    ]
+        (list_of(no_validation),),
+    )
 
     name: str
     type: Type[SurfrawListType]
@@ -264,7 +264,7 @@ class AliasOption(Option):
 
 @dataclass(frozen=True)
 class MappingOption(Option):
-    validators = (validate_name, no_validation, [parse_bool])
+    validators = (validate_name, no_validation, (parse_bool,))
     target: str
     parameter: str
     should_url_encode: bool = True
