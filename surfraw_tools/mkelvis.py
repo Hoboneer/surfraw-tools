@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 PROGRAM_NAME: Final = "mkelvis"
 
 
-def get_optheader(
+def _get_optheader(
     opt: SurfrawOption, prefix: str = "", force_no_metavar: bool = False
 ) -> str:
     """Return representation of `opt` in `-local-help`.
@@ -64,26 +64,26 @@ def get_optheader(
     return optheader
 
 
-def get_optlines(
+def _get_optlines(
     opt: SurfrawOption, target: Optional[SurfrawOption] = None
 ) -> List[str]:
     if target is None:
         target = opt
     if isinstance(target, SurfrawList):
         optlines = []
-        optlines.append(get_optheader(opt, prefix="add-"))
+        optlines.append(_get_optheader(opt, prefix="add-"))
         if not isinstance(opt, SurfrawFlag):
             optlines.append(
-                get_optheader(opt, prefix="clear-", force_no_metavar=True)
+                _get_optheader(opt, prefix="clear-", force_no_metavar=True)
             )
-        optlines.append(get_optheader(opt, prefix="remove-"))
+        optlines.append(_get_optheader(opt, prefix="remove-"))
     else:
-        optlines = [get_optheader(opt)]
+        optlines = [_get_optheader(opt)]
     return optlines
 
 
 # FIXME: This is very ugly, please... make it not so bad.
-def generate_local_help_output(
+def _generate_local_help_output(
     ctx: Context, namespacer: Callable[[str], str]
 ) -> str:
     """Return the 'Local options' part of `sr $elvi -local-help`."""
@@ -98,7 +98,7 @@ def generate_local_help_output(
     for opt in sorted(
         ctx.variable_options, key=lambda x: types_to_sort_order[x.__class__]
     ):
-        lines = get_optlines(opt)
+        lines = _get_optlines(opt)
 
         # Add values of enum aligned with last metavar.
         if isinstance(opt, SurfrawEnum) or (
@@ -114,7 +114,7 @@ def generate_local_help_output(
 
     # Aliases to one of the above options, but with an argument
     entries.extend(
-        (flag, get_optlines(flag, target=flag.target))
+        (flag, _get_optlines(flag, target=flag.target))
         for flag in ctx.options.flags
     )
 
@@ -184,7 +184,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "prog": PROGRAM_NAME
     }
     if template_vars["any_options_defined"]:
-        template_vars["local_help_output"] = generate_local_help_output(
+        template_vars["local_help_output"] = _generate_local_help_output(
             ctx, namespacer
         )
 

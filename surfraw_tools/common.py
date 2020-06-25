@@ -244,12 +244,14 @@ def _parse_elvis_name(name: str) -> _ElvisName:
     return _ElvisName(name)
 
 
-VALID_FLAG_TYPES: Final = [
+_VALID_FLAG_TYPES: Final = [
     opt.typename for opt in SurfrawOption.variable_options
 ]
-VALID_FLAG_TYPES_STR: Final = ", ".join(
-    f"'{typename}'" if typename != VALID_FLAG_TYPES[-1] else f"or '{typename}'"
-    for i, typename in enumerate(VALID_FLAG_TYPES)
+_VALID_FLAG_TYPES_STR: Final = ", ".join(
+    f"'{typename}'"
+    if typename != _VALID_FLAG_TYPES[-1]
+    else f"or '{typename}'"
+    for i, typename in enumerate(_VALID_FLAG_TYPES)
 )
 
 
@@ -292,7 +294,7 @@ BASE_PARSER.add_argument(
     type=_wrap_parser(FlagOption.from_arg),
     dest="unresolved_flags",
     metavar="FLAG_NAME:FLAG_TARGET:VALUE",
-    help=f"specify an alias to a value(s) of a defined {VALID_FLAG_TYPES_STR} option",
+    help=f"specify an alias to a value(s) of a defined {_VALID_FLAG_TYPES_STR} option",
 )
 BASE_PARSER.add_argument(
     "--yes-no",
@@ -434,7 +436,7 @@ def _resolve_flags(
             target = variable_options[flag.target]
         except KeyError:
             raise OptionResolutionError(
-                f"flag option '{flag.name}' does not target any existing {VALID_FLAG_TYPES_STR} option"
+                f"flag option '{flag.name}' does not target any existing {_VALID_FLAG_TYPES_STR} option"
             ) from None
         real_flag = flag.to_surfraw_opt(target)
         target.add_flag(real_flag)
@@ -593,7 +595,7 @@ def _make_namespace(prefix: str) -> Callable[[str], str]:
 
 
 @contextfilter
-def jinja_namespacer(ctx: JContext, basename: str) -> str:
+def _jinja_namespacer(ctx: JContext, basename: str) -> str:
     return f"SURFRAW_{ctx['name']}_{basename}"
 
 
@@ -623,9 +625,9 @@ def get_env(
     )
 
     # Add functions to jinja template
-    env.filters["namespace"] = jinja_namespacer
+    env.filters["namespace"] = _jinja_namespacer
     # Short-hand for `namespace`
-    env.filters["ns"] = jinja_namespacer
+    env.filters["ns"] = _jinja_namespacer
 
     for typename, opt_type in SurfrawOption.typenames.items():
         # Account for late-binding.
