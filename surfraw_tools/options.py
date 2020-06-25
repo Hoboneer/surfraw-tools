@@ -72,7 +72,6 @@ class SurfrawOption:
     typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
-    variable_options: ClassVar[List[Type[SurfrawOption]]] = []
 
     name: str
 
@@ -146,6 +145,10 @@ class SurfrawOption:
 class SurfrawVarOption(SurfrawOption):
     """Superclass for options that create variables in elvi."""
 
+    # This should only contain subclasses of `SurfrawVarOption`.
+    # mypy doesn't seem to like having values of `typenames` to subclasses of this class.
+    typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
+
     flag_value_validator: ClassVar[_FlagValidator]
 
     # Flags should be listed in the order that they were defined in the command line.
@@ -163,7 +166,7 @@ class SurfrawVarOption(SurfrawOption):
     def __init_subclass__(cls) -> None:
         super().__init_subclass__()
         if cls.__name__ != "SurfrawListType":
-            SurfrawOption.variable_options.append(cls)
+            SurfrawVarOption.typenames[cls.typename] = cls
 
     def add_flag(self, flag: SurfrawFlag) -> None:
         self.flags.append(flag)

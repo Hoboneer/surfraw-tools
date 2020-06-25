@@ -105,7 +105,7 @@ class _ChainContainer(Generic[T]):
 
 
 class _FlagContainer(_ChainContainer[SurfrawFlag]):
-    types = SurfrawOption.variable_options
+    types = tuple(SurfrawVarOption.typenames.values())
 
 
 class _ListContainer(_ChainContainer[SurfrawList]):
@@ -245,14 +245,12 @@ def _parse_elvis_name(name: str) -> _ElvisName:
     return _ElvisName(name)
 
 
-_VALID_FLAG_TYPES: Final = [
-    opt.typename for opt in SurfrawOption.variable_options
-]
+# Make sure that the resultant string is a grammatically-correct list.
 _VALID_FLAG_TYPES_STR: Final = ", ".join(
     f"'{typename}'"
-    if typename != _VALID_FLAG_TYPES[-1]
+    if i != len(SurfrawVarOption.typenames) - 1
     else f"or '{typename}'"
-    for i, typename in enumerate(_VALID_FLAG_TYPES)
+    for i, typename in enumerate(SurfrawVarOption.typenames)
 )
 
 

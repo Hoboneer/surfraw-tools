@@ -35,6 +35,7 @@ from .options import (
     SurfrawList,
     SurfrawOption,
     SurfrawSpecial,
+    SurfrawVarOption,
 )
 
 if TYPE_CHECKING:
@@ -93,7 +94,7 @@ def _generate_local_help_output(
     # Options that take arguments
     # Depends on subclass definition order.
     types_to_sort_order = {
-        type_: i for i, type_ in enumerate(SurfrawOption.variable_options)
+        type_: i for i, type_ in enumerate(SurfrawVarOption.typenames.values())
     }
     for opt in sorted(
         ctx.variable_options, key=lambda x: types_to_sort_order[x.__class__]
@@ -134,7 +135,7 @@ def _generate_local_help_output(
                 gap = "  | "
                 suffix = ""
             lines[i] = f"{line}{padding}{gap}{suffix}"
-        if isinstance(opt, tuple(SurfrawOption.variable_options)):
+        if isinstance(opt, SurfrawVarOption):
             prefix = " " * longest_length + "    "
             ns_name = namespacer(opt.name)
             lines.append(prefix + f"Default: ${ns_name}")
