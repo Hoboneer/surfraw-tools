@@ -27,6 +27,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    ValuesView,
     cast,
 )
 
@@ -114,12 +115,10 @@ class _ListContainer(_ChainContainer[SurfrawList]):
 
 class _SurfrawOptionContainer(argparse.Namespace):
     def __init__(self) -> None:
-        # Options that create variables.
-        self.variable_options: List[SurfrawVarOption] = []
         self._seen_variable_names: Set[str] = set()
-        self.nonvariable_options: List[SurfrawOption] = []
         self._seen_nonvariable_names: Set[str] = set()
 
+        # Options that create variables.
         self.bools: List[SurfrawBool] = []
         self.enums: List[SurfrawEnum] = []
         self.anythings: List[SurfrawAnything] = []
@@ -148,7 +147,6 @@ class _SurfrawOptionContainer(argparse.Namespace):
                     f"the variable name '{option.name}' is duplicated"
                 )
             self._seen_variable_names.add(option.name)
-            self.variable_options.append(option)
             self._varopts[option.typename_plural].append(option)  # type: ignore
         else:
             if option.name in self._seen_nonvariable_names:
@@ -156,8 +154,23 @@ class _SurfrawOptionContainer(argparse.Namespace):
                     f"the non-variable-creating option name '{option.name}' is duplicated"
                 )
             self._seen_nonvariable_names.add(option.name)
-            self.nonvariable_options.append(option)
             self._nonvaropts[option.typename_plural].append(option)  # type: ignore
+
+    @property
+    def variable_options(self) -> Iterable[SurfrawVarOption]:
+        return chain.from_iterable(
+            cast(
+                ValuesView[Iterable[SurfrawVarOption]], self._varopts.values()
+            )
+        )
+
+    @property
+    def nonvariable_options(self) -> Iterable[SurfrawOption]:
+        return chain.from_iterable(
+            cast(
+                ValuesView[Iterable[SurfrawOption]], self._nonvaropts.values()
+            )
+        )
 
 
 _ElvisName = NewType("_ElvisName", str)
