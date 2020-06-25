@@ -21,6 +21,7 @@ from typing import (
     List,
     NewType,
     Optional,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -76,7 +77,7 @@ T = TypeVar("T", SurfrawFlag, SurfrawList)
 # TODO: Name this better!
 @dataclass
 class _ChainContainer(Generic[T]):
-    types: ClassVar[List[Type[SurfrawOption]]] = []
+    types: ClassVar[Sequence[Type[SurfrawOption]]] = []
     _items: Dict[str, List[T]] = field(default_factory=dict, init=False)
 
     def __post_init__(self) -> None:
