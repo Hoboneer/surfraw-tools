@@ -32,7 +32,6 @@ from typing import (
 )
 
 from jinja2 import (
-    BaseLoader,
     ChoiceLoader,
     Environment,
     ModuleLoader,
@@ -40,7 +39,6 @@ from jinja2 import (
     contextfilter,
 )
 from jinja2.runtime import Context as JContext
-from pkg_resources import DistributionNotFound
 
 from ._package import __version__
 from .cliopts import (
@@ -612,19 +610,19 @@ def get_env(
     simply render get a template and render it like so:
     `template.render(variables)` for simple uses.
     """
-    pkg_loader: BaseLoader = PackageLoader("surfraw_tools")
-    try:
-        with imp.path("surfraw_tools", "templates") as path:
-            precompiled_templates_dir = os.path.join(path, "compiled")
-    except DistributionNotFound:
-        loader = pkg_loader
-    else:
-        loader = ChoiceLoader(
-            [ModuleLoader(precompiled_templates_dir), pkg_loader]
-        )
-    # Only need to get a template once.
+    with imp.path("surfraw_tools", "templates") as path:
+        precompiled_templates_dir = os.path.join(path, "compiled")
     env = Environment(
-        loader=loader, cache_size=0, trim_blocks=True, lstrip_blocks=True
+        loader=ChoiceLoader(
+            [
+                ModuleLoader(precompiled_templates_dir),
+                PackageLoader("surfraw_tools"),
+            ]
+        ),
+        # Only need to get a template once.
+        cache_size=0,
+        trim_blocks=True,
+        lstrip_blocks=True,
     )
 
     # Add functions to jinja template
