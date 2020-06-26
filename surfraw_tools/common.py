@@ -34,8 +34,8 @@ from typing import (
 from jinja2 import (
     ChoiceLoader,
     Environment,
+    FileSystemLoader,
     ModuleLoader,
-    PackageLoader,
     contextfilter,
 )
 from jinja2.runtime import Context as JContext
@@ -611,12 +611,14 @@ def get_env(
     `template.render(variables)` for simple uses.
     """
     with imp.path("surfraw_tools", "templates") as path:
+        raw_templates_dir = path
         precompiled_templates_dir = os.path.join(path, "compiled")
     env = Environment(
         loader=ChoiceLoader(
             [
                 ModuleLoader(precompiled_templates_dir),
-                PackageLoader("surfraw_tools"),
+                # Don't use `PackageLoader` because it imports `pkg_resources` internally, which is a slow operation.
+                FileSystemLoader(raw_templates_dir),
             ]
         ),
         # Only need to get a template once.
