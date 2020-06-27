@@ -18,15 +18,40 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+from functools import wraps
 from itertools import chain
 from os import EX_OK, EX_OSERR, EX_USAGE
 from tempfile import NamedTemporaryFile
-from typing import TYPE_CHECKING, Callable, List, Optional, Tuple
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    cast,
+)
 
+from .cliopts import (
+    AliasOption,
+    AnythingOption,
+    BoolOption,
+    CollapseOption,
+    DescribeOption,
+    EnumOption,
+    FlagOption,
+    InlineOption,
+    ListOption,
+    MappingOption,
+    MetavarOption,
+)
 from .common import (
+    _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
     VERSION_FORMAT_STRING,
     Context,
+    _ElvisName,
     get_env,
     process_args,
 )
@@ -156,6 +181,196 @@ def _generate_local_help_output(
     return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
 
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _wrap_parser(func: F) -> F:
+    @wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        try:
+            ret = func(*args, **kwargs)
+        except Exception as e:
+            raise argparse.ArgumentTypeError(str(e)) from None
+        return ret
+
+    return cast(F, wrapper)
+
+
+def _parse_elvis_name(name: str) -> _ElvisName:
+    dirs, _ = os.path.split(name)
+    if dirs:
+        raise argparse.ArgumentTypeError("elvis names may not be paths")
+    return _ElvisName(name)
+
+
+def _get_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        PROGRAM_NAME,
+        description="generate an elvis for surfraw",
+        parents=[BASE_PARSER],
+    )
+    parser.add_argument(
+        "name", type=_parse_elvis_name, help="name for the elvis"
+    )
+    parser.add_argument(
+        "base_url",
+        help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",
+    )
+    parser.add_argument(
+        "search_url",
+        help="the url to append arguments to, with the query parameters opened and no protocol (automatically set to 'https')",
+    )
+    parser.add_argument(
+        "--description",
+        help="description for the elvis, excluding the domain name in parentheses",
+    )
+    parser.add_argument(
+        "--insecure", action="store_true", help="use 'http' instead of 'https'"
+    )
+
+    # Option generation
+
+    # Include the 'or' for the last typename.
+    parser.add_argument(
+        "--flag",
+        "-F",
+        action="append",
+        type=_wrap_parser(FlagOption.from_arg),
+        dest="unresolved_flags",
+        metavar="FLAG_NAME:FLAG_TARGET:VALUE",
+        help=f"specify an alias to a value(s) of a defined {_VALID_FLAG_TYPES_STR} option",
+    )
+    parser.add_argument(
+        "--yes-no",
+        "-Y",
+        action="append",
+        type=_wrap_parser(BoolOption.from_arg),
+        dest="unresolved_varopts",
+        metavar="VARIABLE_NAME:DEFAULT_YES_OR_NO",
+        help="specify a boolean option for the elvis",
+    )
+    parser.add_argument(
+        "--enum",
+        "-E",
+        action="append",
+        type=_wrap_parser(EnumOption.from_arg),
+        dest="unresolved_varopts",
+        metavar="VARIABLE_NAME:DEFAULT_VALUE:VAL1,VAL2,...",
+        help="specify an option with an argument from a range of values",
+    )
+    parser.add_argument(
+        "--anything",
+        "-A",
+        action="append",
+        dest="unresolved_varopts",
+        type=_wrap_parser(AnythingOption.from_arg),
+        metavar="VARIABLE_NAME:DEFAULT_VALUE",
+        help="specify an option that is not checked",
+    )
+    parser.add_argument(
+        "--alias",
+        action="append",
+        type=_wrap_parser(AliasOption.from_arg),
+        dest="unresolved_aliases",
+        metavar="ALIAS_NAME:ALIAS_TARGET:ALIAS_TARGET_TYPE",
+        help="make an alias to another defined option",
+    )
+    parser.add_argument(
+        "--list",
+        action="append",
+        type=_wrap_parser(ListOption.from_arg),
+        dest="unresolved_varopts",
+        metavar="LIST_NAME:LIST_TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]",
+        help="create a list of enum or 'anything' values as a repeatable (cumulative) option (e.g., `-add-foos=bar,baz,qux`)",
+    )
+    parser.add_argument(
+        "--use-results-option",
+        action="store_true",
+        dest="use_results_option",
+        help="define a 'results' variable and option",
+    )
+    parser.add_argument(
+        "--use-language-option",
+        action="store_true",
+        dest="use_language_option",
+        help="define a 'language' variable and option",
+    )
+    parser.add_argument(
+        "--map",
+        action="append",
+        type=_wrap_parser(MappingOption.from_arg),
+        dest="mappings",
+        metavar="VARIABLE_NAME:PARAMETER[:URL_ENCODE?]",
+        help="map a variable to a URL parameter; by default, `URL_ENCODE` is 'yes'",
+    )
+    parser.add_argument(
+        "--list-map",
+        action="append",
+        # Same object, different target
+        type=_wrap_parser(MappingOption.from_arg),
+        dest="list_mappings",
+        metavar="VARIABLE_NAME:PARAMETER[:URL_ENCODE?]",
+        help="map the values of a list variable to multiple URL parameters; by default, `URL_ENCODE` is 'yes'",
+    )
+    parser.add_argument(
+        "--inline",
+        action="append",
+        type=_wrap_parser(InlineOption.from_arg),
+        dest="inlines",
+        metavar="VARIABLE_NAME:KEYWORD",
+        help="map a variable to a keyword in the search query (e.g., `filetype:pdf` or `site:example.com`)",
+    )
+    parser.add_argument(
+        "--list-inline",
+        action="append",
+        type=_wrap_parser(InlineOption.from_arg),
+        dest="list_inlines",
+        metavar="VARIABLE_NAME:KEYWORD",
+        help="map the values of a list variable to multiple keywords in the search query (e.g., `foo bar query filetype:pdf filetype:xml`)",
+    )
+    parser.add_argument(
+        "--collapse",
+        action="append",
+        type=_wrap_parser(CollapseOption.from_arg),
+        dest="collapses",
+        metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
+        help="change groups of values of a variable to a single value",
+    )
+    parser.add_argument(
+        "--metavar",
+        action="append",
+        type=_wrap_parser(MetavarOption.from_arg),
+        dest="metavars",
+        metavar="VARIABLE_NAME:METAVAR",
+        help="define a metavar for an option; it will be UPPERCASE in the generated elvis",
+    )
+    parser.add_argument(
+        "--describe",
+        action="append",
+        type=_wrap_parser(DescribeOption.from_arg),
+        dest="descriptions",
+        metavar="VARIABLE_NAME:DESCRIPTION",
+        help="define a description for an option",
+    )
+    parser.add_argument(
+        "--num-tabs",
+        type=int,
+        help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
+    )
+    _search_args_group = parser.add_mutually_exclusive_group()
+    _search_args_group.add_argument(
+        "--query-parameter",
+        "-Q",
+        help="define the parameter for the query arguments; needed with --map",
+    )
+    _search_args_group.add_argument(
+        "--no-append-args",
+        action="store_false",
+        dest="append_search_args",
+        help="don't automatically append search to url",
+    )
+    return parser
+
 
 def main(argv: Optional[List[str]] = None) -> int:
     """Generate a single surfraw elvis.
@@ -163,11 +378,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
     """
-    parser = argparse.ArgumentParser(
-        PROGRAM_NAME,
-        description="generate an elvis for surfraw",
-        parents=[BASE_PARSER],
-    )
+    parser = _get_parser()
     ctx = Context(PROGRAM_NAME)
     try:
         parser.parse_args(argv, namespace=ctx)
