@@ -1,3 +1,7 @@
+"""Common functions and classes to generate elvi.
+
+Also includes a parser from `argparse` to base command-line programs on.
+"""
 from __future__ import annotations
 
 import argparse
@@ -176,6 +180,8 @@ _ElvisName = NewType("_ElvisName", str)
 
 @dataclass
 class Context:
+    """Data holder for elvis currently being generated."""
+
     program_name: str
 
     name: _ElvisName = field(default=_ElvisName("DEFAULT"), init=False)
@@ -222,6 +228,7 @@ class Context:
 
     @property
     def variable_options(self) -> Iterable[SurfrawVarOption]:
+        """Return variable-creating options."""
         return self.options.variable_options
 
 
@@ -521,6 +528,20 @@ def _resolve_var_targets(
 
 
 def resolve_options(ctx: Context) -> None:
+    """Resolve parsed options.
+
+    "Resolving" can mean different things depending on the option.
+
+    For flags and aliases, it means to get a concrete option to set as its
+    `target`.  After that, flags also check if their values are valid for their
+    target.
+
+    For metavars and describe options, it sets the respective metavar or
+    description of its target.
+
+    For mappings, inlines, and collapses (incl. list-ones), it checks if their
+    targets exist.
+    """
     # Resolve variable options.
     try:
         for unresolved_opt in ctx.unresolved_varopts:
@@ -540,6 +561,7 @@ def resolve_options(ctx: Context) -> None:
 
 
 def process_args(ctx: Context) -> int:
+    """Do extra processing on parsed options."""
     if ctx.description is None:
         ctx.description = f"Search {ctx.name} ({ctx.base_url})"
     else:
