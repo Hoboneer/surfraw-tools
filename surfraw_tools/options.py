@@ -3,8 +3,6 @@ from __future__ import annotations
 
 import re
 import weakref
-from dataclasses import dataclass, field
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -16,7 +14,6 @@ from typing import (
     Optional,
     Type,
     Union,
-    cast,
 )
 
 from .validation import (
@@ -67,7 +64,6 @@ _FORBIDDEN_OPTION_NAMES: Final = {
 _FlagValidator = Callable[[Any], Any]
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawOption:
     """Model for options in surfraw elvi."""
 
@@ -75,34 +71,17 @@ class SurfrawOption:
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
 
-    name: str
-
-    # `_metadata` holds the true data.
-    _metadata: _SurfrawMetadata = field(
-        default_factory=cast(
-            Type["_SurfrawMetadata"],
-            partial(dict, metavar=None, description=None),
-        ),
-        init=False,
-        compare=False,
-    )
-
-    aliases: weakref.WeakSet[SurfrawAlias] = field(
-        default_factory=weakref.WeakSet, init=False, compare=False, repr=False
-    )
-
-    def __post_init__(self) -> None:
-        """Ensure option name does not override global surfraw options.
-
-        A good default for its description is also set.
-        """
-        if self.name in _FORBIDDEN_OPTION_NAMES:
+    def __init__(self, name: str):
+        if name in _FORBIDDEN_OPTION_NAMES:
             raise ValueError(
-                f"option name '{self.name}' is global, which cannot be overriden by elvi"
+                f"option name '{name}' is global, which cannot be overriden by elvi"
             )
-        self.set_metadata(
-            "description", f"A {self.__class__.typename} option for '{self.name}'"
-        )
+        self.name: Final = name
+        self.aliases: Final[weakref.WeakSet[SurfrawAlias]] = weakref.WeakSet()
+        self._metadata: Final[_SurfrawMetadata] = {
+            "metavar": None,
+            "description": f"A {self.__class__.typename} option for '{self.name}'",
+        }
 
     @property
     def metavar(self) -> Optional[str]:
@@ -142,7 +121,6 @@ class SurfrawOption:
         self.aliases.add(alias)
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawVarOption(SurfrawOption):
     """Superclass for options that create variables in elvi."""
 
@@ -152,17 +130,13 @@ class SurfrawVarOption(SurfrawOption):
 
     flag_value_validator: ClassVar[_FlagValidator]
 
-    # Flags should be listed in the order that they were defined in the command line.
-    flags: List[SurfrawFlag] = field(
-        default_factory=list, init=False, compare=False, repr=False
-    )
-    _resolved_flag_values: List[SurfrawFlag] = field(
-        default_factory=list, init=False, compare=False, repr=False
-    )
+    def __init__(self, name: str):
+        super().__init__(name)
 
-    def __post_init__(self) -> None:
-        """Set default metavar as this option's name."""
-        super().__post_init__()
+        # Flags should be listed in the order that they were defined in the command line.
+        self.flags: Final[List[SurfrawFlag]] = []
+        self._resolved_flag_values: Final[List[SurfrawFlag]] = []
+
         self.set_metadata("metavar", self.name.upper())
 
     def __init_subclass__(cls) -> None:
@@ -198,7 +172,6 @@ class SurfrawVarOption(SurfrawOption):
         pass
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawListType(SurfrawVarOption):
     """Valid types for surfraw list options."""
 
@@ -215,23 +188,18 @@ class SurfrawListType(SurfrawVarOption):
 # Concrete option types follow
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawFlag(SurfrawOption):
     """Alias (with value) to a variable-creating option."""
 
     typename = "flag"
     typename_plural = "flags"
 
-    target: SurfrawVarOption
-    value: Any
-
-    def __post_init__(self) -> None:
-        """Set metavar to `None` and set flag description.
-
-        Flags don't take arguments so a metavar would be useless.
-        For clarity, their description also can't be changed.
-        """
-        super().__post_init__()
+    def __init__(self, name: str, target: SurfrawVarOption, value: Any):
+        super().__init__(name)
+        self.target: Final = target
+        self.value: Final = value
+        # Flags don't take arguments so a metavar would be useless.
+        # For clarity, their description also can't be changed.
         self.set_metadata("metavar", None)
         self.set_metadata(
             "description", f"An alias for -{self.target.name}={self.value}"
@@ -243,7 +211,6 @@ class SurfrawFlag(SurfrawOption):
         return self.target.__class__
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawBool(SurfrawVarOption):
     """Boolean option corresponding to 'yesno' in `surfraw`."""
 
@@ -252,10 +219,12 @@ class SurfrawBool(SurfrawVarOption):
 
     # Don't need to make new flag objects after resolving.
     flag_value_validator = validate_bool
-    default: str
+
+    def __init__(self, name: str, default: str):
+        super().__init__(name)
+        self.default: Final = default
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawEnum(SurfrawListType):
     """Option with user-specified list of valid values."""
 
@@ -263,24 +232,21 @@ class SurfrawEnum(SurfrawListType):
     typename_plural = "enums"
 
     flag_value_validator = validate_enum_value
-    default: str
-    values: List[str] = field(hash=False)
 
-    def __post_init__(self) -> None:
-        """Ensure enum is consistent.
-
-        This means it must specify its valid values (it's useless otherwise)
-        and its default must be a valid value (duh).
-        """
-        super().__post_init__()
-        if not self.values:
+    def __init__(self, name: str, default: str, values: List[str]):
+        super().__init__(name)
+        # Ensure enum is consistent.
+        if not values:
             raise ValueError(
                 f"enum '{self.name}' must specify its valid values"
             )
-        if self.default not in self.values:
+        if default not in values:
             raise ValueError(
-                f"enum default value '{self.default}' must be within '{self.values}'"
+                f"enum default value '{default}' must be within '{values}'"
             )
+        self.default: Final = default
+        self.values: Final = values
+
         # "A enum" is incorrect.
         self.set_metadata(
             "description", re.sub("^A ", "An ", self.description)
@@ -294,7 +260,6 @@ class SurfrawEnum(SurfrawListType):
             )
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawAnything(SurfrawListType):
     """Unchecked option."""
 
@@ -303,22 +268,17 @@ class SurfrawAnything(SurfrawListType):
 
     # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
-    default: str
 
-    def __post_init__(self) -> None:
-        """Set default description.
-
-        Calling these 'anything' options in the help output is unclear--
-        "unchecked" clarifies what it does.
-        """
-        super().__post_init__()
+    def __init__(self, name: str, default: str):
+        super().__init__(name)
+        self.default: Final = default
+        # Calling these 'anything' options in the help output is unclear.
         self.set_metadata(
             "description", f"An unchecked option for '{self.name}'"
         )
 
 
 # This class is not instantiated normally... maybe prepend name with underscore?
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawSpecial(SurfrawVarOption):
     """Option with hardcoded values.
 
@@ -328,8 +288,6 @@ class SurfrawSpecial(SurfrawVarOption):
 
     typename = "special"
     typename_plural = "specials"
-
-    default: str
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
@@ -341,9 +299,11 @@ class SurfrawSpecial(SurfrawVarOption):
             "don't call `flag_value_validator` of `SurfrawSpecial` directly"
         )
 
-    def __post_init__(self) -> None:
-        """Set metadata specific to each kind of special option."""
-        super().__post_init__()
+    def __init__(self, name: str, default: str):
+        super().__init__(name)
+        self.default: Final = default
+
+        # Set metadata specific to each kind of special option.
         if self.name == "results":
             # Match the rest of the elvi's metavars for -results=
             self.set_metadata("metavar", "NUM")
@@ -379,16 +339,11 @@ class SurfrawSpecial(SurfrawVarOption):
 
 
 # XXX: Should this store validators for the type it has?
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawList(SurfrawVarOption):
     """List- or CSV-like option."""
 
     typename = "list"
     typename_plural = "lists"
-
-    type: Type[SurfrawListType]
-    defaults: List[str] = field(hash=False)
-    values: List[str] = field(hash=False)
 
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
@@ -400,17 +355,24 @@ class SurfrawList(SurfrawVarOption):
             "don't call `flag_value_validator` of `SurfrawList` directly"
         )
 
-    def __post_init__(self) -> None:
-        """Ensure list is consistent.
+    def __init__(
+        self,
+        name: str,
+        type: Type[SurfrawListType],
+        defaults: List[str],
+        values: List[str],
+    ):
+        super().__init__(name)
+        self.type: Final = type
+        self.defaults: Final = defaults
+        self.values: Final = values
 
-        Enum-list defaults must be a subset of its valid values.
-        """
-        super().__post_init__()
         self.set_metadata(
             "description",
             f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'",
         )
 
+        # Ensure list is consistent.
         if issubclass(self.type, SurfrawEnum):
             if not set(self.defaults) <= set(self.values):
                 raise ValueError(
@@ -437,7 +399,6 @@ class SurfrawList(SurfrawVarOption):
             # Don't need to check `AnythingOption`.
 
 
-@dataclass(frozen=True, unsafe_hash=True)
 class SurfrawAlias(SurfrawOption):
     """Alias (without value) to variable-creating option or flag option.
 
@@ -447,9 +408,8 @@ class SurfrawAlias(SurfrawOption):
     typename = "alias"
     typename_plural = "aliases"
 
-    target: Union[SurfrawVarOption, SurfrawFlag]
-
-    def __post_init__(self) -> None:
-        """Set metavar to `None`."""
-        super().__post_init__()
-        self.set_metadata("metavar", None)
+    def __init__(
+        self, name: str, target: Union[SurfrawVarOption, SurfrawFlag]
+    ):
+        super().__init__(name)
+        self.target: Final = target
