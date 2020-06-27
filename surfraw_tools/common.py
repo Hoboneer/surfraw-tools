@@ -8,7 +8,6 @@ import argparse
 import os
 import sys
 from argparse import _VersionAction
-from dataclasses import dataclass, field
 from functools import partial
 from importlib import resources as imp
 from itertools import chain
@@ -78,15 +77,13 @@ T = TypeVar("T", SurfrawFlag, SurfrawList)
 
 
 # TODO: Name this better!
-@dataclass
 class _ChainContainer(Generic[T]):
     types: ClassVar[Sequence[Type[SurfrawOption]]] = []
-    _items: Dict[str, List[T]] = field(default_factory=dict, init=False)
 
-    def __post_init__(self) -> None:
-        self._items.update(
-            {type_.typename_plural: [] for type_ in self.__class__.types}
-        )
+    def __init__(self) -> None:
+        self._items: Dict[str, List[T]] = {
+            type_.typename_plural: [] for type_ in self.__class__.types
+        }
 
     def append(self, item: T) -> None:
         try:
@@ -98,6 +95,12 @@ class _ChainContainer(Generic[T]):
 
     def __getitem__(self, type_: str) -> List[T]:
         return self._items[type_]
+
+    def __repr__(self) -> str:
+        pairs = (
+            f"{typename}={elems}" for typename, elems in self._items.items()
+        )
+        return f"_ChainContainer({', '.join(pairs)})"
 
     def __iter__(self) -> Iterator[T]:
         return chain.from_iterable(self._items.values())
@@ -178,53 +181,43 @@ class _SurfrawOptionContainer(argparse.Namespace):
 _ElvisName = NewType("_ElvisName", str)
 
 
-@dataclass
-class Context:
+class Context(argparse.Namespace):
     """Data holder for elvis currently being generated."""
 
-    program_name: str
+    def __init__(self, program_name: str):
+        self.program_name: Final = program_name
 
-    name: _ElvisName = field(default=_ElvisName("DEFAULT"), init=False)
-    base_url: str = field(default="", init=False)
-    search_url: str = field(default="", init=False)
-    description: Optional[str] = field(default=None, init=False)
-    query_parameter: Optional[str] = field(default=None, init=False)
-    append_search_args: bool = field(default=True, init=False)
+        self.name: _ElvisName = _ElvisName("DEFAULT")
+        self.base_url: str = ""
+        self.search_url: str = ""
+        self.description: Optional[str] = None
+        self.query_parameter: Optional[str] = None
+        self.append_search_args: bool = True
 
-    insecure: bool = field(default=False, init=False)
-    num_tabs: int = field(default=1, init=False)
+        self.insecure: bool = False
+        self.num_tabs: int = 1
 
-    # Option containers
-    options: _SurfrawOptionContainer = field(
-        default_factory=_SurfrawOptionContainer, init=False
-    )
-    unresolved_varopts: List[
-        Union[BoolOption, EnumOption, AnythingOption, ListOption]
-    ] = field(default_factory=list, init=False)
-    unresolved_flags: List[FlagOption] = field(
-        default_factory=list, init=False
-    )
-    unresolved_aliases: List[AliasOption] = field(
-        default_factory=list, init=False
-    )
+        # Option containers
+        self.options: _SurfrawOptionContainer = _SurfrawOptionContainer()
+        self.unresolved_varopts: List[
+            Union[BoolOption, EnumOption, AnythingOption, ListOption]
+        ] = []
+        self.unresolved_flags: List[FlagOption] = []
+        self.unresolved_aliases: List[AliasOption] = []
 
-    mappings: List[MappingOption] = field(default_factory=list, init=False)
-    list_mappings: List[MappingOption] = field(
-        default_factory=list, init=False
-    )
+        self.mappings: List[MappingOption] = []
+        self.list_mappings: List[MappingOption] = []
 
-    inlines: List[InlineOption] = field(default_factory=list, init=False)
-    list_inlines: List[InlineOption] = field(default_factory=list, init=False)
+        self.inlines: List[InlineOption] = []
+        self.list_inlines: List[InlineOption] = []
 
-    collapses: List[CollapseOption] = field(default_factory=list, init=False)
+        self.collapses: List[CollapseOption] = []
 
-    metavars: List[MetavarOption] = field(default_factory=list, init=False)
-    descriptions: List[DescribeOption] = field(
-        default_factory=list, init=False
-    )
+        self.metavars: List[MetavarOption] = []
+        self.descriptions: List[DescribeOption] = []
 
-    use_results_option: bool = field(default=False, init=False)
-    use_language_option: bool = field(default=False, init=False)
+        self.use_results_option: bool = False
+        self.use_language_option: bool = False
 
     @property
     def variable_options(self) -> Iterable[SurfrawVarOption]:
