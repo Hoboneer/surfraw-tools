@@ -59,6 +59,10 @@ class Option:
 
     @classmethod
     def from_arg(cls: _O, arg: str) -> _O:
+        """Construct an instance from a single string of arguments.
+
+        `arg` is delimited by colon (':') characters.
+        """
         parsed_args = cls.parse_args(
             arg,
             validators=cls.validators,
@@ -79,6 +83,17 @@ class Option:
         validators: _FlagValidatorsType,
         last_is_unlimited: bool = False,
     ) -> List[Any]:
+        """Validate `raw_arg` using `validators`.
+
+        Despite the name, each validator may map values to different types,
+        i.e., a parser.
+
+        `validators` may contain nested sequences of validators to denote
+        optional groups, e.g., `validators=[foo, bar, [baz]]`.
+
+        If `last_is_unlimited` is `True`, then the args will be validated by
+        the final validator until exhausted.
+        """
         args = deque(raw_arg.split(":"))
         valid_args: List[Any] = []
 
@@ -131,27 +146,35 @@ class Option:
 
 @dataclass(frozen=True)
 class FlagOption(Option):
+    """Alias (with value) to a variable-creating option."""
+
     validators = (validate_name, validate_name, no_validation)
     name: str
     target: str
     value: str
 
     def to_surfraw_opt(self, resolved_target: SurfrawVarOption) -> SurfrawFlag:
+        """Resolve flag target to a concrete option."""
         return SurfrawFlag(self.name, resolved_target, self.value)
 
 
 @dataclass(frozen=True)
 class BoolOption(Option):
+    """Boolean option corresponding to 'yesno' in `surfraw`."""
+
     validators = (validate_name, validate_bool)
     name: str
     default: str
 
     def to_surfraw_opt(self) -> SurfrawBool:
+        """Return model for surfraw bool options."""
         return SurfrawBool(self.name, self.default)
 
 
 @dataclass(frozen=True)
 class EnumOption(Option):
+    """Option with user-specified list of valid values."""
+
     validators = (
         validate_name,
         validate_enum_value,
@@ -162,16 +185,20 @@ class EnumOption(Option):
     values: List[str] = field(hash=False)
 
     def to_surfraw_opt(self) -> SurfrawEnum:
+        """Return model for surfraw enum options."""
         return SurfrawEnum(self.name, self.default, self.values)
 
 
 @dataclass(frozen=True)
 class AnythingOption(Option):
+    """Unchecked option."""
+
     validators = (validate_name, no_validation)
     name: str
     default: str
 
     def to_surfraw_opt(self) -> SurfrawAnything:
+        """Return model for surfraw 'anything' options."""
         return SurfrawAnything(self.name, self.default)
 
 
@@ -188,6 +215,8 @@ def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
 
 @dataclass(frozen=True)
 class ListOption(Option):
+    """List- or CSV-like option."""
+
     validators = (
         validate_name,
         _parse_list_type,
@@ -201,6 +230,7 @@ class ListOption(Option):
     values: List[str] = field(default_factory=list, hash=False)
 
     def __post_init__(self) -> None:
+        """Validate `self.values` if needed, according to `self.type`."""
         if issubclass(self.type, SurfrawEnum):
             if not self.values:
                 raise OptionParseError(
@@ -216,6 +246,7 @@ class ListOption(Option):
             pass
 
     def to_surfraw_opt(self) -> SurfrawList:
+        """Return model for surfraw list options."""
         return SurfrawList(self.name, self.type, self.defaults, self.values)
 
 
@@ -247,6 +278,11 @@ def _parse_alias_type(
 
 @dataclass(frozen=True)
 class AliasOption(Option):
+    """Alias (without value) to variable-creating option or flag option.
+
+    This is essentially a shorthand for common options.
+    """
+
     validators = (validate_name, validate_name, _parse_alias_type)
     name: str
     target: str
@@ -255,12 +291,23 @@ class AliasOption(Option):
     def to_surfraw_opt(
         self, resolved_target: Union[SurfrawVarOption, SurfrawFlag]
     ) -> SurfrawAlias:
+        """Resolve alias target to a concrete option.
+
+        Note that the model of surfraw aliases doesn't need to store its type
+        since it already contains a reference.
+        """
         # No longer need to store target type explicitly (it has a reference!).
         return SurfrawAlias(self.name, resolved_target)
 
 
 @dataclass(frozen=True)
 class MappingOption(Option):
+    """Non-surfraw option to map surfraw variables to url parameters.
+
+    `should_url_encode` specifies whether to percent-encode the values of
+    target variables, which is useful for already-encoded values.
+    """
+
     validators = (validate_name, no_validation, (parse_bool,))
     target: str
     parameter: str
@@ -268,24 +315,39 @@ class MappingOption(Option):
 
     @property
     def variable(self) -> str:
+        """Return the surfraw variable this mapping targets."""
         # To allow other code to continue to use this class unchanged
         return self.target
 
 
 @dataclass(frozen=True)
 class InlineOption(Option):
+    """Non-surfraw option to map surfraw variables to search keywords.
+
+    A common use would be to output "search string... filetype:pdf", without
+    users having to memorise keywords or with special preprocessing.
+    """
+
     validators = (validate_name, validate_name)
     target: str
     keyword: str
 
     @property
     def variable(self) -> str:
+        """Return the surfraw variable this inlining targets."""
         # To allow other code to continue to use this class unchanged
         return self.target
 
 
 @dataclass(frozen=True)
 class CollapseOption(Option):
+    """Non-surfraw option to modify variables in-place using a shell case statement.
+
+    This may specify unlimited cases in the output case statement.  The last
+    list value in each case is what the variable is replaced with, which may
+    contain command substitutions and is run within double quotes.
+    """
+
     validators = (validate_name, list_of(no_validation))
     last_arg_is_unlimited = True
 
@@ -294,6 +356,7 @@ class CollapseOption(Option):
 
     @property
     def variable(self) -> str:
+        """Return the surfraw variable this collapse targets."""
         # To allow other code to continue to use this class unchanged
         return self.target
 
@@ -313,16 +376,21 @@ def _validate_metavar(metavar: str) -> str:
 # Treat this as immutable!
 @dataclass
 class MetavarOption(Option):
+    """Option to set the metavar of surfraw options."""
+
     validators = (validate_name, _validate_metavar)
     variable: str
     metavar: str
 
     def __post_init__(self) -> None:
+        """Ensure metavar is uppercase."""
         self.metavar = self.metavar.upper()
 
 
 @dataclass(frozen=True)
 class DescribeOption(Option):
+    """Option to set the description of surfraw options."""
+
     validators = (validate_name, no_validation)
     variable: str
     description: str
