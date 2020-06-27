@@ -306,7 +306,7 @@ def _resolve_metavars_and_descs(
                 f"metavar for '{metavar.variable}' with the value '{metavar.metavar}' targets a non-existent variable"
             )
         else:
-            opt.set_metadata("metavar", metavar.metavar)
+            opt.metavar = metavar.metavar
     for desc in ctx.descriptions:
         try:
             opt = variable_options[desc.variable]
@@ -315,7 +315,7 @@ def _resolve_metavars_and_descs(
                 f"description for '{desc.variable}' targets a non-existent variable"
             )
         else:
-            opt.set_metadata("description", desc.description)
+            opt.description = desc.description
 
 
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]

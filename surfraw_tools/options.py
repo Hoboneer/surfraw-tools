@@ -26,12 +26,7 @@ from .validation import (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypedDict, Literal, Final
-
-    class _SurfrawMetadata(TypedDict):
-        metavar: Optional[str]
-        description: str
-
+    from typing_extensions import Final
 
 # Options with non alphabetic characters are impossible
 _FORBIDDEN_OPTION_NAMES: Final = {
@@ -67,7 +62,7 @@ _FlagValidator = Callable[[Any], Any]
 class SurfrawOption:
     """Model for options in surfraw elvi."""
 
-    __slots__ = ("name", "aliases", "_metadata")
+    __slots__ = ("name", "aliases", "metavar", "description")
 
     typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
     typename: ClassVar[str]
@@ -80,31 +75,9 @@ class SurfrawOption:
             )
         self.name: Final = name
         self.aliases: Final[weakref.WeakSet[SurfrawAlias]] = weakref.WeakSet()
-        self._metadata: Final[_SurfrawMetadata] = {
-            "metavar": None,
-            "description": f"A {self.__class__.typename} option for '{self.name}'",
-        }
 
-    @property
-    def metavar(self) -> Optional[str]:
-        """Return the metavar of this option.
-
-        It should be fully uppercase.
-        """
-        return self._metadata["metavar"]
-
-    @property
-    def description(self) -> str:
-        """Return the description of this option."""
-        return self._metadata["description"]
-
-    def set_metadata(
-        self,
-        key: Union[Literal["metavar"], Literal["description"]],
-        val: Optional[str],
-    ) -> None:
-        """Set metadata for this option."""
-        self._metadata[key] = val
+        self.metavar: Optional[str] = None
+        self.description: str = f"A {self.__class__.typename} option for '{self.name}'"
 
     def __init_subclass__(cls) -> None:
         """Add relevant subclasses to `SurfrawOption.typenames` and give them typenames.
@@ -141,7 +114,7 @@ class SurfrawVarOption(SurfrawOption):
         self.flags: Final[List[SurfrawFlag]] = []
         self._resolved_flag_values: Final[List[SurfrawFlag]] = []
 
-        self.set_metadata("metavar", self.name.upper())
+        self.metavar = self.name.upper()
 
     def __init_subclass__(cls) -> None:
         """Add relevant subclasses to `SurfrawVarOption.typenames`."""
@@ -206,10 +179,8 @@ class SurfrawFlag(SurfrawOption):
         self.value: Final = value
         # Flags don't take arguments so a metavar would be useless.
         # For clarity, their description also can't be changed.
-        self.set_metadata("metavar", None)
-        self.set_metadata(
-            "description", f"An alias for -{self.target.name}={self.value}"
-        )
+        self.metavar = None
+        self.description = f"An alias for -{self.target.name}={self.value}"
 
     @property
     def type(self) -> Type[SurfrawOption]:
@@ -258,9 +229,7 @@ class SurfrawEnum(SurfrawListType):
         self.values: Final = values
 
         # "A enum" is incorrect.
-        self.set_metadata(
-            "description", re.sub("^A ", "An ", self.description)
-        )
+        self.description = re.sub("^A ", "An ", self.description)
 
     def _post_resolve_flags(self) -> None:
         vals = set(self.values)
@@ -285,9 +254,7 @@ class SurfrawAnything(SurfrawListType):
         super().__init__(name)
         self.default: Final = default
         # Calling these 'anything' options in the help output is unclear.
-        self.set_metadata(
-            "description", f"An unchecked option for '{self.name}'"
-        )
+        self.description = f"An unchecked option for '{self.name}'"
 
 
 # This class is not instantiated normally... maybe prepend name with underscore?
@@ -320,16 +287,13 @@ class SurfrawSpecial(SurfrawVarOption):
         # Set metadata specific to each kind of special option.
         if self.name == "results":
             # Match the rest of the elvi's metavars for -results=
-            self.set_metadata("metavar", "NUM")
-            self.set_metadata(
-                "description", "Number of search results returned"
-            )
+            self.metavar = "NUM"
+            self.description = "Number of search results returned"
         elif self.name == "language":
             # Match the wikimedia elvi
-            self.set_metadata("metavar", "ISOCODE")
-            self.set_metadata(
-                "description",
-                "Two letter language code (resembles ISO country codes)",
+            self.metavar = "ISOCODE"
+            self.description = (
+                "Two letter language code (resembles ISO country codes)"
             )
         else:
             raise ValueError(
@@ -383,10 +347,7 @@ class SurfrawList(SurfrawVarOption):
         self.defaults: Final = defaults
         self.values: Final = values
 
-        self.set_metadata(
-            "description",
-            f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'",
-        )
+        self.description = f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'"
 
         # Ensure list is consistent.
         if issubclass(self.type, SurfrawEnum):
@@ -408,10 +369,7 @@ class SurfrawList(SurfrawVarOption):
                     raise OptionResolutionError(
                         f"enum list flag option {flag.name}'s value ('{flag_values}') must be a subset of its target's values ('{self.values}')"
                     )
-            flag.set_metadata(
-                "description",
-                f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'",
-            )
+            flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
             # Don't need to check `AnythingOption`.
 
 
