@@ -1,3 +1,4 @@
+"""Main module for `mkelvis` command-line program."""
 # Copyright 2019 Gabriel Lisaca
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,8 +53,8 @@ def _get_optheader(
     These are in sorted order.
 
     Example:
-      -s=SORT, -sort=SORT"""
-
+      -s=SORT, -sort=SORT
+    """
     if opt.metavar is None or force_no_metavar:
         suffix = ""
     else:
@@ -68,6 +69,7 @@ def _get_optheader(
 def _get_optlines(
     opt: SurfrawOption, target: Optional[SurfrawOption] = None
 ) -> List[str]:
+    """Return representation of `opt` in `-local-help`, with special-casing for list options."""
     if target is None:
         target = opt
     if isinstance(target, SurfrawList):
@@ -154,8 +156,9 @@ def _generate_local_help_output(
     return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
 
+
 def main(argv: Optional[List[str]] = None) -> int:
-    """Main program to generate surfraw elvi.
+    """Generate a single surfraw elvis.
 
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
