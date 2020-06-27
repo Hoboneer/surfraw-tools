@@ -625,12 +625,16 @@ def _jinja_namespacer(ctx: JContext, basename: str) -> str:
 def get_env(
     ctx: Context,
 ) -> Tuple[Environment, Dict[str, Any], Callable[[str], str]]:
-    """Get a Jinja `Environment`, a dict of variables to base the code
-    generator on, and a function to namespace variables.
+    """Return relevant objects for template generation.
+
+    That is, get a Jinja `Environment`, a dict of variables to base the code
+    generator on, and a function to namespace variables (from Python code).
+    The namespacer is needed because the template gets a `contextfilter` to do
+    the same thing.
 
     The calling code should add entries to the `template_variables` dict and
-    simply render get a template and render it like so:
-    `template.render(variables)` for simple uses.
+    simply get a template and render it like so: `template.render(variables)`
+    for simple uses.
     """
     with imp.path("surfraw_tools", "templates") as path:
         raw_templates_dir = path
