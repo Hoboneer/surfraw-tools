@@ -260,6 +260,7 @@ def _resolve_flags(
         real_flag = flag.to_surfraw_opt(target)
         target.add_flag(real_flag)
         ctx.options.append(real_flag)
+    ctx.unresolved_flags.clear()
 
     # Check if flag values are valid for their target type.
     try:
@@ -290,6 +291,7 @@ def _resolve_aliases(
         real_alias = alias.to_surfraw_opt(target)
         target.add_alias(real_alias)
         ctx.options.append(real_alias)
+    ctx.unresolved_aliases.clear()
 
 
 def _resolve_metavars_and_descs(
@@ -361,6 +363,7 @@ def resolve_options(ctx: Context) -> None:
             ctx.options.append(real_opt)
     except Exception as e:
         raise OptionResolutionError(str(e)) from None
+    ctx.unresolved_varopts.clear()
 
     # Symbol table.
     varopts = {opt.name: opt for opt in ctx.options.variable_options}
