@@ -1,3 +1,4 @@
+# noqa: 100
 import os
 from distutils import log
 
@@ -20,7 +21,12 @@ def compile_templates(path):
 
 
 class PrecompiledJinja(build_py):
-    def run(self):
+    """Compile Jinja2 templates while building.
+
+    Parsing templates on every call is too slow.
+    """
+
+    def run(self):  # noqa: 102
         super().run()
         templates_dir = os.path.join(
             self.build_lib, "surfraw_tools/templates/compiled/"
