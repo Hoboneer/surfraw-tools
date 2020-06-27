@@ -31,7 +31,7 @@ from .validation import (
 if TYPE_CHECKING:
     from typing_extensions import TypedDict, Literal, Final
 
-    class SurfrawMetadata(TypedDict):
+    class _SurfrawMetadata(TypedDict):
         metavar: Optional[str]
         description: str
 
@@ -76,9 +76,9 @@ class SurfrawOption:
     name: str
 
     # `_metadata` holds the true data.
-    _metadata: SurfrawMetadata = field(
+    _metadata: _SurfrawMetadata = field(
         default_factory=cast(
-            Type["SurfrawMetadata"],
+            Type["_SurfrawMetadata"],
             partial(dict, metavar=None, description=None),
         ),
         init=False,
