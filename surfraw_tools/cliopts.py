@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import re
 from collections import deque
-from dataclasses import dataclass, field
 from typing import (
     TYPE_CHECKING,
     Any,
     ClassVar,
     List,
+    Optional,
     Sequence,
     Type,
     TypeVar,
@@ -144,34 +144,35 @@ class Option:
         return valid_args
 
 
-@dataclass(frozen=True)
 class FlagOption(Option):
     """Alias (with value) to a variable-creating option."""
 
     validators = (validate_name, validate_name, no_validation)
-    name: str
-    target: str
-    value: str
+
+    def __init__(self, name: str, target: str, value: str):
+        self.name: Final = name
+        self.target: Final = target
+        self.value: Final = value
 
     def to_surfraw_opt(self, resolved_target: SurfrawVarOption) -> SurfrawFlag:
         """Resolve flag target to a concrete option."""
         return SurfrawFlag(self.name, resolved_target, self.value)
 
 
-@dataclass(frozen=True)
 class BoolOption(Option):
     """Boolean option corresponding to 'yesno' in `surfraw`."""
 
     validators = (validate_name, validate_bool)
-    name: str
-    default: str
+
+    def __init__(self, name: str, default: str):
+        self.name: Final = name
+        self.default: Final = default
 
     def to_surfraw_opt(self) -> SurfrawBool:
         """Return model for surfraw bool options."""
         return SurfrawBool(self.name, self.default)
 
 
-@dataclass(frozen=True)
 class EnumOption(Option):
     """Option with user-specified list of valid values."""
 
@@ -180,22 +181,25 @@ class EnumOption(Option):
         validate_enum_value,
         list_of(validate_enum_value),
     )
-    name: str
-    default: str
-    values: List[str] = field(hash=False)
+
+    def __init__(self, name: str, default: str, values: List[str]):
+        self.name: Final = name
+        self.default: Final = default
+        self.values: Final = values
 
     def to_surfraw_opt(self) -> SurfrawEnum:
         """Return model for surfraw enum options."""
         return SurfrawEnum(self.name, self.default, self.values)
 
 
-@dataclass(frozen=True)
 class AnythingOption(Option):
     """Unchecked option."""
 
     validators = (validate_name, no_validation)
-    name: str
-    default: str
+
+    def __init__(self, name: str, default: str):
+        self.name: Final = name
+        self.default: Final = default
 
     def to_surfraw_opt(self) -> SurfrawAnything:
         """Return model for surfraw 'anything' options."""
@@ -213,7 +217,6 @@ def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
         return cast(Type[SurfrawListType], type_)
 
 
-@dataclass(frozen=True)
 class ListOption(Option):
     """List- or CSV-like option."""
 
@@ -224,13 +227,22 @@ class ListOption(Option):
         (list_of(no_validation),),
     )
 
-    name: str
-    type: Type[SurfrawListType]
-    defaults: List[str] = field(hash=False)
-    values: List[str] = field(default_factory=list, hash=False)
+    def __init__(
+        self,
+        name: str,
+        type: Type[SurfrawListType],
+        defaults: List[str],
+        values: Optional[List[str]] = None,
+    ):
+        if values is None:
+            values = []
 
-    def __post_init__(self) -> None:
-        """Validate `self.values` if needed, according to `self.type`."""
+        self.name: Final = name
+        self.type: Final = type
+        self.defaults: Final = defaults
+        self.values: Final = values
+
+        # Validate `self.values` if needed, according to `self.type`.
         if issubclass(self.type, SurfrawEnum):
             if not self.values:
                 raise OptionParseError(
@@ -276,7 +288,6 @@ def _parse_alias_type(
         return cast(Union[Type[SurfrawVarOption], Type[SurfrawFlag]], type_)
 
 
-@dataclass(frozen=True)
 class AliasOption(Option):
     """Alias (without value) to variable-creating option or flag option.
 
@@ -284,9 +295,16 @@ class AliasOption(Option):
     """
 
     validators = (validate_name, validate_name, _parse_alias_type)
-    name: str
-    target: str
-    type: Union[Type[SurfrawVarOption], Type[SurfrawFlag]]
+
+    def __init__(
+        self,
+        name: str,
+        target: str,
+        type: Union[Type[SurfrawVarOption], Type[SurfrawFlag]],
+    ):
+        self.name: Final = name
+        self.target: Final = target
+        self.type: Final = type
 
     def to_surfraw_opt(
         self, resolved_target: Union[SurfrawVarOption, SurfrawFlag]
@@ -300,7 +318,6 @@ class AliasOption(Option):
         return SurfrawAlias(self.name, resolved_target)
 
 
-@dataclass(frozen=True)
 class MappingOption(Option):
     """Non-surfraw option to map surfraw variables to url parameters.
 
@@ -309,9 +326,13 @@ class MappingOption(Option):
     """
 
     validators = (validate_name, no_validation, (parse_bool,))
-    target: str
-    parameter: str
-    should_url_encode: bool = True
+
+    def __init__(
+        self, target: str, parameter: str, should_url_encode: bool = True
+    ):
+        self.target: Final = target
+        self.parameter: Final = parameter
+        self.should_url_encode: Final = should_url_encode
 
     @property
     def variable(self) -> str:
@@ -320,7 +341,6 @@ class MappingOption(Option):
         return self.target
 
 
-@dataclass(frozen=True)
 class InlineOption(Option):
     """Non-surfraw option to map surfraw variables to search keywords.
 
@@ -329,8 +349,10 @@ class InlineOption(Option):
     """
 
     validators = (validate_name, validate_name)
-    target: str
-    keyword: str
+
+    def __init__(self, target: str, keyword: str):
+        self.target: Final = target
+        self.keyword: Final = keyword
 
     @property
     def variable(self) -> str:
@@ -339,7 +361,6 @@ class InlineOption(Option):
         return self.target
 
 
-@dataclass(frozen=True)
 class CollapseOption(Option):
     """Non-surfraw option to modify variables in-place using a shell case statement.
 
@@ -351,8 +372,9 @@ class CollapseOption(Option):
     validators = (validate_name, list_of(no_validation))
     last_arg_is_unlimited = True
 
-    target: str
-    collapses: List[str] = field(hash=False)
+    def __init__(self, target: str, collapses: List[str]):
+        self.target: Final = target
+        self.collapses: Final = collapses
 
     @property
     def variable(self) -> str:
@@ -373,24 +395,21 @@ def _validate_metavar(metavar: str) -> str:
     return metavar
 
 
-# Treat this as immutable!
-@dataclass
 class MetavarOption(Option):
     """Option to set the metavar of surfraw options."""
 
     validators = (validate_name, _validate_metavar)
-    variable: str
-    metavar: str
 
-    def __post_init__(self) -> None:
-        """Ensure metavar is uppercase."""
-        self.metavar = self.metavar.upper()
+    def __init__(self, variable: str, metavar: str):
+        self.variable: Final = variable
+        self.metavar: Final = metavar.upper()
 
 
-@dataclass(frozen=True)
 class DescribeOption(Option):
     """Option to set the description of surfraw options."""
 
     validators = (validate_name, no_validation)
-    variable: str
-    description: str
+
+    def __init__(self, variable: str, description: str):
+        self.variable: Final = variable
+        self.description: Final = description
