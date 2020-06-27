@@ -67,6 +67,8 @@ _FlagValidator = Callable[[Any], Any]
 class SurfrawOption:
     """Model for options in surfraw elvi."""
 
+    __slots__ = ("name", "aliases", "_metadata")
+
     typenames: ClassVar[Dict[str, Type[SurfrawOption]]] = {}
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
@@ -123,6 +125,8 @@ class SurfrawOption:
 
 class SurfrawVarOption(SurfrawOption):
     """Superclass for options that create variables in elvi."""
+
+    __slots__ = ("flags", "_resolved_flag_values")
 
     # This should only contain subclasses of `SurfrawVarOption`.
     # mypy doesn't seem to like having values of `typenames` to subclasses of this class.
@@ -191,6 +195,8 @@ class SurfrawListType(SurfrawVarOption):
 class SurfrawFlag(SurfrawOption):
     """Alias (with value) to a variable-creating option."""
 
+    __slots__ = ("target", "value")
+
     typename = "flag"
     typename_plural = "flags"
 
@@ -214,6 +220,8 @@ class SurfrawFlag(SurfrawOption):
 class SurfrawBool(SurfrawVarOption):
     """Boolean option corresponding to 'yesno' in `surfraw`."""
 
+    __slots__ = ("default",)
+
     typename = "bool"
     typename_plural = "bools"
 
@@ -227,6 +235,8 @@ class SurfrawBool(SurfrawVarOption):
 
 class SurfrawEnum(SurfrawListType):
     """Option with user-specified list of valid values."""
+
+    __slots__ = ("default", "values")
 
     typename = "enum"
     typename_plural = "enums"
@@ -263,6 +273,8 @@ class SurfrawEnum(SurfrawListType):
 class SurfrawAnything(SurfrawListType):
     """Unchecked option."""
 
+    __slots__ = ("default",)
+
     typename = "anything"
     typename_plural = "anythings"
 
@@ -285,6 +297,8 @@ class SurfrawSpecial(SurfrawVarOption):
     This isn't created normally.  Users opt in.
     Good for common patterns in surfraw elvi.
     """
+
+    __slots__ = ("default",)
 
     typename = "special"
     typename_plural = "specials"
@@ -341,6 +355,8 @@ class SurfrawSpecial(SurfrawVarOption):
 # XXX: Should this store validators for the type it has?
 class SurfrawList(SurfrawVarOption):
     """List- or CSV-like option."""
+
+    __slots__ = ("type", "defaults", "values")
 
     typename = "list"
     typename_plural = "lists"
@@ -404,6 +420,8 @@ class SurfrawAlias(SurfrawOption):
 
     This is essentially a shorthand for common options.
     """
+
+    __slots__ = ("target", "__weakref__")
 
     typename = "alias"
     typename_plural = "aliases"

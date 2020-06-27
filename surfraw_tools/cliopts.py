@@ -54,6 +54,8 @@ class Option:
         last_arg_is_unlimited: Whether the last arg may be repeated.  (default: `False`)
     """
 
+    __slots__ = ()
+
     validators: ClassVar[_FlagValidatorsType]
     last_arg_is_unlimited: ClassVar[bool] = False
 
@@ -147,6 +149,8 @@ class Option:
 class FlagOption(Option):
     """Alias (with value) to a variable-creating option."""
 
+    __slots__ = ("name", "target", "value")
+
     validators = (validate_name, validate_name, no_validation)
 
     def __init__(self, name: str, target: str, value: str):
@@ -162,6 +166,8 @@ class FlagOption(Option):
 class BoolOption(Option):
     """Boolean option corresponding to 'yesno' in `surfraw`."""
 
+    __slots__ = ("name", "default")
+
     validators = (validate_name, validate_bool)
 
     def __init__(self, name: str, default: str):
@@ -175,6 +181,8 @@ class BoolOption(Option):
 
 class EnumOption(Option):
     """Option with user-specified list of valid values."""
+
+    __slots__ = ("name", "default", "values")
 
     validators = (
         validate_name,
@@ -194,6 +202,8 @@ class EnumOption(Option):
 
 class AnythingOption(Option):
     """Unchecked option."""
+
+    __slots__ = ("name", "default")
 
     validators = (validate_name, no_validation)
 
@@ -219,6 +229,8 @@ def _parse_list_type(list_type: str) -> Type[SurfrawListType]:
 
 class ListOption(Option):
     """List- or CSV-like option."""
+
+    __slots__ = ("name", "type", "defaults", "values")
 
     validators = (
         validate_name,
@@ -294,6 +306,8 @@ class AliasOption(Option):
     This is essentially a shorthand for common options.
     """
 
+    __slots__ = ("name", "target", "type")
+
     validators = (validate_name, validate_name, _parse_alias_type)
 
     def __init__(
@@ -325,6 +339,8 @@ class MappingOption(Option):
     target variables, which is useful for already-encoded values.
     """
 
+    __slots__ = ("target", "parameter", "should_url_encode")
+
     validators = (validate_name, no_validation, (parse_bool,))
 
     def __init__(
@@ -348,6 +364,8 @@ class InlineOption(Option):
     users having to memorise keywords or with special preprocessing.
     """
 
+    __slots__ = ("target", "keyword")
+
     validators = (validate_name, validate_name)
 
     def __init__(self, target: str, keyword: str):
@@ -368,6 +386,8 @@ class CollapseOption(Option):
     list value in each case is what the variable is replaced with, which may
     contain command substitutions and is run within double quotes.
     """
+
+    __slots__ = ("target", "collapses")
 
     validators = (validate_name, list_of(no_validation))
     last_arg_is_unlimited = True
@@ -398,6 +418,8 @@ def _validate_metavar(metavar: str) -> str:
 class MetavarOption(Option):
     """Option to set the metavar of surfraw options."""
 
+    __slots__ = ("variable", "metavar")
+
     validators = (validate_name, _validate_metavar)
 
     def __init__(self, variable: str, metavar: str):
@@ -407,6 +429,8 @@ class MetavarOption(Option):
 
 class DescribeOption(Option):
     """Option to set the description of surfraw options."""
+
+    __slots__ = ("variable", "description")
 
     validators = (validate_name, no_validation)
 
