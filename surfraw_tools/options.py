@@ -101,7 +101,7 @@ class SurfrawOption:
                 f"option name '{self.name}' is global, which cannot be overriden by elvi"
             )
         self.set_metadata(
-            "description", f"A {self.typename} option for '{self.name}'"
+            "description", f"A {self.__class__.typename} option for '{self.name}'"
         )
 
     @property
