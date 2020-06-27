@@ -136,23 +136,6 @@ class SurfrawOption:
             # This is just a superclass.  It won't be used.
             # FIXME: Special case.  Refactor?
             return
-        subclass_re = r"Surfraw([A-Z][a-z]+)"
-        try:
-            cls.typename = (
-                cast(Match[str], re.match(subclass_re, cls.__name__))
-                .group(1)
-                .lower()
-            )
-        except IndexError:
-            raise RuntimeError(
-                f"subclasses of SurfrawOption must match the regex '{subclass_re}'"
-            ) from None
-        # Can't reference `SurfrawAlias` here since it's not defined yet, but this will do.
-        if cls.typename == "alias":
-            cls.typename_plural = "aliases"
-        else:
-            cls.typename_plural = cls.typename + "s"
-
         SurfrawOption.typenames[cls.typename] = cls
 
     def add_alias(self, alias: SurfrawAlias) -> None:
@@ -237,6 +220,9 @@ class SurfrawListType(SurfrawVarOption):
 class SurfrawFlag(SurfrawOption):
     """Alias (with value) to a variable-creating option."""
 
+    typename = "flag"
+    typename_plural = "flags"
+
     target: SurfrawVarOption
     value: Any
 
@@ -262,6 +248,9 @@ class SurfrawFlag(SurfrawOption):
 class SurfrawBool(SurfrawVarOption):
     """Boolean option corresponding to 'yesno' in `surfraw`."""
 
+    typename = "bool"
+    typename_plural = "bools"
+
     # Don't need to make new flag objects after resolving.
     flag_value_validator = validate_bool
     default: str
@@ -270,6 +259,9 @@ class SurfrawBool(SurfrawVarOption):
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawEnum(SurfrawListType):
     """Option with user-specified list of valid values."""
+
+    typename = "enum"
+    typename_plural = "enums"
 
     flag_value_validator = validate_enum_value
     default: str
@@ -307,6 +299,9 @@ class SurfrawEnum(SurfrawListType):
 class SurfrawAnything(SurfrawListType):
     """Unchecked option."""
 
+    typename = "anything"
+    typename_plural = "anythings"
+
     # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
     default: str
@@ -331,6 +326,9 @@ class SurfrawSpecial(SurfrawVarOption):
     This isn't created normally.  Users opt in.
     Good for common patterns in surfraw elvi.
     """
+
+    typename = "special"
+    typename_plural = "specials"
 
     default: str
 
@@ -385,6 +383,9 @@ class SurfrawSpecial(SurfrawVarOption):
 @dataclass(frozen=True, unsafe_hash=True)
 class SurfrawList(SurfrawVarOption):
     """List- or CSV-like option."""
+
+    typename = "list"
+    typename_plural = "lists"
 
     type: Type[SurfrawListType]
     defaults: List[str] = field(hash=False)
@@ -443,6 +444,9 @@ class SurfrawAlias(SurfrawOption):
 
     This is essentially a shorthand for common options.
     """
+
+    typename = "alias"
+    typename_plural = "aliases"
 
     target: Union[SurfrawVarOption, SurfrawFlag]
 
