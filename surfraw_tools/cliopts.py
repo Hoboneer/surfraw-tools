@@ -57,9 +57,6 @@ class Option:
     validators: ClassVar[_FlagValidatorsType]
     last_arg_is_unlimited: ClassVar[bool] = False
 
-    typename: ClassVar[str]
-    typename_plural: ClassVar[str]
-
     @classmethod
     def from_arg(cls: _O, arg: str) -> _O:
         parsed_args = cls.parse_args(
