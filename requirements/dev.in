@@ -1,4 +1,5 @@
 -r base.txt
+pip-tools
 black
 isort
 flake8
