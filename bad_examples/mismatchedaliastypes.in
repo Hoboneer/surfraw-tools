@@ -1,5 +1,0 @@
-mismatchedaliastypes
-foo
-foo
---enum=mismatch:foo:foo,bar,baz
---alias=badalias:mismatch:yes-no
