@@ -4,6 +4,8 @@
 # NOTE: Any double underscore-prefixed names (i.e., variables and functions)
 #       are reserved for `mkelvis` and are an implementation detail.
 #       Depend on at your own risk.
+{# SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com> #}
+{# SPDX-License-Identifier: Apache-2.0 #}
 . surfraw || exit 1
 
 w3_usage_hook ()

@@ -1,4 +1,11 @@
+# SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: CC0-1.0
+
 include COPYING
+include LICENSES/*
+include .reuse/dep5
+
 include README.md
 include surfraw_tools/templates/*.in
 include pyproject.toml

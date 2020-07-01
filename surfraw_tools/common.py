@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Common functions and classes to generate elvi.
 
 Also includes a parser from `argparse` to base command-line programs on.

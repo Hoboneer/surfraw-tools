@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # surfraw-tools
 
 These are command line tools to generate

@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: surfraw-tools
+Upstream-Contact: Gabriel Lisaca <gabriel.lisaca@gmail.com>
+Source: https://github.com/Hoboneer/surfraw-elvis-generator
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
+
+Files: requirements/*
+Copyright: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+License: CC0-1.0

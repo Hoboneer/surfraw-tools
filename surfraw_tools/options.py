@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Object representations for surfraw options."""
 from __future__ import annotations
 
