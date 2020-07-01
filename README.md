@@ -15,6 +15,14 @@ The following are currently provided:
 * `mkelvis`: Generate a single surfraw elvis per invocation.  Code for
   completions is also generated inside the output elvis.
 
+## Copyright
+
+This project is licensed under the Apache License 2.0 (sic) and follows the
+[REUSE licencing guidelines](https://reuse.software).  Some auxiliary files
+have a different licence.  Check their file headers or `.reuse/dep5` for
+details.  Copies of the licences used in this project can be located in the
+`LICENSES/` directory, per the REUSE guidelines.
+
 ## Quickstart
 
 Specify your elvis to generate with the three positional arguments as shown:
