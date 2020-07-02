@@ -13,7 +13,6 @@ import os
 import sys
 from argparse import _VersionAction
 from functools import partial
-from importlib import resources as imp
 from itertools import chain
 from os import EX_OK, EX_USAGE
 from typing import (
@@ -458,9 +457,11 @@ def get_env(
     simply get a template and render it like so: `template.render(variables)`
     for simple uses.
     """
-    with imp.path("surfraw_tools", "templates") as path:
-        raw_templates_dir = path
-        precompiled_templates_dir = os.path.join(path, "compiled")
+    # This package should not run from an archive--it's too slow to decompress every time.
+    # Thus, `__file__` is guaranteed to be defined.
+    package_dir = os.path.dirname(__file__)
+    raw_templates_dir = os.path.join(package_dir, "templates")
+    precompiled_templates_dir = os.path.join(raw_templates_dir, "compiled")
     env = Environment(
         loader=ChoiceLoader(
             [
