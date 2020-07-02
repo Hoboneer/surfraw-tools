@@ -396,7 +396,13 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Atomically write output file.
     try:
-        with NamedTemporaryFile(mode="w", delete=False, dir=os.getcwd()) as f:
+        with NamedTemporaryFile(
+            mode="w",
+            delete=False,
+            prefix=f"{ctx.name}.",
+            suffix=f".{ctx.program_name}.tmp",
+            dir=os.getcwd(),
+        ) as f:
             env.get_template("elvis.in").stream(template_vars).dump(f)
             f.flush()
             fd = f.fileno()
@@ -404,6 +410,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             os.fchmod(fd, 0o755)
             os.rename(f.name, ctx.name)
     except OSError as e:
+        # Don't delete tempfile to allow for inspection on write errors.
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_OSERR
     return EX_OK
