@@ -1,8 +1,8 @@
+# noqa: D100
 # SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
 #
 # SPDX-License-Identifier: Apache-2.0
 
-# noqa: 100
 import os
 from distutils import log
 
@@ -30,7 +30,7 @@ class PrecompiledJinja(build_py):
     Parsing templates on every call is too slow.
     """
 
-    def run(self):  # noqa: 102
+    def run(self):  # noqa: D102
         super().run()
         templates_dir = os.path.join(
             self.build_lib, "surfraw_tools/templates/compiled/"
