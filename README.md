@@ -61,10 +61,13 @@ Created with: `--yes-no=`
 This is one of the simplest option types, corresponding to the surfraw options
 checked with `yesno` in elvi.
 
-The valid arguments are:
+The valid arguments are (in elvi):
 
   - `yes`, `on`, `1`: True
   - `no`, `off`, `0`: False
+
+For simplicity, `--yes-no` only accepts `yes` for true and `no` for false.
+File an issue if you need the other values to be accepted.
 
 ### Enum options (typename: `enum`)
 
