@@ -8,7 +8,8 @@ SPDX-License-Identifier: Apache-2.0
 
 These are command line tools to generate
 [surfraw](https://www.techrepublic.com/blog/linux-and-open-source/surfing-the-world-wide-web-raw-style/)
-scripts easily.
+scripts easily.  Hosted on
+[GitHub](https://github.com/Hoboneer/surfraw-elvis-generator).
 
 The following are currently provided:
 
