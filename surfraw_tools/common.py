@@ -200,6 +200,7 @@ class Context(argparse.Namespace):
 
         self.insecure: bool = False
         self.num_tabs: int = 1
+        self.outfile: str = ""
 
         # Option containers
         self.options: _SurfrawOptionContainer = _SurfrawOptionContainer()
@@ -384,6 +385,9 @@ def process_args(ctx: Context) -> int:
         ctx.description = f"Search {ctx.name} ({ctx.base_url})"
     else:
         ctx.description += f" ({ctx.base_url})"
+
+    if not ctx.outfile:
+        ctx.outfile = ctx.name
 
     if ctx.insecure:
         # Is this the right term?

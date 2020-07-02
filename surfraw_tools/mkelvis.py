@@ -218,6 +218,13 @@ def _get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--insecure", action="store_true", help="use 'http' instead of 'https'"
     )
+    parser.add_argument(
+        "--output",
+        "-o",
+        dest="outfile",
+        metavar="FILE",
+        help="write elvis code to FILE instead of elvis name",
+    )
 
     # Option generation
 
@@ -396,19 +403,24 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Atomically write output file.
     try:
-        with NamedTemporaryFile(
-            mode="w",
-            delete=False,
-            prefix=f"{ctx.name}.",
-            suffix=f".{ctx.program_name}.tmp",
-            dir=os.getcwd(),
-        ) as f:
-            env.get_template("elvis.in").stream(template_vars).dump(f)
-            f.flush()
-            fd = f.fileno()
-            os.fsync(fd)
-            os.fchmod(fd, 0o755)
-            os.rename(f.name, ctx.name)
+        template = env.get_template("elvis.in")
+        if ctx.outfile == "-":
+            # Don't want to close stdout so don't wrap in with-statement.
+            template.stream(template_vars).dump(sys.stdout)
+        else:
+            with NamedTemporaryFile(
+                mode="w",
+                delete=False,
+                prefix=f"{ctx.name}.",
+                suffix=f".{ctx.program_name}.tmp",
+                dir=os.getcwd(),
+            ) as f:
+                template.stream(template_vars).dump(f)
+                f.flush()
+                fd = f.fileno()
+                os.fsync(fd)
+                os.fchmod(fd, 0o755)
+                os.rename(f.name, ctx.outfile)
     except OSError as e:
         # Don't delete tempfile to allow for inspection on write errors.
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
