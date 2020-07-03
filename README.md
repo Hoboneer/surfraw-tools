@@ -24,6 +24,18 @@ have a different licence.  Check their file headers or `.reuse/dep5` for
 details.  Copies of the licences used in this project can be located in the
 `LICENSES/` directory, per the REUSE guidelines.
 
+## Installation
+
+`surfraw-tools` is available on PyPI.
+[pipx](https://github.com/pipxproject/pipx) is recommended to install.  It is
+available in the distro repositories.
+
+```sh
+pipx install surfraw-tools
+```
+
+See `INSTALL.md` for more details.
+
 ## Quickstart
 
 Specify your elvis to generate with the three positional arguments as shown:
