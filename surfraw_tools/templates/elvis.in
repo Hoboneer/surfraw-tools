@@ -267,6 +267,7 @@ w3_parse_option_hook ()
 {%- endfor %}{# opts|map #}
 {%- endif %}{# not list_option #}
 {%- endmacro %}
+{% if enable_completions %}
 w3_complete_hook_opt ()
 {
 	local opt="$1"
@@ -321,6 +322,7 @@ mkopts add-{{ opt.name }}= clear-{{ opt.name }} remove-{{ opt.name }}=
 mkopts add-{{ opt.name }} remove-{{ opt.name }}
 {% endfor %}{# opts #}
 {% endfor %}{# flags.lists #}
+{% endif %}{# enable_completions #}
 {% endif %}{# any_options_defined #}
 
 w3_config

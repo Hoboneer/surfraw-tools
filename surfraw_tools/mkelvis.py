@@ -242,6 +242,13 @@ def _get_parser() -> argparse.ArgumentParser:
         type=int,
         help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
     )
+    parser.add_argument(
+        "--no-completions",
+        "--disable-completions",
+        action="store_false",
+        dest="enable_completions",
+        help="don't include completion code in output elvis",
+    )
 
     parser.add_argument(
         "--metavar",

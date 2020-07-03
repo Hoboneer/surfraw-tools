@@ -196,6 +196,7 @@ class Context(argparse.Namespace):
         self.description: Optional[str] = None
         self.query_parameter: Optional[str] = None
         self.append_search_args: bool = True
+        self.enable_completions: bool = True
 
         self.insecure: bool = False
         self.num_tabs: int = 1
@@ -495,6 +496,7 @@ def get_env(
         "base_url": ctx.base_url,
         "search_url": ctx.search_url,
         "num_tabs": ctx.num_tabs,
+        "enable_completions": ctx.enable_completions,
         # Options to generate
         "flags": ctx.options.flags,
         "bools": ctx.options.bools,

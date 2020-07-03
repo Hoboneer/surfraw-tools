@@ -55,8 +55,7 @@ The created elvis will be placed in the current directory with the name
 At the time of writing, this program generates completion code for surfraw elvi
 for my work-in-progress system of elvi-specific completions.  Check the merge
 requests in the [main surfraw repo](https://gitlab.com/surfraw/Surfraw).  If
-you don't want to use the WIP completions, go to a commit before the
-`integrated-completions` branch is merged to `master`.
+you don't want to use the WIP completions, use the `--no-completions` option.
 
 ## Option types
 
