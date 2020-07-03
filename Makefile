@@ -46,3 +46,13 @@ clean:
 	-rm -fr *.egg-info/
 	-rm -fr build/
 	-rm -fr dist/
+
+.PHONY: dist
+dist: format lint typecheck
+	@# No wheel because jinja2 versions at build- and runtime need to match.
+	python setup.py sdist
+	twine check dist/*
+
+.PHONY: upload
+upload:
+	twine upload dist/*
