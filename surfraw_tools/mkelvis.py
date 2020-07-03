@@ -317,13 +317,13 @@ def _get_parser() -> argparse.ArgumentParser:
         "--use-results-option",
         action="store_true",
         dest="use_results_option",
-        help="define a 'results' variable and option",
+        help="define a '-results=NUM' option",
     )
     option_group.add_argument(
         "--use-language-option",
         action="store_true",
         dest="use_language_option",
-        help="define a 'language' variable and option",
+        help="define a '-language=ISOCODE' option",
     )
 
     modify_vars_group = parser.add_argument_group(
