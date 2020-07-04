@@ -36,3 +36,15 @@ key of `pyproject.toml` are installed.  Then:
 ```sh
 pip install --no-build-isolation surfraw-tools
 ```
+
+## Local installation
+
+```sh
+pip install .
+# or
+python setup.py install
+```
+
+Note that the second method doesn't build a wheel.  This means that--at least
+on my machine--`pkg_resources` was imported by the script for the `mkelvis`
+entry point so import time was increased by over 100 ms.
