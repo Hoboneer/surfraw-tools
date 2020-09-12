@@ -407,6 +407,21 @@ class CollapseOption(Option):
         return self.target
 
 
+class QueryCollapseOption(Option):
+    """Non-surfraw option to modify the search query in-place using a shell case statement.
+
+    Works the same way as `CollapseOption`s.
+    """
+
+    __slots__ = ("collapses",)
+
+    validators = (list_of(no_validation),)
+    last_arg_is_unlimited = True
+
+    def __init__(self, collapses: List[str]):
+        self.collapses: Final = collapses
+
+
 _VALID_METAVAR_STR: Final = "^[a-z]+$"
 _VALID_METAVAR: Final = re.compile(_VALID_METAVAR_STR)
 

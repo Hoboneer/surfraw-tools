@@ -36,6 +36,7 @@ from .cliopts import (
     ListOption,
     MappingOption,
     MetavarOption,
+    QueryCollapseOption,
 )
 from .common import (
     _VALID_FLAG_TYPES_STR,
@@ -377,6 +378,14 @@ def _get_parser() -> argparse.ArgumentParser:
         dest="collapses",
         metavar="VARIABLE_NAME:VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
         help="change groups of values of a variable to a single value",
+    )
+    modify_vars_group.add_argument(
+        "--query-collapse",
+        action="append",
+        type=_wrap_parser(QueryCollapseOption.from_arg),
+        dest="query_collapses",
+        metavar="VAL1,VAL2,RESULT:VAL_A,VAL_B,VAL_C,RESULT_D:...",
+        help="modify the search query with a shell case statement (see `--collapse` option)",
     )
 
     return parser

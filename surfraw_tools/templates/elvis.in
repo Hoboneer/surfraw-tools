@@ -388,6 +388,11 @@ __mkelvis_exit_list_ctx
 {% endif %}
 {% endfor %}
 
+# Collapse search query
+{% for collapse in query_collapses %}
+{{ collapse_variable('w3_args', collapse.collapses) }}
+{% endfor %}
+
 # Any variables in the url should have values now
 if test -z "$w3_args"; then
 	w3_browse_url "{{ base_url }}"

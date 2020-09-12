@@ -59,6 +59,7 @@ from .cliopts import (
     ListOption,
     MappingOption,
     MetavarOption,
+    QueryCollapseOption,
 )
 from .options import (
     SurfrawAlias,
@@ -217,6 +218,7 @@ class Context(argparse.Namespace):
         self.list_inlines: List[InlineOption] = []
 
         self.collapses: List[CollapseOption] = []
+        self.query_collapses: List[QueryCollapseOption] = []
 
         self.metavars: List[MetavarOption] = []
         self.descriptions: List[DescribeOption] = []
@@ -511,6 +513,7 @@ def get_env(
         "inlines": ctx.inlines,
         "list_inlines": ctx.list_inlines,
         "collapses": ctx.collapses,
+        "query_collapses": ctx.query_collapses,
         "query_parameter": ctx.query_parameter,
         "append_search_args": ctx.append_search_args,
     }
