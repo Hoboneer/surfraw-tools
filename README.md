@@ -16,6 +16,22 @@ The following are currently provided:
 * `mkelvis`: Generate a single surfraw elvis per invocation.  Code for
   completions is also generated inside the output elvis.
 
+## Features (`mkelvis`)
+
+* declarative option syntax with access to the shell for some options
+  - the topic variable (`$_`) is available for some options
+  - map surfraw-option values to url parameters
+  - "inline" surfraw-option values to search query keywords
+  - mutate variables in shell case-statements
+* easy-to-generate options, with *types* for different uses (see `Option types` heading)
+* shortcuts to generate common surfraw options: `-result=NUM` and `-language=ISOCODE`
+* allows `*` characters in queries without spewing out contents of directories from globbing
+  - by disabling pathname expansion before calling `w3_url_of_arg`
+* usable, automatically-generated `--local-help` and `-elvi` output
+  - with control over some aspects of formatting
+* readable output elvi with explanatory comments and templates
+* elvi-specific tab-completions (**NOTE: uses WIP surfraw features from my merge request on the main surfraw repo**)
+
 ## Copyright
 
 This project is licensed under the Apache License 2.0 (sic) and follows the
