@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from .options import (
+from surfraw_tools.lib.options import (
     SurfrawAlias,
     SurfrawAnything,
     SurfrawBool,
@@ -32,7 +32,7 @@ from .options import (
     SurfrawVarOption,
     _FlagValidator,
 )
-from .validation import (
+from surfraw_tools.lib.validation import (
     OptionParseError,
     list_of,
     no_validation,

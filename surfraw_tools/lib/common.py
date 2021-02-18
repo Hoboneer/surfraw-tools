@@ -46,8 +46,8 @@ from jinja2 import (
 )
 from jinja2.runtime import Context as JContext
 
-from ._package import __version__
-from .cliopts import (
+from surfraw_tools._package import __version__
+from surfraw_tools.lib.cliopts import (
     AliasOption,
     AnythingOption,
     BoolOption,
@@ -60,7 +60,7 @@ from .cliopts import (
     MappingOption,
     MetavarOption,
 )
-from .options import (
+from surfraw_tools.lib.options import (
     SurfrawAlias,
     SurfrawAnything,
     SurfrawBool,
@@ -71,7 +71,10 @@ from .options import (
     SurfrawSpecial,
     SurfrawVarOption,
 )
-from .validation import OptionParseError, OptionResolutionError
+from surfraw_tools.lib.validation import (
+    OptionParseError,
+    OptionResolutionError,
+)
 
 if TYPE_CHECKING:
     from typing_extensions import Final

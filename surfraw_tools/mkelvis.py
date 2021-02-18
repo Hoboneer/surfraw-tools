@@ -24,7 +24,7 @@ from typing import (
     cast,
 )
 
-from .cliopts import (
+from surfraw_tools.lib.cliopts import (
     AliasOption,
     AnythingOption,
     BoolOption,
@@ -37,7 +37,7 @@ from .cliopts import (
     MappingOption,
     MetavarOption,
 )
-from .common import (
+from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
     VERSION_FORMAT_STRING,
@@ -46,7 +46,7 @@ from .common import (
     get_env,
     process_args,
 )
-from .options import (
+from surfraw_tools.lib.options import (
     SurfrawEnum,
     SurfrawFlag,
     SurfrawList,

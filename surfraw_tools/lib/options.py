@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from .validation import (
+from surfraw_tools.lib.validation import (
     OptionParseError,
     OptionResolutionError,
     list_of,
