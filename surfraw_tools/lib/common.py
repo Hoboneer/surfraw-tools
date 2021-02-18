@@ -463,7 +463,7 @@ def get_env(
     """
     # This package should not run from an archive--it's too slow to decompress every time.
     # Thus, `__file__` is guaranteed to be defined.
-    package_dir = os.path.dirname(__file__)
+    package_dir = os.path.dirname(os.path.dirname(__file__))
     raw_templates_dir = os.path.join(package_dir, "templates")
     precompiled_templates_dir = os.path.join(raw_templates_dir, "compiled")
     env = Environment(
