@@ -12,16 +12,15 @@ from jinja2 import FileSystemLoader
 from setuptools import setup
 from setuptools.command.build_py import build_py
 
-from surfraw_tools.common import Context, get_env
+from surfraw_tools.lib.elvis import Elvis
 
 
 def compile_templates(path):
     """Pre-compile Jinja2 templates for faster runtime execution."""
-    ctx = Context("jinjac")
-    env, *_ = get_env(ctx)
+    elvis = Elvis("UNUSED", "UNUSED", "UNUSED", generator="jinjac")
     templates_dir = "surfraw_tools/templates"
-    env.loader = FileSystemLoader(templates_dir)
-    env.compile_templates(path, zip=None)
+    elvis.env.loader = FileSystemLoader(templates_dir)
+    elvis.env.compile_templates(path, zip=None)
 
 
 class PrecompiledJinja(build_py):
