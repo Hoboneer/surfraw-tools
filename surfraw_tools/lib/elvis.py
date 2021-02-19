@@ -120,7 +120,6 @@ def _get_optlines(
 
 
 class Elvis(argparse.Namespace):
-    # def __init__(self, TODO_arg_to_get_options) -> None:
     def __init__(
         self,
         name: str,
@@ -136,6 +135,7 @@ class Elvis(argparse.Namespace):
         enable_completions: bool = True,
     ) -> None:
         self.generator: Final = generator
+        # TODO: validate name (modify `parse_elvis_name`)
         self.name: Final = _ElvisName(name)
         self._base_url: Final = base_url
         self._search_url: Final = search_url
@@ -166,6 +166,7 @@ class Elvis(argparse.Namespace):
         self._have_language_option: bool = False
 
         self.env = self._init_get_env()
+        self.namespacer = _make_namespace(f"SURFRAW_{self.name}")
 
     @staticmethod
     def _init_get_env() -> Environment:
@@ -382,13 +383,14 @@ class Elvis(argparse.Namespace):
             VERSION_FORMAT_STRING is not None
         ), "VERSION_FORMAT_STRING should be defined"
         any_options_defined = any(True for _ in self.options.variable_options)
-        namespacer = _make_namespace(f"SURFRAW_{self.name}")
         return {
             "GENERATOR_PROGRAM": VERSION_FORMAT_STRING
             % {"prog": self.generator},
             # Aliases and flags can only exist if any variable-creating options are defined.
             "any_options_defined": any_options_defined,
-            "local_help_output": self._generate_local_help_output(namespacer)
+            "local_help_output": self._generate_local_help_output(
+                self.namespacer
+            )
             if any_options_defined
             else "",
             "name": self.name,

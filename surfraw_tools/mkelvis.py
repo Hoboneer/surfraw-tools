@@ -11,7 +11,16 @@ import os
 import sys
 from functools import wraps
 from os import EX_OK, EX_OSERR, EX_USAGE
-from typing import TYPE_CHECKING, Any, Callable, List, Optional, TypeVar, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from surfraw_tools.lib.cliopts import (
     AliasOption,
@@ -29,8 +38,8 @@ from surfraw_tools.lib.cliopts import (
 from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
-    Context,
     _ElvisName,
+    parse_elvis_name,
 )
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.validation import OptionResolutionError
@@ -56,13 +65,6 @@ def _wrap_parser(func: F) -> F:
     return cast(F, wrapper)
 
 
-def _parse_elvis_name(name: str) -> _ElvisName:
-    dirs, _ = os.path.split(name)
-    if dirs:
-        raise argparse.ArgumentTypeError("elvis names may not be paths")
-    return _ElvisName(name)
-
-
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         PROGRAM_NAME,
@@ -70,7 +72,7 @@ def _get_parser() -> argparse.ArgumentParser:
         parents=[BASE_PARSER],
     )
     parser.add_argument(
-        "name", type=_parse_elvis_name, help="name for the elvis"
+        "name", type=parse_elvis_name, help="name for the elvis"
     )
     parser.add_argument(
         "base_url",
