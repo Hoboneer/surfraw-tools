@@ -167,45 +167,6 @@ class _SurfrawOptionContainer(argparse.Namespace):
 _ElvisName = NewType("_ElvisName", str)
 
 
-# Purely for context during *parsing* now
-class Context(argparse.Namespace):
-    """Data holder for elvis currently being generated."""
-
-    def __init__(self) -> None:
-        self.name: _ElvisName = _ElvisName("DEFAULT")
-        self.base_url: str = ""
-        self.search_url: str = ""
-        self.description: Optional[str] = None
-        self.query_parameter: Optional[str] = None
-        self.append_search_args: bool = True
-        self.enable_completions: bool = True
-
-        self.insecure: bool = False
-        self.num_tabs: int = 1
-        self.outfile: str = ""
-
-        # Option containers
-        self.unresolved_varopts: List[
-            Union[BoolOption, EnumOption, AnythingOption, ListOption]
-        ] = []
-        self.unresolved_flags: List[FlagOption] = []
-        self.unresolved_aliases: List[AliasOption] = []
-
-        self.mappings: List[MappingOption] = []
-        self.list_mappings: List[MappingOption] = []
-
-        self.inlines: List[InlineOption] = []
-        self.list_inlines: List[InlineOption] = []
-
-        self.collapses: List[CollapseOption] = []
-
-        self.metavars: List[MetavarOption] = []
-        self.descriptions: List[DescribeOption] = []
-
-        self.use_results_option: bool = False
-        self.use_language_option: bool = False
-
-
 # Make sure that the resultant string is a grammatically-correct list.
 _VALID_FLAG_TYPES_STR: Final = ", ".join(
     f"'{typename}'"
