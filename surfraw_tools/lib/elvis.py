@@ -182,8 +182,8 @@ class Elvis(argparse.Namespace):
                     FileSystemLoader(raw_templates_dir),
                 ]
             ),
-            # Only need to get a template once.
-            cache_size=0,
+            # Only one template to load.
+            cache_size=1,
             trim_blocks=True,
             lstrip_blocks=True,
         )
