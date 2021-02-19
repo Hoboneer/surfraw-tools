@@ -131,7 +131,7 @@ class Elvis(argparse.Namespace):
         description: Optional[str] = None,
         query_parameter: Optional[str] = None,
         num_tabs: int = 1,
-        insecure: bool = False,
+        scheme: str = "https",
         append_search_args: bool = True,
         enable_completions: bool = True,
     ) -> None:
@@ -144,7 +144,7 @@ class Elvis(argparse.Namespace):
         self.append_search_args: Final = append_search_args
         self.enable_completions: Final = enable_completions
 
-        self.insecure: Final = insecure
+        self.scheme: Final = scheme
         self._num_tabs: int
         self.num_tabs = num_tabs
 
@@ -340,19 +340,11 @@ class Elvis(argparse.Namespace):
 
     @property
     def base_url(self) -> str:
-        if self.insecure:
-            url_scheme = "http"
-        else:
-            url_scheme = "https"
-        return f"{url_scheme}://{self._base_url}"
+        return f"{self.scheme}://{self._base_url}"
 
     @property
     def search_url(self) -> str:
-        if self.insecure:
-            url_scheme = "http"
-        else:
-            url_scheme = "https"
-        return f"{url_scheme}://{self._search_url}"
+        return f"{self.scheme}://{self._search_url}"
 
     @property
     def num_tabs(self) -> int:

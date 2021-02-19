@@ -272,7 +272,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             ctx.name,
             ctx.base_url,
             ctx.search_url,
-            insecure=ctx.insecure,
+            scheme="http" if ctx.insecure else "https",
             description=ctx.description,
             query_parameter=ctx.query_parameter,
             append_search_args=ctx.append_search_args,
