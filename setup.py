@@ -42,4 +42,6 @@ class PrecompiledJinja(build_py):
             compile_templates(templates_dir)
 
 
-setup(cmdclass={"build_py": PrecompiledJinja},)
+setup(
+    cmdclass={"build_py": PrecompiledJinja},
+)

@@ -4,8 +4,8 @@
 
 REQUIREMENTS_DIR := requirements
 
-PACKAGE_DIR := surfraw_tools
-SOURCE_FILES := $(wildcard $(PACKAGE_DIR)/*.py)
+PACKAGE_DIRS := surfraw_tools surfraw_tools/lib
+SOURCE_FILES := $(foreach dir, $(PACKAGE_DIRS), $(wildcard $(dir)/*.py))
 CHECK_FILES := $(SOURCE_FILES) setup.py
 
 # Do nothing.

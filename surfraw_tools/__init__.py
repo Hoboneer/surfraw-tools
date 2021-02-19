@@ -3,4 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """Command-line programs to make writing surfraw elvi easier."""
-from ._package import __version__  # noqa: F401
+from surfraw_tools._package import __version__  # noqa: F401

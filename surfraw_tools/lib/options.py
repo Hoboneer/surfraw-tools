@@ -20,7 +20,7 @@ from typing import (
     Union,
 )
 
-from .validation import (
+from surfraw_tools.lib.validation import (
     OptionParseError,
     OptionResolutionError,
     list_of,
@@ -81,7 +81,9 @@ class SurfrawOption:
         self.aliases: Final[weakref.WeakSet[SurfrawAlias]] = weakref.WeakSet()
 
         self.metavar: Optional[str] = None
-        self.description: str = f"A {self.__class__.typename} option for '{self.name}'"
+        self.description: str = (
+            f"A {self.__class__.typename} option for '{self.name}'"
+        )
 
     def __init_subclass__(cls) -> None:
         """Add relevant subclasses to `SurfrawOption.typenames` and give them typenames.
