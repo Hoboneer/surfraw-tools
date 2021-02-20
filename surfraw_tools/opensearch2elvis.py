@@ -278,6 +278,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     except Exception as e:
         log.critical(f"{e}")
         return EX_USAGE
+    except SystemExit:
+        return EX_USAGE
 
     os_desc: OpenSearchDescription
     with ExitStack() as cm:

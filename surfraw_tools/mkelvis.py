@@ -304,6 +304,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     except Exception as e:
         log.critical(f"{e}")
         return EX_USAGE
+    except SystemExit:
+        return EX_USAGE
 
     # TODO: handle exceptions PROPERLY
     # TODO: handle `--num-tabs` error (with nice error message): EX_USAGE
