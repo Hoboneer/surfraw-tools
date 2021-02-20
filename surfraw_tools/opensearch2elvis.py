@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 import subprocess
 import sys
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
     TYPE_CHECKING,
     Callable,
     Dict,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -248,6 +250,25 @@ class OpenSearchDescription(argparse.Namespace):
         ]
 
 
+@contextmanager
+def _handle_opensearch_errors(log: logging.Logger) -> Iterator[None]:
+    try:
+        yield
+    except et.LxmlSyntaxError as e:
+        log.critical(
+            f"an error occurred while parsing XML: {e}",
+        )
+        sys.exit(EX_DATAERR)
+    except URLError as e:
+        log.critical(
+            f"an error occurred while retrieving data from the network: {e}",
+        )
+        sys.exit(EX_UNAVAILABLE)
+    except (OSError, Exception) as e:
+        log.critical(f"{e}")
+        sys.exit(EX_UNAVAILABLE)
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     log = get_logger(PROGRAM_NAME)
     parser = _get_parser()
@@ -259,60 +280,47 @@ def main(argv: Optional[List[str]] = None) -> int:
         return EX_USAGE
 
     os_desc: OpenSearchDescription
-    try:
-        with ExitStack() as cm:
-            if not urlparse(ctx.file_or_url).scheme:
-                # Just a local file.
+    with ExitStack() as cm:
+        cm.enter_context(_handle_opensearch_errors(log))
+        if not urlparse(ctx.file_or_url).scheme:
+            # Just a local file.
+            os_desc = OpenSearchDescription(
+                cm.enter_context(open(ctx.file_or_url, "rb"))
+            )
+        else:
+            log.info(f"{ctx.file_or_url} is a URL, downloading...")
+            resp = cm.enter_context(urlopen(ctx.file_or_url))
+            content_type = resp.info().get_content_type()
+            if content_type == "application/opensearchdescription+xml":
+                os_desc = OpenSearchDescription(resp)
+            elif content_type == "text/html":
+                # TODO: use an internal finder?
+                log.info(
+                    "need to find OpenSearch description, running opensearch-discover..."
+                )
+                proc = subprocess.run(
+                    ["opensearch-discover", "--first", ctx.file_or_url],
+                    capture_output=True,
+                    text=True,
+                )
+                if proc.returncode != 0:
+                    log.critical(
+                        f"an error occurred while running opensearch-discover (code: {proc.returncode})"
+                    )
+                    # Remove extra newline (the logger adds one itself).
+                    log.critical(proc.stderr.strip("\n"))
+                    return EX_UNAVAILABLE
+                log.info(
+                    "found, downloading...",
+                )
                 os_desc = OpenSearchDescription(
-                    cm.enter_context(open(ctx.file_or_url, "rb"))
+                    cm.enter_context(urlopen(proc.stdout.strip()))
                 )
             else:
-                log.info(f"{ctx.file_or_url} is a URL, downloading...")
-                resp = cm.enter_context(urlopen(ctx.file_or_url))
-                content_type = resp.info().get_content_type()
-                if content_type == "application/opensearchdescription+xml":
-                    os_desc = OpenSearchDescription(resp)
-                elif content_type == "text/html":
-                    # TODO: use an internal finder?
-                    log.info(
-                        "need to find OpenSearch description, running opensearch-discover..."
-                    )
-                    proc = subprocess.run(
-                        ["opensearch-discover", "--first", ctx.file_or_url],
-                        capture_output=True,
-                        text=True,
-                    )
-                    if proc.returncode != 0:
-                        log.critical(
-                            f"an error occurred while running opensearch-discover (code: {proc.returncode})"
-                        )
-                        # Remove extra newline (the logger adds one itself).
-                        log.critical(proc.stderr.strip("\n"))
-                        return EX_UNAVAILABLE
-                    log.info(
-                        "found, downloading...",
-                    )
-                    os_desc = OpenSearchDescription(
-                        cm.enter_context(urlopen(proc.stdout.strip()))
-                    )
-                else:
-                    log.critical(
-                        f"Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
-                    )
-                    return EX_DATAERR
-    except et.LxmlSyntaxError as e:
-        log.critical(
-            f"an error occurred while parsing XML: {e}",
-        )
-        return EX_DATAERR
-    except URLError as e:
-        log.critical(
-            f"an error occurred while retrieving data from the network: {e}",
-        )
-        return EX_UNAVAILABLE
-    except (OSError, Exception) as e:
-        log.critical(f"{e}")
-        return EX_UNAVAILABLE
+                log.critical(
+                    f"Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
+                )
+                return EX_DATAERR
 
     # Set up for processing
     scheme, base_url, *_ = urlparse(os_desc.search_url.template.raw)
