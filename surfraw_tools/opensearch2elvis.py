@@ -4,6 +4,7 @@ import argparse
 import re
 import subprocess
 import sys
+from contextlib import ExitStack
 from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
@@ -16,6 +17,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.error import URLError
 from urllib.parse import urlparse, urlunparse
 from urllib.request import urlopen
 
@@ -252,55 +254,75 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_USAGE
 
-    # TODO: handle network errors
     os_desc: OpenSearchDescription
-    if urlparse(ctx.file_or_url).scheme:
-        print(
-            f"{PROGRAM_NAME}: {ctx.file_or_url} is a URL, downloading...",
-            file=sys.stderr,
-        )
-        with urlopen(ctx.file_or_url) as resp:
-            content_type = resp.info().get_content_type()
-            if content_type == "application/opensearchdescription+xml":
-                os_desc = OpenSearchDescription(resp)
-            elif content_type == "text/html":
-                # TODO: use an internal finder?
-                print(
-                    f"{PROGRAM_NAME}: need to find OpenSearch description, running opensearch-discover...",
-                    file=sys.stderr,
+    try:
+        with ExitStack() as cm:
+            if not urlparse(ctx.file_or_url).scheme:
+                # Just a local file.
+                os_desc = OpenSearchDescription(
+                    cm.enter_context(open(ctx.file_or_url, "rb"))
                 )
-                proc = subprocess.run(
-                    ["opensearch-discover", "--first", ctx.file_or_url],
-                    capture_output=True,
-                    text=True,
-                )
-                if proc.returncode != 0:
-                    print(
-                        f"{PROGRAM_NAME}: an error occurred while running opensearch-discover (code: {proc.returncode})",
-                        file=sys.stderr,
-                    )
-                    print(
-                        "\n".join(
-                            f"{PROGRAM_NAME}: {line}"
-                            for line in proc.stderr.split("\n")
-                        ),
-                        file=sys.stderr,
-                    )
-                    return EX_UNAVAILABLE
-                print(
-                    f"{PROGRAM_NAME}: found, downloading...", file=sys.stderr
-                )
-                with urlopen(proc.stdout.strip()) as resp:
-                    os_desc = OpenSearchDescription(resp)
             else:
                 print(
-                    f"{PROGRAM_NAME}: Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
+                    f"{PROGRAM_NAME}: {ctx.file_or_url} is a URL, downloading...",
                     file=sys.stderr,
                 )
-                return EX_DATAERR
-    else:
-        with open(ctx.file_or_url, "rb") as f:
-            os_desc = OpenSearchDescription(f)
+                resp = cm.enter_context(urlopen(ctx.file_or_url))
+                content_type = resp.info().get_content_type()
+                if content_type == "application/opensearchdescription+xml":
+                    os_desc = OpenSearchDescription(resp)
+                elif content_type == "text/html":
+                    # TODO: use an internal finder?
+                    print(
+                        f"{PROGRAM_NAME}: need to find OpenSearch description, running opensearch-discover...",
+                        file=sys.stderr,
+                    )
+                    proc = subprocess.run(
+                        ["opensearch-discover", "--first", ctx.file_or_url],
+                        capture_output=True,
+                        text=True,
+                    )
+                    if proc.returncode != 0:
+                        print(
+                            f"{PROGRAM_NAME}: an error occurred while running opensearch-discover (code: {proc.returncode})",
+                            file=sys.stderr,
+                        )
+                        print(
+                            "\n".join(
+                                f"{PROGRAM_NAME}: {line}"
+                                for line in proc.stderr.split("\n")
+                            ),
+                            file=sys.stderr,
+                        )
+                        return EX_UNAVAILABLE
+                    print(
+                        f"{PROGRAM_NAME}: found, downloading...",
+                        file=sys.stderr,
+                    )
+                    os_desc = OpenSearchDescription(
+                        cm.enter_context(urlopen(proc.stdout.strip()))
+                    )
+                else:
+                    print(
+                        f"{PROGRAM_NAME}: Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
+                        file=sys.stderr,
+                    )
+                    return EX_DATAERR
+    except et.LxmlSyntaxError as e:
+        print(
+            f"{PROGRAM_NAME}: an error occurred while parsing XML: {e}",
+            file=sys.stderr,
+        )
+        return EX_DATAERR
+    except URLError as e:
+        print(
+            f"{PROGRAM_NAME}: an error occurred while retrieving data from the network: {e}",
+            file=sys.stderr,
+        )
+        return EX_UNAVAILABLE
+    except OSError as e:
+        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        return EX_UNAVAILABLE
 
     # Set up for processing
     scheme, base_url, *_ = urlparse(os_desc.search_url.template.raw)
