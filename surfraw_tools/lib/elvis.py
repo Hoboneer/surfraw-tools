@@ -244,8 +244,6 @@ class Elvis(argparse.Namespace):
         if (
             self.mappings or self.list_mappings
         ) and self.query_parameter is None:
-            # TODO: raise `OptionResolutionError`?
-            # raise ValueError("mapping variables without defining a query parameter is forbidden")
             raise OptionResolutionError(
                 "mapping variables without defining a query parameter is forbidden"
             )

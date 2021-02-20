@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 from functools import wraps
 from os import EX_OK, EX_OSERR, EX_USAGE

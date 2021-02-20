@@ -21,30 +21,15 @@ from typing import (
     Iterator,
     List,
     NewType,
-    Optional,
     Sequence,
     Set,
     Type,
     TypeVar,
-    Union,
     ValuesView,
     cast,
 )
 
 from surfraw_tools._package import __version__
-from surfraw_tools.lib.cliopts import (
-    AliasOption,
-    AnythingOption,
-    BoolOption,
-    CollapseOption,
-    DescribeOption,
-    EnumOption,
-    FlagOption,
-    InlineOption,
-    ListOption,
-    MappingOption,
-    MetavarOption,
-)
 from surfraw_tools.lib.options import (
     SurfrawAlias,
     SurfrawAnything,

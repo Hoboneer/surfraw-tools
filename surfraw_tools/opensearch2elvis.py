@@ -27,6 +27,7 @@ if TYPE_CHECKING:
 # No stubs.
 from lxml import etree as et  # type: ignore
 
+from surfraw_tools.lib.cliopts import DescribeOption, MetavarOption
 from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, parse_elvis_name
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import SurfrawEnum
@@ -320,7 +321,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             file=sys.stderr,
         )
         return EX_UNAVAILABLE
-    except OSError as e:
+    except (OSError, Exception) as e:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_UNAVAILABLE
 
@@ -352,6 +353,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             "inputEncoding",
             "outputEncoding",
         ):
+            # TODO: handle this
             pass
         elif param.name == "language":
             if not os_desc.languages:
