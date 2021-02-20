@@ -10,6 +10,7 @@ from typing import (
     IO,
     TYPE_CHECKING,
     Callable,
+    Dict,
     List,
     Mapping,
     Optional,
@@ -30,7 +31,11 @@ from lxml import etree as et  # type: ignore
 from surfraw_tools.lib.cliopts import DescribeOption, MetavarOption
 from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, parse_elvis_name
 from surfraw_tools.lib.elvis import Elvis
-from surfraw_tools.lib.options import SurfrawEnum
+from surfraw_tools.lib.options import (
+    SurfrawAnything,
+    SurfrawEnum,
+    SurfrawVarOption,
+)
 
 PROGRAM_NAME: Final = "opensearch2elvis"
 
@@ -105,15 +110,6 @@ class OpenSearchURLTemplate(argparse.Namespace):
             self.params_map.get("searchTerms") is None
             or self.params_map["searchTerms"].optional
         ):
-        # Get special params:
-        #   - searchTerms (query)
-        #   - count (results)
-        #   - startIndex: "anything"
-        #   - startPage: "anything"
-        #   - language: enum of supported languages
-        #   - inputEncoding: "anything"
-        #   - outputEncoding: "anything"
-        # how should the {input,output}Encoding params be supported?  should they be validated?  ("anything" options for now)
             raise ValueError(
                 "the searchTerms parameter must exist and must *not* be optional"
             )
@@ -126,14 +122,6 @@ class OpenSearchURLTemplate(argparse.Namespace):
         # Collected in order of occurrence
         names_to_vars = {
             "searchTerms": "${_}",
-            "count": namespacer("results"),
-            # TODO: what option names should they be?
-            #'startIndex':
-            #'startPage':
-            #'startIndex':
-            "language": namespacer("language"),
-            #'inputEncoding':
-            #'outputEncoding':
         }
         if varname_map:
             names_to_vars.update(varname_map)
@@ -353,27 +341,29 @@ def main(argv: Optional[List[str]] = None) -> int:
         print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
         return EX_USAGE
 
+    varnames: Dict[str, str] = {}
+    opt: SurfrawVarOption
     for param in os_desc.search_url.params:
         if param.name == "count":
+            varnames["count"] = elvis.namespacer("results")
             elvis.add_results_option()
-        elif param.name in (
-            "startIndex",
-            "startPage",
-            "inputEncoding",
-            "outputEncoding",
-        ):
-            # TODO: handle this
-            pass
         elif param.name == "language":
+            varnames["language"] = elvis.namespacer("language")
             if not os_desc.languages:
-                # No need for enum
+                # No need for enum.
                 elvis.add_language_option()
             else:
+                langs = os_desc.languages.copy()
+                for i, lang in enumerate(langs):
+                    if lang == "*":
+                        langs[i] = "any"
+
                 ctx.options.append(
                     SurfrawEnum(
                         param.name,
-                        default=os_desc.languages[0],
-                        values=os_desc.languages,
+                        # Should the default be any?  That's what the spec says.  Strange that it doesn't allow websites to make their own default though.
+                        default=langs[0],
+                        values=langs,
                     )
                 )
                 ctx.metavars.append(MetavarOption(param.name, "ISOCODE"))
@@ -383,6 +373,46 @@ def main(argv: Optional[List[str]] = None) -> int:
                         "Two letter language code (resembles ISO country codes)",
                     )
                 )
+        elif param.name in ("startIndex", "startPage"):
+            if param.name == "startIndex":
+                default = os_desc.search_url.index_offset
+                desc = "Offset of first result"
+            else:
+                default = os_desc.search_url.page_offset
+                desc = "Which page of results to show"
+
+            opt = SurfrawAnything(param.name.lower(), str(default))
+            varnames[param.name] = elvis.namespacer(opt.name)
+
+            ctx.options.append(opt)
+            ctx.metavars.append(MetavarOption(opt.name, "NUM"))
+            ctx.descriptions.append(DescribeOption(opt.name, desc))
+        elif param.name in ("inputEncoding", "outputEncoding"):
+            if param.name == "inputEncoding":
+                encodings = os_desc.input_encodings
+                desc = "Specify how search terms are encoded"
+            else:
+                encodings = os_desc.output_encodings
+                desc = "Request output encoded as ENC"
+
+            default_encoding = "UTF-8"
+            try:
+                if default_encoding not in encodings:
+                    default_encoding = encodings[0]
+            except IndexError:
+                # FIXME: is our behaviour compliant with the spec?
+                print(
+                    f"{PROGRAM_NAME}: OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
+                    file=sys.stderr,
+                )
+                return EX_DATAERR
+            opt = SurfrawEnum(param.name.lower(), default_encoding, encodings)
+            varnames[param.name] = elvis.namespacer(opt.name)
+
+            ctx.options.append(opt)
+            ctx.metavars.append(MetavarOption(opt.name, "ENCODING"))
+            ctx.descriptions.append(DescribeOption(opt.name, desc))
+        # FIXME: support non-OpenSearch parameters
 
     # No need to call `elvis.resolve_options` because not parsing elvis options from CLI.
 
@@ -391,7 +421,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Resolve `search_url` with correct elvis variables.
     _, __, *rest = urlparse(
-        os_desc.search_url.template.get_surfraw_template(elvis.namespacer)
+        os_desc.search_url.template.get_surfraw_template(
+            elvis.namespacer, varname_map=varnames
+        )
     )
     template_vars["search_url"] = urlunparse((scheme, base_url, *rest))
 
