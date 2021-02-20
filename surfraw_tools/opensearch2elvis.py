@@ -4,7 +4,7 @@ import argparse
 import re
 import subprocess
 import sys
-from os import EX_OK, EX_OSERR, EX_USAGE, EX_UNAVAILABLE
+from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
     TYPE_CHECKING,
@@ -293,10 +293,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 with urlopen(proc.stdout.strip()) as resp:
                     os_desc = OpenSearchDescription(resp)
             else:
-                # ERROR
-                raise NotImplementedError(
-                    "unsupported content type; needs to be OpenSearch description or HTML (to find one)"
+                print(
+                    f"{PROGRAM_NAME}: Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
+                    file=sys.stderr,
                 )
+                return EX_DATAERR
     else:
         with open(ctx.file_or_url, "rb") as f:
             os_desc = OpenSearchDescription(f)
