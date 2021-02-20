@@ -96,14 +96,15 @@ class OpenSearchURLTemplate(argparse.Namespace):
         ]
         self.params_map: Final = {param.name: param for param in self.params}
         if len(self.params) != len(self.params_map):
-            # TODO: params inside twice
-            raise NotImplementedError("duplicated params in template")
+            # TODO: remove this restriction?
+            raise ValueError(
+                "parameters may only be used once per template URL"
+            )
         # Check special params
         if (
             self.params_map.get("searchTerms") is None
             or self.params_map["searchTerms"].optional
         ):
-            raise NotImplementedError
         # Get special params:
         #   - searchTerms (query)
         #   - count (results)
@@ -113,6 +114,9 @@ class OpenSearchURLTemplate(argparse.Namespace):
         #   - inputEncoding: "anything"
         #   - outputEncoding: "anything"
         # how should the {input,output}Encoding params be supported?  should they be validated?  ("anything" options for now)
+            raise ValueError(
+                "the searchTerms parameter must exist and must *not* be optional"
+            )
 
     def get_surfraw_template(
         self,
@@ -185,7 +189,10 @@ class OpenSearchDescription(argparse.Namespace):
         self._root: Final = self._xml.getroot()
         root_qname = et.QName(self._root.tag)
         if root_qname != et.QName(NS_OPENSEARCH_1_1, "OpenSearchDescription"):
-            raise NotImplementedError
+            # TODO: say bare namespace of root needs to be the 1.1 namespace?
+            raise ValueError(
+                "only OpenSearch version 1.1 descriptions are supported"
+            )
 
         # self.raw_shortname: Final = self._root.find(
         #    et.QName(NS_OPENSEARCH_1_1, "ShortName")
@@ -211,10 +218,12 @@ class OpenSearchDescription(argparse.Namespace):
             for param in os_url.template.params:
                 # unqualified params (`None` prefix) implicitly have opensearch namespace
                 if param.prefix != correct_prefix or param.prefix is not None:
-                    raise NotImplementedError
+                    raise ValueError(
+                        "only OpenSearch parameters are supported at the moment"
+                    )
             self.urls.append(os_url)
         if not self.urls:
-            raise NotImplementedError
+            raise ValueError("no Url elements found in OpenSearch description")
 
         # For ease of access
         self.search_url: OpenSearchURL
@@ -232,7 +241,7 @@ class OpenSearchDescription(argparse.Namespace):
             ) or url.type == "application/x-suggestions+xml":
                 self.xml_suggestions_url = url
         if not hasattr(self, "search_url"):
-            raise NotImplementedError("search url must exist")
+            raise ValueError("search url must exist")
 
         # Should they be validated?
         self.languages: List[str] = [
