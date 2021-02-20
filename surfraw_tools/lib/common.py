@@ -9,6 +9,7 @@ Also includes a parser from `argparse` to base command-line programs on.
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 from argparse import _VersionAction
 from itertools import chain
@@ -179,3 +180,15 @@ _VERSION_FORMAT_ACTION: Final = cast(
     ),
 )
 VERSION_FORMAT_STRING: Final = _VERSION_FORMAT_ACTION.version
+
+
+def get_logger(name: str) -> logging.Logger:
+    logger = logging.getLogger(name)
+    logger.setLevel(logging.INFO)
+
+    handler = logging.StreamHandler()
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(logging.Formatter("{name}: {message}", style="{"))
+
+    logger.addHandler(handler)
+    return logger

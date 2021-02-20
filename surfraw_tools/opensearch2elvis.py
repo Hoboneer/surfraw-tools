@@ -29,7 +29,12 @@ if TYPE_CHECKING:
 from lxml import etree as et  # type: ignore
 
 from surfraw_tools.lib.cliopts import DescribeOption, MetavarOption
-from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, parse_elvis_name
+from surfraw_tools.lib.common import (
+    BASE_PARSER,
+    _ElvisName,
+    get_logger,
+    parse_elvis_name,
+)
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
     SurfrawAnything,
@@ -244,12 +249,13 @@ class OpenSearchDescription(argparse.Namespace):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
+    log = get_logger(PROGRAM_NAME)
     parser = _get_parser()
     ctx = OpenSearchContext()
     try:
         parser.parse_args(argv, namespace=ctx)
     except Exception as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_USAGE
 
     os_desc: OpenSearchDescription
@@ -261,19 +267,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                     cm.enter_context(open(ctx.file_or_url, "rb"))
                 )
             else:
-                print(
-                    f"{PROGRAM_NAME}: {ctx.file_or_url} is a URL, downloading...",
-                    file=sys.stderr,
-                )
+                log.info(f"{ctx.file_or_url} is a URL, downloading...")
                 resp = cm.enter_context(urlopen(ctx.file_or_url))
                 content_type = resp.info().get_content_type()
                 if content_type == "application/opensearchdescription+xml":
                     os_desc = OpenSearchDescription(resp)
                 elif content_type == "text/html":
                     # TODO: use an internal finder?
-                    print(
-                        f"{PROGRAM_NAME}: need to find OpenSearch description, running opensearch-discover...",
-                        file=sys.stderr,
+                    log.info(
+                        "need to find OpenSearch description, running opensearch-discover..."
                     )
                     proc = subprocess.run(
                         ["opensearch-discover", "--first", ctx.file_or_url],
@@ -281,45 +283,35 @@ def main(argv: Optional[List[str]] = None) -> int:
                         text=True,
                     )
                     if proc.returncode != 0:
-                        print(
-                            f"{PROGRAM_NAME}: an error occurred while running opensearch-discover (code: {proc.returncode})",
-                            file=sys.stderr,
+                        log.critical(
+                            f"an error occurred while running opensearch-discover (code: {proc.returncode})"
                         )
-                        print(
-                            "\n".join(
-                                f"{PROGRAM_NAME}: {line}"
-                                for line in proc.stderr.split("\n")
-                            ),
-                            file=sys.stderr,
-                        )
+                        # Remove extra newline (the logger adds one itself).
+                        log.critical(proc.stderr.strip("\n"))
                         return EX_UNAVAILABLE
-                    print(
-                        f"{PROGRAM_NAME}: found, downloading...",
-                        file=sys.stderr,
+                    log.info(
+                        "found, downloading...",
                     )
                     os_desc = OpenSearchDescription(
                         cm.enter_context(urlopen(proc.stdout.strip()))
                     )
                 else:
-                    print(
-                        f"{PROGRAM_NAME}: Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
-                        file=sys.stderr,
+                    log.critical(
+                        f"Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
                     )
                     return EX_DATAERR
     except et.LxmlSyntaxError as e:
-        print(
-            f"{PROGRAM_NAME}: an error occurred while parsing XML: {e}",
-            file=sys.stderr,
+        log.critical(
+            f"an error occurred while parsing XML: {e}",
         )
         return EX_DATAERR
     except URLError as e:
-        print(
-            f"{PROGRAM_NAME}: an error occurred while retrieving data from the network: {e}",
-            file=sys.stderr,
+        log.critical(
+            f"an error occurred while retrieving data from the network: {e}",
         )
         return EX_UNAVAILABLE
     except (OSError, Exception) as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_UNAVAILABLE
 
     # Set up for processing
@@ -338,7 +330,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             generator=PROGRAM_NAME,
         )
     except Exception as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_USAGE
 
     varnames: Dict[str, str] = {}
@@ -401,8 +393,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                     default_encoding = encodings[0]
             except IndexError:
                 # FIXME: is our behaviour compliant with the spec?
-                print(
-                    f"{PROGRAM_NAME}: OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
+                log.critical(
+                    f"OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
                     file=sys.stderr,
                 )
                 return EX_DATAERR
@@ -432,6 +424,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         elvis.write(template_vars)
     except OSError as e:
         # Don't delete tempfile to allow for inspection on write errors.
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_OSERR
     return EX_OK

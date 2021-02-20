@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 import argparse
-import sys
 from functools import wraps
 from os import EX_OK, EX_OSERR, EX_USAGE
 from typing import (
@@ -38,6 +37,7 @@ from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
     _ElvisName,
+    get_logger,
     parse_elvis_name,
 )
 from surfraw_tools.lib.elvis import Elvis
@@ -296,12 +296,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
     """
+    log = get_logger(PROGRAM_NAME)
     parser = _get_parser()
     ctx = Context()
     try:
         parser.parse_args(argv, namespace=ctx)
     except Exception as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_USAGE
 
     # TODO: handle exceptions PROPERLY
@@ -320,7 +321,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             generator=PROGRAM_NAME,
         )
     except Exception as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_USAGE
 
     # Transfer relevant data to `Elvis` object.
@@ -344,7 +345,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             ctx.unresolved_aliases,
         )
     except OptionResolutionError as e:
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_USAGE
 
     # Generate the elvis.
@@ -355,6 +356,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         elvis.write(template_vars, ctx.outfile)
     except OSError as e:
         # Don't delete tempfile to allow for inspection on write errors.
-        print(f"{PROGRAM_NAME}: {e}", file=sys.stderr)
+        log.critical(f"{e}")
         return EX_OSERR
     return EX_OK
