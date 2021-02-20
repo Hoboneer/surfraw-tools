@@ -4,5 +4,9 @@
 #
 #    pip-compile --output-file=base.txt base.in
 #
-jinja2==2.11.3            # via -r base.in
-markupsafe==1.1.1         # via jinja2
+jinja2==2.11.3
+    # via -r base.in
+lxml==4.6.2
+    # via -r base.in
+markupsafe==1.1.1
+    # via jinja2

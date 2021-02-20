@@ -9,6 +9,7 @@ Also includes a parser from `argparse` to base command-line programs on.
 from __future__ import annotations
 
 import argparse
+import os
 from argparse import _VersionAction
 from itertools import chain
 from typing import (
@@ -20,30 +21,15 @@ from typing import (
     Iterator,
     List,
     NewType,
-    Optional,
     Sequence,
     Set,
     Type,
     TypeVar,
-    Union,
     ValuesView,
     cast,
 )
 
 from surfraw_tools._package import __version__
-from surfraw_tools.lib.cliopts import (
-    AliasOption,
-    AnythingOption,
-    BoolOption,
-    CollapseOption,
-    DescribeOption,
-    EnumOption,
-    FlagOption,
-    InlineOption,
-    ListOption,
-    MappingOption,
-    MetavarOption,
-)
 from surfraw_tools.lib.options import (
     SurfrawAlias,
     SurfrawAnything,
@@ -165,6 +151,13 @@ class _SurfrawOptionContainer(argparse.Namespace):
 
 
 _ElvisName = NewType("_ElvisName", str)
+
+
+def parse_elvis_name(name: str) -> _ElvisName:
+    dirs, _ = os.path.split(name)
+    if dirs:
+        raise argparse.ArgumentTypeError("elvis names may not be paths")
+    return _ElvisName(name)
 
 
 # Make sure that the resultant string is a grammatically-correct list.
