@@ -398,7 +398,6 @@ def main(argv: Optional[List[str]] = None) -> int:
                 # FIXME: is our behaviour compliant with the spec?
                 log.critical(
                     f"OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
-                    file=sys.stderr,
                 )
                 return EX_DATAERR
             opt = SurfrawEnum(param.name.lower(), default_encoding, encodings)

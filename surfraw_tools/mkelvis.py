@@ -86,6 +86,7 @@ def _get_parser() -> argparse.ArgumentParser:
         "--description",
         help="description for the elvis, excluding the domain name in parentheses",
     )
+
     _search_args_group = parser.add_mutually_exclusive_group()
     _search_args_group.add_argument(
         "--query-parameter",
@@ -98,6 +99,7 @@ def _get_parser() -> argparse.ArgumentParser:
         dest="append_search_args",
         help="don't automatically append search to url",
     )
+
     parser.add_argument(
         "--output",
         "-o",
