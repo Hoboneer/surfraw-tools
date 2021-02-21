@@ -36,6 +36,7 @@ from surfraw_tools.lib.common import (
     _ElvisName,
     get_logger,
     parse_elvis_name,
+    set_logger_verbosity,
 )
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
@@ -280,6 +281,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         return EX_USAGE
     except SystemExit:
         return EX_USAGE
+    set_logger_verbosity(log, quieter=ctx.quiet, louder=ctx.verbose)
 
     os_desc: OpenSearchDescription
     with ExitStack() as cm:

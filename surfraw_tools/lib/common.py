@@ -180,6 +180,8 @@ _VERSION_FORMAT_ACTION: Final = cast(
     ),
 )
 VERSION_FORMAT_STRING: Final = _VERSION_FORMAT_ACTION.version
+BASE_PARSER.add_argument("--verbose", "-v", action="count", default=0)
+BASE_PARSER.add_argument("--quiet", "-q", action="count", default=0)
 
 
 def get_logger(name: str) -> logging.Logger:
@@ -192,3 +194,19 @@ def get_logger(name: str) -> logging.Logger:
 
     logger.addHandler(handler)
     return logger
+
+
+def clamp(n: int, low: int, high: int) -> int:
+    if low >= high:
+        raise ValueError("`low` must be lower than `high`")
+    return max(low, min(n, high))
+
+
+def set_logger_verbosity(
+    log: logging.Logger, quieter: int, louder: int
+) -> None:
+    """Set the appropriate logging level from -q and -v counts."""
+    curr_level = log.getEffectiveLevel()
+    curr_level += quieter * 10
+    curr_level -= louder * 10
+    log.setLevel(clamp(curr_level, low=logging.DEBUG, high=logging.CRITICAL))
