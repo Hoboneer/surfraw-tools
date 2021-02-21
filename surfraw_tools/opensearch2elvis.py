@@ -50,7 +50,7 @@ PROGRAM_NAME: Final = "opensearch2elvis"
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         PROGRAM_NAME,
-        description="generate an elvis for an OpenSearch-enabled website",
+        description="generate an elvis for an OpenSearch-enabled website (v1.1, Draft 6)",
         parents=[BASE_PARSER],
     )
     parser.add_argument(
