@@ -19,6 +19,7 @@ from typing import (
     Union,
     cast,
 )
+from urllib.parse import urlparse, urlunparse
 
 from surfraw_tools.lib.cliopts import (
     AliasOption,
@@ -298,14 +299,30 @@ def main(argv: Optional[List[str]] = None) -> int:
     """
     ctx, log = setup_cli(PROGRAM_NAME, argv, _get_parser(), Context())
 
+    # Accept URLs *with* XOR *without* schemes.
+    base_parts = urlparse(ctx.base_url)
+    search_parts = urlparse(ctx.search_url)
+    if base_parts.scheme != search_parts.scheme:
+        log.critical("the schemes of both URLs must be the same")
+        return EX_USAGE
+    elif base_parts.scheme == "":
+        scheme = "http" if ctx.insecure else "https"
+        new_base = ctx.base_url
+        new_search = ctx.search_url
+    else:
+        scheme = base_parts.scheme
+        # `urlunparse` is a bit dumb, so just strip the leading "//".
+        new_base = urlunparse(("", *base_parts[1:])).lstrip("/")
+        new_search = urlunparse(("", *search_parts[1:])).lstrip("/")
+
     # TODO: handle exceptions PROPERLY
     # TODO: handle `--num-tabs` error (with nice error message): EX_USAGE
     try:
         elvis = Elvis(
             ctx.name,
-            ctx.base_url,
-            ctx.search_url,
-            scheme="http" if ctx.insecure else "https",
+            new_base,
+            new_search,
+            scheme=scheme,
             description=ctx.description,
             query_parameter=ctx.query_parameter,
             append_search_args=ctx.append_search_args,
