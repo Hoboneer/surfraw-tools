@@ -266,7 +266,7 @@ class Context(argparse.Namespace):
 
         self.insecure: bool = False
         self.num_tabs: int = 1
-        self.outfile: str = ""
+        self.outfile: Optional[str] = None
 
         # Option containers
         self.unresolved_varopts: List[
