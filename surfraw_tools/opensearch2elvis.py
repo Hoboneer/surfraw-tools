@@ -34,9 +34,8 @@ from surfraw_tools.lib.cliopts import DescribeOption, MetavarOption
 from surfraw_tools.lib.common import (
     BASE_PARSER,
     _ElvisName,
-    get_logger,
     parse_elvis_name,
-    set_logger_verbosity,
+    setup_cli,
 )
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
@@ -271,17 +270,9 @@ def _handle_opensearch_errors(log: logging.Logger) -> Iterator[None]:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    log = get_logger(PROGRAM_NAME)
-    parser = _get_parser()
-    ctx = OpenSearchContext()
-    try:
-        parser.parse_args(argv, namespace=ctx)
-    except Exception as e:
-        log.critical(f"{e}")
-        return EX_USAGE
-    except SystemExit:
-        return EX_USAGE
-    set_logger_verbosity(log, quieter=ctx.quiet, louder=ctx.verbose)
+    ctx, log = setup_cli(
+        PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
+    )
 
     os_desc: OpenSearchDescription
     with ExitStack() as cm:

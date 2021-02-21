@@ -11,8 +11,10 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import sys
 from argparse import _VersionAction
 from itertools import chain
+from os import EX_USAGE
 from typing import (
     TYPE_CHECKING,
     ClassVar,
@@ -22,8 +24,10 @@ from typing import (
     Iterator,
     List,
     NewType,
+    Optional,
     Sequence,
     Set,
+    Tuple,
     Type,
     TypeVar,
     ValuesView,
@@ -210,3 +214,23 @@ def set_logger_verbosity(
     curr_level += quieter * 10
     curr_level -= louder * 10
     log.setLevel(clamp(curr_level, low=logging.DEBUG, high=logging.CRITICAL))
+
+
+def setup_cli(
+    progname: str,
+    argv: Optional[List[str]],
+    parser: argparse.ArgumentParser,
+    ctx: argparse.Namespace,
+) -> Tuple[argparse.Namespace, logging.Logger]:
+    """Set up logging and parse args, also returning the context object (along with the logger) for convenience."""
+    log = get_logger(progname)
+    try:
+        parser.parse_args(argv, namespace=ctx)
+    except Exception as e:
+        log.critical(f"{e}")
+        sys.exit(EX_USAGE)
+    except SystemExit:
+        # Override exit code (it would have been 2).
+        sys.exit(EX_USAGE)
+    set_logger_verbosity(log, quieter=ctx.quiet, louder=ctx.verbose)
+    return (ctx, log)
