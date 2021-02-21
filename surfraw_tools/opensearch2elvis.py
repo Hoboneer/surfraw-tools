@@ -357,10 +357,8 @@ def main(argv: Optional[List[str]] = None) -> int:
                     # Should the default be any?  That's what the spec says.  Strange that it doesn't allow websites to make their own default though.
                     default=langs[0],
                     values=langs,
-                )
-                opt.metavar = "ISOCODE"
-                opt.description = (
-                    "Two letter language code (resembles ISO country codes)"
+                    metavar="ISOCODE",
+                    description="Two letter language code (resembles ISO country codes)",
                 )
                 ctx.options.append(opt)
         elif param.name in ("startIndex", "startPage"):
@@ -371,12 +369,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                 default = os_desc.search_url.page_offset
                 desc = "Which page of results to show"
 
-            opt = SurfrawAnything(param.name.lower(), str(default))
-            varnames[param.name] = elvis.namespacer(opt.name)
-
-            opt.metavar = "NUM"
-            opt.description = desc
+            opt = SurfrawAnything(
+                param.name.lower(),
+                str(default),
+                metavar="NUM",
+                description=desc,
+            )
             ctx.options.append(opt)
+            varnames[param.name] = elvis.namespacer(opt.name)
         elif param.name in ("inputEncoding", "outputEncoding"):
             if param.name == "inputEncoding":
                 encodings = os_desc.input_encodings
@@ -395,12 +395,16 @@ def main(argv: Optional[List[str]] = None) -> int:
                     f"OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
                 )
                 return EX_DATAERR
-            opt = SurfrawEnum(param.name.lower(), default_encoding, encodings)
-            varnames[param.name] = elvis.namespacer(opt.name)
 
-            opt.metavar = "ENCODING"
-            opt.description = desc
+            opt = SurfrawEnum(
+                param.name.lower(),
+                default_encoding,
+                encodings,
+                metavar="ENCODING",
+                description=desc,
+            )
             ctx.options.append(opt)
+            varnames[param.name] = elvis.namespacer(opt.name)
         # FIXME: support non-OpenSearch parameters
 
     # No need to call `elvis.resolve_options` because not parsing elvis options from CLI.

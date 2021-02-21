@@ -72,7 +72,13 @@ class SurfrawOption:
     typename: ClassVar[str]
     typename_plural: ClassVar[str]
 
-    def __init__(self, name: str):
+    def __init__(
+        self,
+        name: str,
+        *,
+        metavar: Optional[str] = None,
+        description: Optional[str] = None,
+    ):
         if name in _FORBIDDEN_OPTION_NAMES:
             raise ValueError(
                 f"option name '{name}' is global, which cannot be overriden by elvi"
@@ -80,8 +86,8 @@ class SurfrawOption:
         self.name: Final = name
         self.aliases: Final[weakref.WeakSet[SurfrawAlias]] = weakref.WeakSet()
 
-        self.metavar: Optional[str] = None
-        self.description: str = (
+        self.metavar: Optional[str] = metavar
+        self.description: str = description or (
             f"A {self.__class__.typename} option for '{self.name}'"
         )
 
@@ -113,14 +119,14 @@ class SurfrawVarOption(SurfrawOption):
 
     flag_value_validator: ClassVar[_FlagValidator]
 
-    def __init__(self, name: str):
-        super().__init__(name)
+    def __init__(self, name: str, **kwargs: Any):
+        super().__init__(name, **kwargs)
 
         # Flags should be listed in the order that they were defined in the command line.
         self.flags: Final[List[SurfrawFlag]] = []
         self._resolved_flag_values: Final[List[SurfrawFlag]] = []
 
-        self.metavar = self.name.upper()
+        self.metavar = self.metavar or self.name.upper()
 
     def __init_subclass__(cls) -> None:
         """Add relevant subclasses to `SurfrawVarOption.typenames`."""
@@ -179,12 +185,19 @@ class SurfrawFlag(SurfrawOption):
     typename = "flag"
     typename_plural = "flags"
 
-    def __init__(self, name: str, target: SurfrawVarOption, value: Any):
-        super().__init__(name)
+    def __init__(
+        self, name: str, target: SurfrawVarOption, value: Any, **kwargs: Any
+    ):
+        super().__init__(name, **kwargs)
         self.target: Final = target
         self.value: Final = value
         # Flags don't take arguments so a metavar would be useless.
         # For clarity, their description also can't be changed.
+        if "metavar" in kwargs:
+            raise ValueError("flags can't have metavars")
+        elif "description" in kwargs:
+            # At least not yet.  I want flags to clearly show what they're aliases for.
+            raise ValueError("flags can't have custom descriptions")
         self.metavar = None
         self.description = f"An alias for -{self.target.name}={self.value}"
 
@@ -205,8 +218,8 @@ class SurfrawBool(SurfrawVarOption):
     # Don't need to make new flag objects after resolving.
     flag_value_validator = validate_bool
 
-    def __init__(self, name: str, default: str):
-        super().__init__(name)
+    def __init__(self, name: str, default: str, **kwargs: Any):
+        super().__init__(name, **kwargs)
         self.default: Final = default
 
 
@@ -220,8 +233,10 @@ class SurfrawEnum(SurfrawListType):
 
     flag_value_validator = validate_enum_value
 
-    def __init__(self, name: str, default: str, values: List[str]):
-        super().__init__(name)
+    def __init__(
+        self, name: str, default: str, values: List[str], **kwargs: Any
+    ):
+        super().__init__(name, **kwargs)
         # Ensure enum is consistent.
         if not values:
             raise ValueError(
@@ -234,8 +249,10 @@ class SurfrawEnum(SurfrawListType):
         self.default: Final = default
         self.values: Final = values
 
-        # "A enum" is incorrect.
-        self.description = re.sub("^A ", "An ", self.description)
+        # Can't risk messing up a custom description.
+        if "description" not in kwargs:
+            # "A enum" is incorrect.
+            self.description = re.sub("^A ", "An ", self.description)
 
     def _post_resolve_flags(self) -> None:
         vals = set(self.values)
@@ -256,11 +273,12 @@ class SurfrawAnything(SurfrawListType):
     # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
 
-    def __init__(self, name: str, default: str):
-        super().__init__(name)
+    def __init__(self, name: str, default: str, **kwargs: Any):
+        super().__init__(name, **kwargs)
         self.default: Final = default
         # Calling these 'anything' options in the help output is unclear.
-        self.description = f"An unchecked option for '{self.name}'"
+        if "description" not in kwargs:
+            self.description = f"An unchecked option for '{self.name}'"
 
 
 # This class is not instantiated normally... maybe prepend name with underscore?
@@ -286,26 +304,11 @@ class SurfrawSpecial(SurfrawVarOption):
             "don't call `flag_value_validator` of `SurfrawSpecial` directly"
         )
 
-    def __init__(self, name: str, default: str):
-        super().__init__(name)
+    def __init__(self, name: str, default: str, **kwargs: Any):
+        super().__init__(name, **kwargs)
         self.default: Final = default
-
-        # Set metadata specific to each kind of special option.
-        if self.name == "results":
-            # Match the rest of the elvi's metavars for -results=
-            self.metavar = "NUM"
-            self.description = "Number of search results returned"
-        elif self.name == "language":
-            # Match the wikimedia elvi
-            self.metavar = "ISOCODE"
-            self.description = (
-                "Two letter language code (resembles ISO country codes)"
-            )
-        else:
-            raise ValueError(
-                f"special options cannot have the name '{self.name}'"
-            )
-        # Use default metavar and description otherwise.
+        if self.name not in ("results", "language"):
+            raise ValueError(f"'{self.name}' is an unsupported special option")
 
     def resolve_flags(self) -> None:
         """Resolve flags for each special option kind."""
@@ -347,13 +350,15 @@ class SurfrawList(SurfrawVarOption):
         type: Type[SurfrawListType],
         defaults: List[str],
         values: List[str],
+        **kwargs: Any,
     ):
-        super().__init__(name)
+        super().__init__(name, **kwargs)
         self.type: Final = type
         self.defaults: Final = defaults
         self.values: Final = values
 
-        self.description = f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'"
+        if "description" not in kwargs:
+            self.description = f"A repeatable (cumulative) '{self.type.typename}' list option for '{self.name}'"
 
         # Ensure list is consistent.
         if issubclass(self.type, SurfrawEnum):
@@ -391,7 +396,15 @@ class SurfrawAlias(SurfrawOption):
     typename_plural = "aliases"
 
     def __init__(
-        self, name: str, target: Union[SurfrawVarOption, SurfrawFlag]
+        self,
+        name: str,
+        target: Union[SurfrawVarOption, SurfrawFlag],
+        **kwargs: Any,
     ):
-        super().__init__(name)
+        super().__init__(name, **kwargs)
         self.target: Final = target
+        if "metavar" in kwargs:
+            raise ValueError("aliases can't have metavars")
+        elif "description" in kwargs:
+            # It doesn't make sense for aliases: each appears alongside its parent option.
+            raise ValueError("aliases can't have custom descriptions")

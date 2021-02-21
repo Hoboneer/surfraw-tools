@@ -360,7 +360,12 @@ class Elvis(argparse.Namespace):
             # TODO: what error?
             raise NotImplementedError("cannot have two -results=NUM options")
         self.options.append(
-            SurfrawSpecial("results", default="$SURFRAW_results")
+            SurfrawSpecial(
+                "results",
+                default="$SURFRAW_results",
+                metavar="NUM",
+                description="Number of search results returned",
+            )
         )
         self._have_results_option = True
 
@@ -372,7 +377,12 @@ class Elvis(argparse.Namespace):
             )
         # If `SURFRAW_lang` is empty or unset, assume English.
         self.options.append(
-            SurfrawSpecial("language", default="${SURFRAW_lang:=en}")
+            SurfrawSpecial(
+                "language",
+                default="${SURFRAW_lang:=en}",
+                metavar="ISOCODE",
+                description="Two letter language code (resembles ISO country codes)",
+            )
         )
         self._have_results_option = True
 
