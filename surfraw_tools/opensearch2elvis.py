@@ -320,6 +320,9 @@ def _handle_opensearch_errors(log: logging.Logger) -> Iterator[None]:
             f"an error occurred while retrieving data from the network: {e}",
         )
         sys.exit(EX_UNAVAILABLE)
+    except AssertionError:
+        # Don't fail silently, especially here!
+        raise
     except (OSError, Exception) as e:
         log.critical(f"{e}")
         sys.exit(EX_UNAVAILABLE)
