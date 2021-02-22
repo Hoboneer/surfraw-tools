@@ -83,7 +83,7 @@ class OpenSearchParameter(argparse.Namespace):
 
 
 _TEMPLATE_PARAM_RE: Final = re.compile(
-    r"{(?:(?P<prefix>):)?(?P<name>[^:&=/?]+)(?P<optional>\?)?}"
+    r"{(?:(?P<prefix>[^:&=/?]+):)?(?P<name>[^:&=/?]+)(?P<optional>\?)?}"
 )
 
 
