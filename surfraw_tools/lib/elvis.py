@@ -67,13 +67,6 @@ from surfraw_tools.lib.validation import (
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]
 
 
-def _make_namespace(prefix: str) -> Callable[[str], str]:
-    def prefixer(name: str) -> str:
-        return f"{prefix}_{name}"
-
-    return prefixer
-
-
 @contextfilter
 def _jinja_namespacer(ctx: JContext, basename: str) -> str:
     return f"SURFRAW_{ctx['name']}_{basename}"
@@ -167,7 +160,9 @@ class Elvis(argparse.Namespace):
         self._have_language_option: bool = False
 
         self.env = self._init_get_env()
-        self.namespacer = _make_namespace(f"SURFRAW_{self.name}")
+
+    def namespacer(self, name: str) -> str:
+        return f"SURFRAW_{self.name}_{name}"
 
     @staticmethod
     def _init_get_env() -> Environment:
