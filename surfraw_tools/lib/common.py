@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import argparse
 import logging
-import os
 import sys
 from argparse import _VersionAction
 from itertools import chain
@@ -156,13 +155,6 @@ class _SurfrawOptionContainer(argparse.Namespace):
 
 
 _ElvisName = NewType("_ElvisName", str)
-
-
-def parse_elvis_name(name: str) -> _ElvisName:
-    dirs, _ = os.path.split(name)
-    if dirs:
-        raise argparse.ArgumentTypeError("elvis names may not be paths")
-    return _ElvisName(name)
 
 
 # Make sure that the resultant string is a grammatically-correct list.

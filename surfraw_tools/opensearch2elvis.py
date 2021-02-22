@@ -30,12 +30,7 @@ if TYPE_CHECKING:
 # No stubs.
 from lxml import etree as et  # type: ignore
 
-from surfraw_tools.lib.common import (
-    BASE_PARSER,
-    _ElvisName,
-    parse_elvis_name,
-    setup_cli,
-)
+from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, setup_cli
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
     SurfrawAnything,
@@ -52,9 +47,7 @@ def _get_parser() -> argparse.ArgumentParser:
         description="generate an elvis for an OpenSearch-enabled website (v1.1, Draft 6)",
         parents=[BASE_PARSER],
     )
-    parser.add_argument(
-        "name", type=parse_elvis_name, help="name for the elvis"
-    )
+    parser.add_argument("name", help="name for the elvis")
     parser.add_argument(
         "file_or_url",
         help="local OpenSearch description file or any URL on the website",

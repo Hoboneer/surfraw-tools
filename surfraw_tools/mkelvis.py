@@ -38,7 +38,6 @@ from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
     _ElvisName,
-    parse_elvis_name,
     setup_cli,
 )
 from surfraw_tools.lib.elvis import Elvis
@@ -72,7 +71,8 @@ def _get_parser() -> argparse.ArgumentParser:
         parents=[BASE_PARSER],
     )
     parser.add_argument(
-        "name", type=parse_elvis_name, help="name for the elvis"
+        "name",
+        help="name for the elvis",
     )
     parser.add_argument(
         "base_url",

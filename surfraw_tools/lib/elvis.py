@@ -135,17 +135,18 @@ class Elvis(argparse.Namespace):
         enable_completions: bool = True,
     ) -> None:
         self.generator: Final = generator
-        # TODO: validate name (modify `parse_elvis_name`)
-        self.name: Final = _ElvisName(name)
-        self._base_url: Final = base_url
-        self._search_url: Final = search_url
-        self.description: Final = description
-        self.query_parameter: Final = query_parameter
-        self.append_search_args: Final = append_search_args
-        self.enable_completions: Final = enable_completions
+        # FIXME: remove when no longer a false positive.
+        # Mypy flags this as an error.  This should be fixed in future versions.
+        # See https://github.com/python/mypy/issues/3004
+        self.name = name  # type: ignore
+        self.base_url = base_url
+        self.search_url = search_url
+        self.description = description
+        self.query_parameter = query_parameter
+        self.append_search_args = append_search_args
+        self.enable_completions = enable_completions
 
-        self.scheme: Final = scheme
-        self._num_tabs: int
+        self.scheme = scheme
         self.num_tabs = num_tabs
 
         # Option containers
@@ -338,12 +339,31 @@ class Elvis(argparse.Namespace):
                     )
 
     @property
+    def name(self) -> _ElvisName:
+        return self._name
+
+    @name.setter
+    def name(self, name: Union[str, _ElvisName]) -> None:
+        dirs, _ = os.path.split(name)
+        if dirs:
+            raise ValueError("elvis names may not be paths")
+        self._name = _ElvisName(name)
+
+    @property
     def base_url(self) -> str:
         return f"{self.scheme}://{self._base_url}"
+
+    @base_url.setter
+    def base_url(self, url: str) -> None:
+        self._base_url = url
 
     @property
     def search_url(self) -> str:
         return f"{self.scheme}://{self._search_url}"
+
+    @search_url.setter
+    def search_url(self, url: str) -> None:
+        self._search_url = url
 
     @property
     def num_tabs(self) -> int:
