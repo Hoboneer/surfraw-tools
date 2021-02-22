@@ -10,18 +10,16 @@ from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
     TYPE_CHECKING,
-    Callable,
-    Dict,
+    Iterable,
     Iterator,
     List,
     Mapping,
     Optional,
     Tuple,
-    Union,
     cast,
 )
 from urllib.error import URLError
-from urllib.parse import urlparse, urlunparse
+from urllib.parse import parse_qsl, urlparse, urlunparse
 from urllib.request import urlopen
 
 if TYPE_CHECKING:
@@ -30,6 +28,7 @@ if TYPE_CHECKING:
 # No stubs.
 from lxml import etree as et  # type: ignore
 
+from surfraw_tools.lib.cliopts import MappingOption
 from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, setup_cli
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
@@ -66,74 +65,34 @@ class OpenSearchParameter(argparse.Namespace):
         self,
         name: str,
         optional: bool,
-        span: Tuple[int, int],
+        span: Optional[Tuple[int, int]] = None,
         prefix: Optional[str] = None,
+        namespace: Optional[str] = None,
+        param: Optional[str] = None,
     ):
         self.name: Final = name
         self.optional: Final = optional
         self.span: Final = span
         self.prefix: Final = prefix
+        self.namespace: Final = namespace or NS_OPENSEARCH_1_1
+
+        # POST method attributes
+        self.param: Final = param
+        ## None of these have any special processing.  Just stored for now.
+        # self.minimum: Final = minimum
+        # self.maximum: Final = maximum
+        # self.pattern: Final = pattern
+        # self.title: Final = title
+        # self.min_exclusive: Final = min_exclusive
+        # self.max_exclusive: Final = max_exclusive
+        # self.min_inclusive: Final = min_inclusive
+        # self.max_inclusive: Final = max_inclusive
+        # self.step: Final = step
 
 
 _TEMPLATE_PARAM_RE: Final = re.compile(
     r"{(?:(?P<prefix>[^:&=/?]+):)?(?P<name>[^:&=/?]+)(?P<optional>\?)?}"
 )
-
-
-class OpenSearchURLTemplate(argparse.Namespace):
-    def __init__(self, template: str):
-        self.raw: Final = template
-        # extract params from template
-        # This assmumes that no duplicates exist
-        # TODO: Handle empty matches
-        # TODO: Check if prefix matches declared namespace
-        #       DON'T handle this for now.
-        matches = re.finditer(_TEMPLATE_PARAM_RE, self.raw)
-        self.params: Final = [
-            OpenSearchParameter(
-                match.group("name"),
-                bool(match.group("optional")),
-                match.span(),
-                match.group("prefix"),
-            )
-            for match in matches
-        ]
-        self.params_map: Final = {param.name: param for param in self.params}
-        if len(self.params) != len(self.params_map):
-            # TODO: remove this restriction?
-            raise ValueError(
-                "parameters may only be used once per template URL"
-            )
-        # Check special params
-        if (
-            self.params_map.get("searchTerms") is None
-            or self.params_map["searchTerms"].optional
-        ):
-            raise ValueError(
-                "the searchTerms parameter must exist and must *not* be optional"
-            )
-
-    def get_surfraw_template(
-        self,
-        namespacer: Callable[[str], str],
-        varname_map: Optional[Mapping[str, str]] = None,
-    ) -> str:
-        # Collected in order of occurrence
-        names_to_vars = {
-            "searchTerms": "${_}",
-        }
-        if varname_map:
-            names_to_vars.update(varname_map)
-        new_template = self.raw
-        for param in self.params:
-            # Slow, but it works
-            new_template = re.sub(
-                _TEMPLATE_PARAM_RE,
-                names_to_vars[param.name],
-                new_template,
-                count=1,
-            )
-        return new_template
 
 
 class OpenSearchURL(argparse.Namespace):
@@ -145,29 +104,118 @@ class OpenSearchURL(argparse.Namespace):
         rel: str = "results",
         index_offset: int = 1,
         page_offset: int = 1,
+        method: Optional[str] = None,
+        enctype: Optional[str] = None,
+        params: Optional[Iterable[et._Element]] = None,
+        namespaces: Optional[Mapping[Optional[str], str]] = None,
     ):
-        self.template: Final = OpenSearchURLTemplate(template)
+        self.raw_template: str = template
+        self.extra_params: List[str] = []
         self.type: Final = type
         self.rels: Final = rel.split(" ")
         self.index_offset: Final = index_offset
         self.page_offset: Final = page_offset
+        # Ignore method for now.  Assume everything uses "get".
+        # TODO: validate whether `method` is "a valid HTTP request method, as specified in RFC 2616."
+        if method:
+            self.method = method.lower()
+        else:
+            self.method = "get"
+        # TODO: validate according to this value?
+        self.enctype = enctype or "application/x-www-form-urlencoded"
 
-    @property
-    def params(self) -> List[OpenSearchParameter]:
-        return self.template.params
+        self.params: List[OpenSearchParameter]
+        if self.method == "get":
+            assert namespaces
+            self._build_get_params(namespaces)
+        elif self.method == "post":
+            assert params
+            # Just use a GET request and hope for the best
+            self._build_post_params(params)
+        else:
+            raise ValueError(
+                "only GET requests are supported, with POST requests becoming GET requests"
+            )
+
+        params_map: Final = {param.name: param for param in self.params}
+        if len(self.params) != len(params_map):
+            # TODO: remove this restriction?
+            raise ValueError(
+                "parameters may only be used once per template URL"
+            )
+        elif (
+            params_map.get("searchTerms") is None
+            or params_map["searchTerms"].optional
+        ):
+            raise ValueError(
+                "the searchTerms parameter must exist and must *not* be optional"
+            )
+
+    def _build_get_params(
+        self, namespaces: Mapping[Optional[str], str]
+    ) -> None:
+        # Determine whether mappings can be used
+        parts = urlparse(self.raw_template)
+        if parts.query:
+            self.params = []
+            for key, val in parse_qsl(parts.query):
+                match = re.match(_TEMPLATE_PARAM_RE, val)
+                if not match:
+                    self.extra_params.append(f"{key}={val}")
+                    continue
+                self.params.append(
+                    OpenSearchParameter(
+                        match.group("name"),
+                        bool(match.group("optional")),
+                        prefix=match.group("prefix"),
+                        namespace=namespaces.get(match.group("prefix")),
+                        param=key,
+                    )
+                )
+        else:
+            # A strange URL indeed.
+            matches = re.finditer(_TEMPLATE_PARAM_RE, self.raw_template)
+            self.params = [
+                OpenSearchParameter(
+                    match.group("name"),
+                    bool(match.group("optional")),
+                    match.span(),
+                    prefix=match.group("prefix"),
+                    namespace=namespaces.get(match.group("prefix")),
+                )
+                for match in matches
+            ]
+
+    def _build_post_params(self, param_elems: Iterable[et._Element]) -> None:
+        self.params = []
+        for param in param_elems:
+            # `value` is what would go into the template URL
+            value = param.get("value")
+            if not value:
+                raise ValueError(
+                    f"no value for <{et.QName(param).localname}> found"
+                )
+
+            match = cast("re.Match[str]", re.match(_TEMPLATE_PARAM_RE, value))
+            self.params.append(
+                OpenSearchParameter(
+                    match.group("name"),
+                    bool(match.group("optional")),
+                    # Each <Param> and <Parameter> element affect the interpretations of prefix they contain.
+                    prefix=match.group("prefix"),
+                    namespace=param.nsmap.get(match.group("prefix")),
+                    param=param.get("name"),
+                )
+            )
 
 
 # NS_OPENSEARCH_1_0: Final = ""
+# Draft 6 (with some parts before Draft 3 for compatibility)
 NS_OPENSEARCH_1_1: Final = "http://a9.com/-/spec/opensearch/1.1/"
-
-
-def _get_opensearch_prefix(
-    prefix_map: Mapping[Optional[str], str]
-) -> Union[str, None]:
-    for prefix, namespace in prefix_map.items():
-        if namespace == NS_OPENSEARCH_1_1:
-            return prefix
-    raise ValueError
+# Draft 2
+NS_OPENSEARCH_EXT_PARAMETERS_1_0: Final = (
+    "http://a9.com/-/spec/opensearch/extensions/parameters/1.0/"
+)
 
 
 class OpenSearchDescription(argparse.Namespace):
@@ -193,22 +241,38 @@ class OpenSearchDescription(argparse.Namespace):
         for url_elem in self._root.xpath(
             "os:Url[@template and @type]", namespaces={"os": NS_OPENSEARCH_1_1}
         ):
-            os_url = OpenSearchURL(
-                template=cast(str, url_elem.get("template")),
-                type=cast(str, url_elem.get("type")),
-                rel=url_elem.get("rel", "results"),
-                index_offset=int(url_elem.get("indexOffset", "1")),
-                page_offset=int(url_elem.get("pageOffset", "1")),
+            # According to the spec, this attribute *needs* an XML prefix.
+            method_attr_name = et.QName(
+                NS_OPENSEARCH_EXT_PARAMETERS_1_0, "method"
             )
-            correct_prefix = _get_opensearch_prefix(url_elem.nsmap)
-            # Whether the template parameters use the right prefix (for the namespace)
-            for param in os_url.template.params:
-                # unqualified params (`None` prefix) implicitly have opensearch namespace
-                if param.prefix != correct_prefix or param.prefix is not None:
-                    raise ValueError(
-                        "only OpenSearch parameters are supported at the moment"
-                    )
-            self.urls.append(os_url)
+
+            params = url_elem.findall(
+                "param:Parameter",
+                namespaces={"param": NS_OPENSEARCH_EXT_PARAMETERS_1_0},
+            ) or url_elem.findall(
+                "os:Param", namespaces={"os": NS_OPENSEARCH_1_1}
+            )
+
+            self.urls.append(
+                OpenSearchURL(
+                    template=cast(str, url_elem.get("template")),
+                    type=cast(str, url_elem.get("type")),
+                    rel=url_elem.get("rel", "results"),
+                    index_offset=int(url_elem.get("indexOffset", "1")),
+                    page_offset=int(url_elem.get("pageOffset", "1")),
+                    # Prefer using the extension.
+                    method=url_elem.get(
+                        method_attr_name, url_elem.get("method")
+                    ),
+                    # According to the spec, this attribute *needs* an XML prefix.
+                    enctype=url_elem.get(
+                        et.QName(NS_OPENSEARCH_EXT_PARAMETERS_1_0, "enctype")
+                    ),
+                    params=params,
+                    # should namespaces of each param element be taken instead?
+                    namespaces=url_elem.nsmap,
+                )
+            )
         if not self.urls:
             raise ValueError("no Url elements found in OpenSearch description")
 
@@ -310,14 +374,14 @@ def main(argv: Optional[List[str]] = None) -> int:
                 return EX_DATAERR
 
     # Set up for processing
-    scheme, base_url, *_ = urlparse(os_desc.search_url.template.raw)
+    scheme, base_url, *_ = urlparse(os_desc.search_url.raw_template)
 
     try:
         elvis = Elvis(
             ctx.name,
             base_url,
             # Placeholder URL.  It'll be modified in `template_vars`.
-            os_desc.search_url.template.raw,
+            os_desc.search_url.raw_template,
             scheme=scheme,
             description=os_desc.description,
             append_search_args=False,
@@ -328,14 +392,37 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.critical(f"{e}")
         return EX_USAGE
 
-    varnames: Dict[str, str] = {}
     opt: SurfrawVarOption
     for param in os_desc.search_url.params:
+        if param.optional:
+            log.debug(
+                f"disregarding optionality of param '{param.name}': elvi can't have *required* options"
+            )
+        if param.namespace != NS_OPENSEARCH_1_1:
+            # FIXME: support non-OpenSearch parameters
+            assert param.param
+            assert param.prefix
+            # Assume that the parameters sharing this namespace have the same prefix
+            log.debug(
+                f"assuming that the parameters with the namespace {param.namespace} have the same prefix"
+            )
+            optname = f"{param.prefix}{param.name.lower()}"
+            # No default for now.
+            # TODO: extract default values from OpenSearch description.
+            log.debug(
+                f"adding -{optname}= (anything) option for custom parameter '{param.prefix}{param.name}'"
+            )
+            log.debug(
+                "richer options for custom parameters are currently unsupported"
+            )
+            elvis.options.append(SurfrawAnything(optname, ""))
+            elvis.mappings.append(MappingOption(optname, param.param))
+            continue
+
+        # OpenSearch parameters:
         if param.name == "count":
-            varnames["count"] = elvis.namespacer("results")
             elvis.add_results_option()
         elif param.name == "language":
-            varnames["language"] = elvis.namespacer("language")
             if not os_desc.languages:
                 # No need for enum.
                 elvis.add_language_option()
@@ -353,7 +440,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                     metavar="ISOCODE",
                     description="Two letter language code (resembles ISO country codes)",
                 )
-                ctx.options.append(opt)
+                elvis.options.append(opt)
         elif param.name in ("startIndex", "startPage"):
             if param.name == "startIndex":
                 default = os_desc.search_url.index_offset
@@ -368,8 +455,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 metavar="NUM",
                 description=desc,
             )
-            ctx.options.append(opt)
-            varnames[param.name] = elvis.namespacer(opt.name)
+            elvis.options.append(opt)
         elif param.name in ("inputEncoding", "outputEncoding"):
             if param.name == "inputEncoding":
                 encodings = os_desc.input_encodings
@@ -396,26 +482,49 @@ def main(argv: Optional[List[str]] = None) -> int:
                 metavar="ENCODING",
                 description=desc,
             )
-            ctx.options.append(opt)
-            varnames[param.name] = elvis.namespacer(opt.name)
-        # FIXME: support non-OpenSearch parameters
+            elvis.options.append(opt)
 
-    # No need to call `elvis.resolve_options` because not parsing elvis options from CLI.
+        if param.param:
+            if param.name == "searchTerms":
+                elvis.query_parameter = param.param
+                elvis.append_search_args = True
+            else:
+                elvis.mappings.append(
+                    MappingOption(param.name.lower(), param.param)
+                )
+    assert (
+        elvis.query_parameter
+    ), "no query parameter at this point for some reason--it wasn't caught earlier!"
+
+    elvis.resolve_options([], [], [])
+
+    # Take out placeholders (and their param name) in template URL
+    # but leave any non-varying key-value pairs in.
+    if os_desc.search_url.extra_params and elvis.query_parameter:
+        suffix = "&"
+        query = "&".join(os_desc.search_url.extra_params)
+    else:
+        suffix = "?"
+        query = ""
+    parts = urlparse(os_desc.search_url.raw_template)
+    elvis.search_url = (
+        urlunparse(
+            (
+                "",
+                parts.netloc,
+                parts.path,
+                parts.params,
+                # Query and fragment will be overridden by the mappings.
+                query,
+                "",
+            )
+        )
+        + suffix
+    ).lstrip("/")
 
     # Generate the elvis.
-    template_vars = elvis.get_template_vars()
-
-    # Resolve `search_url` with correct elvis variables.
-    _, __, *rest = urlparse(
-        os_desc.search_url.template.get_surfraw_template(
-            elvis.namespacer, varname_map=varnames
-        )
-    )
-    template_vars["search_url"] = urlunparse((scheme, base_url, *rest))
-
-    # Atomically write output file.
     try:
-        elvis.write(template_vars)
+        elvis.write(elvis.get_template_vars())
     except OSError as e:
         # Don't delete tempfile to allow for inspection on write errors.
         log.critical(f"{e}")
