@@ -176,8 +176,12 @@ _VERSION_FORMAT_ACTION: Final = cast(
     ),
 )
 VERSION_FORMAT_STRING: Final = _VERSION_FORMAT_ACTION.version
-BASE_PARSER.add_argument("--verbose", "-v", action="count", default=0)
-BASE_PARSER.add_argument("--quiet", "-q", action="count", default=0)
+BASE_PARSER.add_argument(
+    "--verbose", "-v", action="count", default=0, help="show more output"
+)
+BASE_PARSER.add_argument(
+    "--quiet", "-q", action="count", default=0, help="show less output"
+)
 
 
 def get_logger(name: str) -> logging.Logger:
