@@ -390,7 +390,7 @@ def _retrieve_opensearch_description(
                         f"/html/head//link[@type='{OPENSEARCH_DESC_MIME}' and contains(@rel, 'search') and @href][1]/@href"
                     )[0]
                 except IndexError:
-                    log.info("no OpenSearch description found")
+                    log.critical("no OpenSearch description found")
                     sys.exit(EX_DATAERR)
 
                 log.info(
