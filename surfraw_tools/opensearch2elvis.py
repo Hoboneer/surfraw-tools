@@ -9,6 +9,8 @@ from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
     TYPE_CHECKING,
+    Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -208,6 +210,28 @@ class OpenSearchURL(argparse.Namespace):
                 )
             )
 
+    def get_surfraw_template(
+        self,
+        namespacer: Callable[[str], str],
+        varname_map: Optional[Mapping[str, str]] = None,
+    ) -> str:
+        # Collected in order of occurrence
+        names_to_vars = {
+            "searchTerms": "${_}",
+        }
+        if varname_map:
+            names_to_vars.update(varname_map)
+        new_template = self.raw_template
+        for param in self.params:
+            # Slow, but it works
+            new_template = re.sub(
+                _TEMPLATE_PARAM_RE,
+                names_to_vars[param.name],
+                new_template,
+                count=1,
+            )
+        return new_template
+
 
 # NS_OPENSEARCH_1_0: Final = ""
 # Draft 6 (with some parts before Draft 3 for compatibility)
@@ -405,6 +429,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.critical(f"{e}")
         return EX_USAGE
 
+    varnames: Dict[str, str] = {}
     opt: SurfrawVarOption
     for param in os_desc.search_url.params:
         if param.optional:
@@ -435,7 +460,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         # OpenSearch parameters:
         if param.name == "count":
             elvis.add_results_option()
+            varnames[param.name] = elvis.namespacer("results")
         elif param.name == "language":
+            varnames[param.name] = elvis.namespacer(param.name)
             if not os_desc.languages:
                 # No need for enum.
                 elvis.add_language_option()
@@ -469,6 +496,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 description=desc,
             )
             elvis.options.append(opt)
+            varnames[param.name] = elvis.namespacer(opt.name)
         elif param.name in ("inputEncoding", "outputEncoding"):
             if param.name == "inputEncoding":
                 encodings = os_desc.input_encodings
@@ -496,6 +524,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 description=desc,
             )
             elvis.options.append(opt)
+            varnames[param.name] = elvis.namespacer(opt.name)
 
         if param.param:
             if param.name == "searchTerms":
@@ -505,35 +534,40 @@ def main(argv: Optional[List[str]] = None) -> int:
                 elvis.mappings.append(
                     MappingOption(param.name.lower(), param.param)
                 )
-    assert (
-        elvis.query_parameter
-    ), "no query parameter at this point for some reason--it wasn't caught earlier!"
 
     elvis.resolve_options([], [], [])
 
-    # Take out placeholders (and their param name) in template URL
-    # but leave any non-varying key-value pairs in.
-    if os_desc.search_url.extra_params and elvis.query_parameter:
-        suffix = "&"
-        query = "&".join(os_desc.search_url.extra_params)
-    else:
-        suffix = "?"
-        query = ""
-    parts = urlparse(os_desc.search_url.raw_template)
-    elvis.search_url = (
-        urlunparse(
-            (
-                "",
-                parts.netloc,
-                parts.path,
-                parts.params,
-                # Query and fragment will be overridden by the mappings.
-                query,
-                "",
+    if not elvis.query_parameter:
+        assert not elvis.mappings
+        # Resolve `search_url` with correct elvis variables.
+        _, __, *rest = urlparse(
+            os_desc.search_url.get_surfraw_template(
+                elvis.namespacer, varname_map=varnames
             )
         )
-        + suffix
-    ).lstrip("/")
+        elvis.search_url = urlunparse(("", base_url, *rest)).lstrip("/")
+    else:
+        # Take out placeholders (and their param name) in template URL
+        # but leave any non-varying key-value pairs in.
+        if os_desc.search_url.extra_params:
+            suffix = "&"
+        else:
+            suffix = "?"
+        parts = urlparse(os_desc.search_url.raw_template)
+        elvis.search_url = (
+            urlunparse(
+                (
+                    "",
+                    parts.netloc,
+                    parts.path,
+                    parts.params,
+                    # Query and fragment will be overridden by the mappings.
+                    "&".join(os_desc.search_url.extra_params),
+                    "",
+                )
+            )
+            + suffix
+        ).lstrip("/")
 
     # Generate the elvis.
     try:
