@@ -3,7 +3,6 @@ from __future__ import annotations
 import argparse
 import logging
 import re
-import subprocess
 import sys
 from contextlib import ExitStack, contextmanager
 from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
@@ -26,7 +25,8 @@ if TYPE_CHECKING:
     from typing_extensions import Final
 
 # No stubs.
-from lxml import etree as et  # type: ignore
+import lxml.html as html  # type: ignore
+from lxml import etree as et
 
 from surfraw_tools.lib.cliopts import MappingOption
 from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, setup_cli
@@ -328,53 +328,63 @@ def _handle_opensearch_errors(log: logging.Logger) -> Iterator[None]:
         sys.exit(EX_UNAVAILABLE)
 
 
+OPENSEARCH_DESC_MIME: Final = "application/opensearchdescription+xml"
+
+
+def _retrieve_opensearch_description(
+    file_or_url: str, log: logging.Logger
+) -> OpenSearchDescription:
+    with ExitStack() as cm:
+        cm.enter_context(_handle_opensearch_errors(log))
+        if not urlparse(file_or_url).scheme:
+            # Just a local file.
+            os_desc = OpenSearchDescription(
+                cm.enter_context(open(file_or_url, "rb"))
+            )
+        else:
+            log.info(f"{file_or_url} is a URL, downloading...")
+            resp = cm.enter_context(urlopen(file_or_url))
+            content_type = resp.info().get_content_type()
+            if content_type == OPENSEARCH_DESC_MIME:
+                os_desc = OpenSearchDescription(resp)
+            elif content_type == "text/html":
+                log.info(
+                    "looking for OpenSearch description from HTML page..."
+                )
+
+                tree = html.parse(resp)
+                tree.getroot().make_links_absolute(resp.geturl())
+                # Only get the first OpenSearch link (for now).
+                # Not checking the `href` attribute: it can only really be checked by downloading it.
+                try:
+                    url = tree.xpath(
+                        f"/html/head//link[@type='{OPENSEARCH_DESC_MIME}' and contains(@rel, 'search') and @href][1]/@href"
+                    )[0]
+                except IndexError:
+                    log.info("no OpenSearch description found")
+                    sys.exit(EX_DATAERR)
+
+                log.info(
+                    f"found at {url}, downloading...",
+                )
+                os_desc = OpenSearchDescription(
+                    # Assuming that the page resolves to an OpenSearch document (what site wouldn't?)
+                    cm.enter_context(urlopen(url))
+                )
+            else:
+                log.critical(
+                    f"Content-Type of {file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
+                )
+                sys.exit(EX_DATAERR)
+    return os_desc
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     ctx, log = setup_cli(
         PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
     )
 
-    os_desc: OpenSearchDescription
-    with ExitStack() as cm:
-        cm.enter_context(_handle_opensearch_errors(log))
-        if not urlparse(ctx.file_or_url).scheme:
-            # Just a local file.
-            os_desc = OpenSearchDescription(
-                cm.enter_context(open(ctx.file_or_url, "rb"))
-            )
-        else:
-            log.info(f"{ctx.file_or_url} is a URL, downloading...")
-            resp = cm.enter_context(urlopen(ctx.file_or_url))
-            content_type = resp.info().get_content_type()
-            if content_type == "application/opensearchdescription+xml":
-                os_desc = OpenSearchDescription(resp)
-            elif content_type == "text/html":
-                # TODO: use an internal finder?
-                log.info(
-                    "need to find OpenSearch description, running opensearch-discover..."
-                )
-                proc = subprocess.run(
-                    ["opensearch-discover", "--first", ctx.file_or_url],
-                    capture_output=True,
-                    text=True,
-                )
-                if proc.returncode != 0:
-                    log.critical(
-                        f"an error occurred while running opensearch-discover (code: {proc.returncode})"
-                    )
-                    # Remove extra newline (the logger adds one itself).
-                    log.critical(proc.stderr.strip("\n"))
-                    return EX_UNAVAILABLE
-                log.info(
-                    "found, downloading...",
-                )
-                os_desc = OpenSearchDescription(
-                    cm.enter_context(urlopen(proc.stdout.strip()))
-                )
-            else:
-                log.critical(
-                    f"Content-Type of {ctx.file_or_url} ({content_type}) is unsupported, it must be an OpenSearch description or HTML file",
-                )
-                return EX_DATAERR
+    os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)
 
     # Set up for processing
     scheme, base_url, *_ = urlparse(os_desc.search_url.raw_template)
