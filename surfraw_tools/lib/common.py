@@ -187,6 +187,9 @@ BASE_PARSER.add_argument(
 def get_logger(name: str) -> logging.Logger:
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
+    # Allow calling the `main()` function multiple times per process.
+    if logger.hasHandlers():
+        return logger
 
     handler = logging.StreamHandler()
     handler.setLevel(logging.DEBUG)
@@ -206,6 +209,7 @@ def set_logger_verbosity(
     log: logging.Logger, quieter: int, louder: int
 ) -> None:
     """Set the appropriate logging level from -q and -v counts."""
+    # The effective level is reset everytime `main()` is called.
     curr_level = log.getEffectiveLevel()
     curr_level += quieter * 10
     curr_level -= louder * 10

@@ -5,6 +5,7 @@ import logging
 import re
 import sys
 from contextlib import ExitStack, contextmanager
+from functools import wraps
 from os import EX_DATAERR, EX_OK, EX_OSERR, EX_UNAVAILABLE, EX_USAGE
 from typing import (
     IO,
@@ -408,6 +409,23 @@ def _retrieve_opensearch_description(
     return os_desc
 
 
+_MainFunc = Callable[[Optional[List[str]]], int]
+
+
+def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
+    # This helps with testing.
+    @wraps(main_func)
+    def wrapper(argv: Optional[List[str]] = None) -> int:
+        try:
+            exit_status = main_func(argv)
+        except SystemExit as e:
+            exit_status = e.code
+        return exit_status
+
+    return wrapper
+
+
+@_convert_system_exit_to_return
 def main(argv: Optional[List[str]] = None) -> int:
     ctx, log = setup_cli(
         PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
