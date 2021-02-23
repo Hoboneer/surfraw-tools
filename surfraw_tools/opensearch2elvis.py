@@ -19,7 +19,7 @@ from typing import (
     Tuple,
     cast,
 )
-from urllib.error import URLError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlparse, urlunparse
 from urllib.request import urlopen
 
@@ -339,9 +339,14 @@ def _handle_opensearch_errors(log: logging.Logger) -> Iterator[None]:
             f"an error occurred while parsing XML: {e}",
         )
         sys.exit(EX_DATAERR)
+    except HTTPError as e:
+        log.critical(
+            f"got an HTTP error {e.code}",
+        )
+        sys.exit(EX_UNAVAILABLE)
     except URLError as e:
         log.critical(
-            f"an error occurred while retrieving data from the network: {e}",
+            f"an error occurred while retrieving data from the network: {e.reason}",
         )
         sys.exit(EX_UNAVAILABLE)
     except AssertionError:
