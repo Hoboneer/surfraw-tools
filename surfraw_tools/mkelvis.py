@@ -76,11 +76,11 @@ def _get_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "base_url",
-        help="the url to show in the description and is the url opened when no search terms are passed, with no protocol",
+        help="the url opened when no search terms are passed, and is shown in the description",
     )
     parser.add_argument(
         "search_url",
-        help="the url to append arguments to, with the query parameters opened and no protocol (automatically set to 'https')",
+        help="the url to append arguments to, with the query parameters opened",
     )
     parser.add_argument(
         "--description",
@@ -91,7 +91,7 @@ def _get_parser() -> argparse.ArgumentParser:
     _search_args_group.add_argument(
         "--query-parameter",
         "-Q",
-        help="define the parameter for the query arguments; needed with --map",
+        help="define the parameter for the query arguments (needed with --map)",
     )
     _search_args_group.add_argument(
         "--no-append-args",
