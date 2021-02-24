@@ -409,49 +409,9 @@ def _retrieve_opensearch_description(
     return os_desc
 
 
-_MainFunc = Callable[[Optional[List[str]]], int]
-
-
-def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
-    # This helps with testing.
-    @wraps(main_func)
-    def wrapper(argv: Optional[List[str]] = None) -> int:
-        try:
-            exit_status = main_func(argv)
-        except SystemExit as e:
-            exit_status = e.code
-        return exit_status
-
-    return wrapper
-
-
-@_convert_system_exit_to_return
-def main(argv: Optional[List[str]] = None) -> int:
-    ctx, log = setup_cli(
-        PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
-    )
-
-    os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)
-
-    # Set up for processing
-    scheme, base_url, *_ = urlparse(os_desc.search_url.raw_template)
-
-    try:
-        elvis = Elvis(
-            ctx.name,
-            base_url,
-            # Placeholder URL.  It'll be modified in `template_vars`.
-            os_desc.search_url.raw_template,
-            scheme=scheme,
-            description=os_desc.description,
-            append_search_args=False,
-            # TODO: add --num-tabs option?
-            generator=PROGRAM_NAME,
-        )
-    except Exception as e:
-        log.critical(f"{e}")
-        return EX_USAGE
-
+def _create_option_objects(
+    elvis: Elvis, os_desc: OpenSearchDescription, log: logging.Logger
+) -> Dict[str, str]:
     varnames: Dict[str, str] = {}
     opt: SurfrawVarOption
     for param in os_desc.search_url.params:
@@ -537,7 +497,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 log.critical(
                     f"OpenSearch description used {param.name} parameter without defining any in {param.name[0].upper()}{param.name[1:]} elements",
                 )
-                return EX_DATAERR
+                sys.exit(EX_DATAERR)
 
             opt = SurfrawEnum(
                 param.name.lower(),
@@ -559,6 +519,54 @@ def main(argv: Optional[List[str]] = None) -> int:
                 )
 
     elvis.resolve_options([], [], [])
+
+    return varnames
+
+
+_MainFunc = Callable[[Optional[List[str]]], int]
+
+
+def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
+    # This helps with testing.
+    @wraps(main_func)
+    def wrapper(argv: Optional[List[str]] = None) -> int:
+        try:
+            exit_status = main_func(argv)
+        except SystemExit as e:
+            exit_status = e.code
+        return exit_status
+
+    return wrapper
+
+
+@_convert_system_exit_to_return
+def main(argv: Optional[List[str]] = None) -> int:
+    ctx, log = setup_cli(
+        PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
+    )
+
+    os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)
+
+    # Set up for processing
+    scheme, base_url, *_ = urlparse(os_desc.search_url.raw_template)
+
+    try:
+        elvis = Elvis(
+            ctx.name,
+            base_url,
+            # Placeholder URL.  It'll be modified in `template_vars`.
+            os_desc.search_url.raw_template,
+            scheme=scheme,
+            description=os_desc.description,
+            append_search_args=False,
+            # TODO: add --num-tabs option?
+            generator=PROGRAM_NAME,
+        )
+    except Exception as e:
+        log.critical(f"{e}")
+        return EX_USAGE
+
+    varnames = _create_option_objects(elvis, os_desc, log=log)
 
     if not elvis.query_parameter:
         assert not elvis.mappings
