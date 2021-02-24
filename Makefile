@@ -5,7 +5,7 @@
 REQUIREMENTS_DIR := requirements
 
 PACKAGE_DIRS := surfraw_tools surfraw_tools/lib
-SOURCE_FILES := $(foreach dir, $(PACKAGE_DIRS), $(wildcard $(dir)/*.py))
+SOURCE_FILES := $(foreach dir, $(PACKAGE_DIRS), $(wildcard $(dir)/*.py)) $(wildcard tests/*.py)
 CHECK_FILES := $(SOURCE_FILES) setup.py
 
 # Do nothing.
@@ -41,6 +41,10 @@ lint:
 typecheck:
 	mypy -p surfraw_tools
 
+.PHONY: test
+test:
+	pytest
+
 .PHONY: clean
 clean:
 	-rm -fr *.egg-info/
@@ -48,7 +52,7 @@ clean:
 	-rm -fr dist/
 
 .PHONY: dist
-dist: format lint typecheck
+dist: format lint typecheck test
 	@# No wheel because jinja2 versions at build- and runtime need to match.
 	python setup.py sdist
 	twine check dist/*
