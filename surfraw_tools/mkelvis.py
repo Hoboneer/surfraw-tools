@@ -301,7 +301,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     """
     ctx, log = setup_cli(PROGRAM_NAME, argv, _get_parser(), Context())
 
-    # Accept URLs *with* XOR *without* schemes.
+    # Accept URLs *with* or *without* schemes, but the schemes must match.
     base_parts = urlparse(ctx.base_url)
     search_parts = urlparse(ctx.search_url)
     if base_parts.scheme != search_parts.scheme:
