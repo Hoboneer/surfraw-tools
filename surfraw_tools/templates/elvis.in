@@ -361,8 +361,8 @@ __mkelvis_exit_list_ctx
 # Collapse variables
 {# TODO: Name this better! #}
 {% macro collapse_variable(var, branches) %}
-_="${{ var }}"
-case "$_" in
+it="${{ var }}"
+case "$it" in
 	{% for branch in branches %}
 	{# Last in `branch` is the result #}
 	{{ '|'.join(branch[:-1]) }}) {{ var }}="{{ branch[-1] }}" ;;
@@ -504,7 +504,7 @@ escaped_args="$(w3_url_of_arg $w3_args)$inlines"
 {% else %}
 escaped_args="$(w3_url_of_arg $w3_args)"
 {% endif %}
-_="$escaped_args"
+it="$escaped_args"
 search_url="{{ search_url }}"
 {% if append_mappings and (mappings or list_mappings or query_parameter is not none) %}
 search_url="$search_url$mappings"
