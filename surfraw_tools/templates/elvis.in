@@ -506,7 +506,7 @@ escaped_args="$(w3_url_of_arg $w3_args)"
 {% endif %}
 _="$escaped_args"
 search_url="{{ search_url }}"
-{% if mappings or list_mappings or query_parameter is not none %}
+{% if append_mappings and (mappings or list_mappings or query_parameter is not none) %}
 search_url="$search_url$mappings"
 {% endif %}
 {% if append_search_args %}

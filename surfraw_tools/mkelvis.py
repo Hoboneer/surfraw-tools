@@ -87,17 +87,22 @@ def _get_parser() -> argparse.ArgumentParser:
         help="description for the elvis, excluding the domain name in parentheses",
     )
 
-    _search_args_group = parser.add_mutually_exclusive_group()
-    _search_args_group.add_argument(
+    parser.add_argument(
         "--query-parameter",
         "-Q",
         help="define the parameter for the query arguments (needed with --map)",
     )
-    _search_args_group.add_argument(
+    parser.add_argument(
         "--no-append-args",
         action="store_false",
         dest="append_search_args",
         help="don't automatically append search to url",
+    )
+    parser.add_argument(
+        "--no-append-mappings",
+        action="store_false",
+        dest="append_mappings",
+        help="don't automatically append --map and --list-map values to query string",
     )
 
     parser.add_argument(
@@ -265,6 +270,7 @@ class Context(argparse.Namespace):
         self.description: Optional[str] = None
         self.query_parameter: Optional[str] = None
         self.append_search_args: bool = True
+        self.append_mappings: bool = True
         self.enable_completions: bool = True
 
         self.insecure: bool = False
@@ -328,6 +334,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             description=ctx.description,
             query_parameter=ctx.query_parameter,
             append_search_args=ctx.append_search_args,
+            append_mappings=ctx.append_mappings,
             enable_completions=ctx.enable_completions,
             num_tabs=ctx.num_tabs,
             generator=PROGRAM_NAME,

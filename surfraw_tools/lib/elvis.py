@@ -125,6 +125,7 @@ class Elvis(argparse.Namespace):
         num_tabs: int = 1,
         scheme: str = "https",
         append_search_args: bool = True,
+        append_mappings: bool = True,
         enable_completions: bool = True,
     ) -> None:
         self.generator: Final = generator
@@ -137,6 +138,7 @@ class Elvis(argparse.Namespace):
         self.description = description
         self.query_parameter = query_parameter
         self.append_search_args = append_search_args
+        self.append_mappings = append_mappings
         self.enable_completions = enable_completions
 
         self.scheme = scheme
@@ -236,13 +238,6 @@ class Elvis(argparse.Namespace):
         self._resolve_aliases(aliases, symtable)
         self._resolve_metavars_and_descs(symtable)
         self._resolve_var_targets(symtable)
-
-        if (
-            self.mappings or self.list_mappings
-        ) and self.query_parameter is None:
-            raise OptionResolutionError(
-                "mapping variables without defining a query parameter is forbidden"
-            )
 
     def _resolve_flags(
         self,
@@ -438,6 +433,7 @@ class Elvis(argparse.Namespace):
             "collapses": self.collapses,
             "query_parameter": self.query_parameter,
             "append_search_args": self.append_search_args,
+            "append_mappings": self.append_mappings,
         }
 
     # FIXME: This is very ugly, please... make it not so bad.
