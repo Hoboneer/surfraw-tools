@@ -218,7 +218,7 @@ class OpenSearchURL(argparse.Namespace):
     ) -> str:
         # Collected in order of occurrence
         names_to_vars = {
-            "searchTerms": "${_}",
+            "searchTerms": "${it}",
         }
         if varname_map:
             names_to_vars.update(varname_map)
