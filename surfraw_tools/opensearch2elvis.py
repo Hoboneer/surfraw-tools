@@ -546,6 +546,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
 
     os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)
+    if os_desc.search_url.method == "post":
+        log.info(
+            "search URL uses method POST: treating it as GET and hoping for the best..."
+        )
 
     # Set up for processing
     scheme, base_url, *_ = urlparse(os_desc.search_url.raw_template)
