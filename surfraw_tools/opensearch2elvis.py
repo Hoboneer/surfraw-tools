@@ -60,6 +60,9 @@ def _get_parser() -> argparse.ArgumentParser:
         "file_or_url",
         help="local OpenSearch description file or any URL on the website",
     )
+    parser.add_argument(
+        "--user-agent", "-U", help="define a User-Agent header"
+    )
     return parser
 
 
@@ -67,6 +70,7 @@ class _OpenSearchContext(argparse.Namespace):
     def __init__(self) -> None:
         self.name: _ElvisName = _ElvisName("DEFAULT")
         self.file_or_url: str = ""
+        self.user_agent: str = "Mozilla/5.0"
 
 
 class OpenSearchParameter(argparse.Namespace):
@@ -395,7 +399,7 @@ OPENSEARCH_DESC_MIME: Final = "application/opensearchdescription+xml"
 
 
 def _retrieve_opensearch_description(
-    file_or_url: str, log: logging.Logger
+    file_or_url: str, user_agent: str, log: logging.Logger
 ) -> OpenSearchDescription:
     with ExitStack() as cm:
         cm.enter_context(_handle_opensearch_errors(log))
@@ -407,7 +411,7 @@ def _retrieve_opensearch_description(
         else:
             log.info(f"{file_or_url} is a URL, downloading...")
             # Some websites aren't nice to bots.
-            fake_headers = {"User-Agent": "Mozilla/5.0"}
+            fake_headers = {"User-Agent": user_agent}
             resp = cm.enter_context(
                 urlopen(Request(file_or_url, headers=fake_headers))
             )
@@ -586,7 +590,9 @@ def main(argv: Optional[List[str]] = None) -> int:
         PROGRAM_NAME, argv, _get_parser(), _OpenSearchContext()
     )
 
-    os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)
+    os_desc = _retrieve_opensearch_description(
+        ctx.file_or_url, ctx.user_agent, log
+    )
     if os_desc.search_url.method == "post":
         log.info(
             "search URL uses method POST: treating it as GET and hoping for the best..."
