@@ -1,3 +1,5 @@
+"""Main module for `opensearch2elvis` command-line program."""
+
 from __future__ import annotations
 
 import argparse
@@ -57,13 +59,15 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-class OpenSearchContext(argparse.Namespace):
+class _OpenSearchContext(argparse.Namespace):
     def __init__(self) -> None:
         self.name: _ElvisName = _ElvisName("DEFAULT")
         self.file_or_url: str = ""
 
 
 class OpenSearchParameter(argparse.Namespace):
+    """Parameter for OpenSearch URL template, regardless of HTTP request method."""
+
     def __init__(
         self,
         name: str,
@@ -81,7 +85,7 @@ class OpenSearchParameter(argparse.Namespace):
 
         # POST method attributes
         self.param: Final = param
-        ## None of these have any special processing.  Just stored for now.
+        # # None of these have any special processing.  Just stored for now.
         # self.minimum: Final = minimum
         # self.maximum: Final = maximum
         # self.pattern: Final = pattern
@@ -99,6 +103,8 @@ _TEMPLATE_PARAM_RE: Final = re.compile(
 
 
 class OpenSearchURL(argparse.Namespace):
+    """URL for an OpenSearch website."""
+
     def __init__(
         self,
         *,
@@ -216,6 +222,11 @@ class OpenSearchURL(argparse.Namespace):
         namespacer: Callable[[str], str],
         varname_map: Optional[Mapping[str, str]] = None,
     ) -> str:
+        """Return the template URL with the placeholder replaced by shell variables.
+
+        This should only be needed (or called) if the `Elvis` object doesn't
+        have a query parameter (or mappings, in this module's case).
+        """
         # Collected in order of occurrence
         names_to_vars = {
             "searchTerms": "${it}",
@@ -244,6 +255,24 @@ NS_OPENSEARCH_EXT_PARAMETERS_1_0: Final = (
 
 
 class OpenSearchDescription(argparse.Namespace):
+    """Description for an OpenSearch-enabled website.
+
+    Only version 1.1 (draft 6) is supported, but `<Param>` elements will be
+    accepted if there are no `<Parameter>` elements from the parameters
+    extension for OpenSearch.  Likewise for the `method` attribute of `<Url>`
+    elements, the version from the parameters extension is preferred, but the
+    pre-draft 3 version (i.e., without an XML prefix) is accepted.
+
+    The input description must contain *one* `<Url>` element of type
+    `text/html`.  This is stored as `search_url`.  The suggestions extension is
+    planned to be supported (in `opensearch2elvis`), so these `<Url>` elements
+    are stored as `json_suggestions_url` and `xml_suggestions_url`, depending
+    on the format advertised.
+
+    The supported languages, and input and output encodings are stored as
+    `languages`, `input_encodings`, and `output_encodings` respectively.
+    """
+
     def __init__(self, file: IO[bytes]):
         self._xml: Final = et.parse(file)
         self._root: Final = self._xml.getroot()
@@ -547,8 +576,9 @@ def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
 
 @_convert_system_exit_to_return
 def main(argv: Optional[List[str]] = None) -> int:
+    """Generate a surfraw elvis for an OpenSearch-enabled website."""
     ctx, log = setup_cli(
-        PROGRAM_NAME, argv, _get_parser(), OpenSearchContext()
+        PROGRAM_NAME, argv, _get_parser(), _OpenSearchContext()
     )
 
     os_desc = _retrieve_opensearch_description(ctx.file_or_url, log)

@@ -260,7 +260,7 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-class Context(argparse.Namespace):
+class _Context(argparse.Namespace):
     """Data holder for elvis currently being generated."""
 
     def __init__(self) -> None:
@@ -305,7 +305,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     Exit codes correspond to the distro's `sysexits.h` file, which are the
     exit codes prefixed "EX_".
     """
-    ctx, log = setup_cli(PROGRAM_NAME, argv, _get_parser(), Context())
+    ctx, log = setup_cli(PROGRAM_NAME, argv, _get_parser(), _Context())
 
     # Accept URLs *with* or *without* schemes, but the schemes must match.
     base_parts = urlparse(ctx.base_url)

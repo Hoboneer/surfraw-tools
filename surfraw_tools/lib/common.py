@@ -185,6 +185,7 @@ BASE_PARSER.add_argument(
 
 
 def get_logger(name: str) -> logging.Logger:
+    """Return a properly configured logger."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
     # Allow calling the `main()` function multiple times per process.
@@ -200,6 +201,7 @@ def get_logger(name: str) -> logging.Logger:
 
 
 def clamp(n: int, low: int, high: int) -> int:
+    """Return a value between `low` and `high` (inclusive) based on `n`."""
     if low >= high:
         raise ValueError("`low` must be lower than `high`")
     return max(low, min(n, high))

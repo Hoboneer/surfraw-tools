@@ -1,3 +1,4 @@
+"""Provides a class that allows treating Surfraw elvi as objects."""
 from __future__ import annotations
 
 import argparse
@@ -113,6 +114,25 @@ def _get_optlines(
 
 
 class Elvis(argparse.Namespace):
+    """Object representation for a Surfraw elvis.
+
+    It has two main functions:
+
+    1. Resolving options: make sure that user-provided Surfraw options are
+    consistent with each other.
+    2. Writing elvi to disk.
+
+    Options can be resolved by calling `resolve_options(...)`.
+
+    To write the elvis to disk, call `get_template_vars(...)` to get a dict of
+    Jinja2 template variables, make any modifications to the dict, and then
+    pass it to `write(...)`.
+
+    Both `base_url` and `search_url` are placed in the elvis source code within
+    double quotes, so command substitutions and parameter expansions are
+    available.
+    """
+
     def __init__(
         self,
         name: str,
@@ -164,6 +184,7 @@ class Elvis(argparse.Namespace):
         self.env = self._init_get_env()
 
     def namespacer(self, name: str) -> str:
+        """Return a namespaced variable name for the elvis."""
         return f"SURFRAW_{self.name}_{name}"
 
     @staticmethod
@@ -330,6 +351,10 @@ class Elvis(argparse.Namespace):
 
     @property
     def name(self) -> _ElvisName:
+        """Name of elvis.
+
+        It cannot contain "/" characters.
+        """
         return self._name
 
     @name.setter
@@ -341,6 +366,11 @@ class Elvis(argparse.Namespace):
 
     @property
     def base_url(self) -> str:
+        """URL when no search terms are entered.
+
+        Getting the value includes the URL scheme, but setting it requires that
+        the input URL has *no* scheme.
+        """
         return f"{self.scheme}://{self._base_url}"
 
     @base_url.setter
@@ -349,6 +379,11 @@ class Elvis(argparse.Namespace):
 
     @property
     def search_url(self) -> str:
+        """Return the URL which search terms are placed in.
+
+        Getting the value includes the URL scheme, but setting it requires that
+        the input URL has *no* scheme.
+        """
         return f"{self.scheme}://{self._search_url}"
 
     @search_url.setter
@@ -357,6 +392,10 @@ class Elvis(argparse.Namespace):
 
     @property
     def num_tabs(self) -> int:
+        """Return the number of tabs after elvis name.
+
+        This is just for nicer output from `sr -elvi`.
+        """
         return self._num_tabs
 
     @num_tabs.setter
@@ -366,6 +405,7 @@ class Elvis(argparse.Namespace):
         self._num_tabs = val
 
     def add_results_option(self) -> None:
+        """Add a `--results=NUM` option to the elvis."""
         if self._have_results_option:
             # TODO: what error?
             raise NotImplementedError("cannot have two -results=NUM options")
@@ -380,6 +420,7 @@ class Elvis(argparse.Namespace):
         self._have_results_option = True
 
     def add_language_option(self) -> None:
+        """Add a `--results=ISOCODE` option to the elvis."""
         if self._have_results_option:
             # TODO: what error?
             raise NotImplementedError(
@@ -397,6 +438,11 @@ class Elvis(argparse.Namespace):
         self._have_results_option = True
 
     def get_template_vars(self) -> Dict[str, Any]:
+        """Get a dict of variables to be used in the Jinja2 template.
+
+        This can be modified, if needed, before passing it to a call to
+        `write(...)`.
+        """
         assert (
             VERSION_FORMAT_STRING is not None
         ), "VERSION_FORMAT_STRING should be defined"
@@ -513,6 +559,18 @@ class Elvis(argparse.Namespace):
     def write(
         self, template_vars: Mapping[str, Any], outfile: Optional[str] = None
     ) -> None:
+        """Write the elvis to disk.
+
+        `template_vars` should not have had any keys removed after being
+        returned from `get_template_vars(...)`.  If `outfile` is `None`, the
+        `name` attribute is used.
+
+        `outfile` may be `"-"`, which causes the write to go to `sys.stdout`.
+        Otherwise, it does an atomic write to the given file (using a temporary
+        file).  If this atomic write fails, a file with the pattern
+        `"ELVISNAME.RANDOMSTRING.GENERATORNAME.tmp"` should remain, available
+        for inspection.
+        """
         if outfile is None:
             outfile = self.name
 
