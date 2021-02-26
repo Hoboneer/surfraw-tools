@@ -22,7 +22,7 @@ from typing import (
 )
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlparse, urlunparse
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 
 if TYPE_CHECKING:
     from typing_extensions import Final
@@ -373,7 +373,11 @@ def _retrieve_opensearch_description(
             )
         else:
             log.info(f"{file_or_url} is a URL, downloading...")
-            resp = cm.enter_context(urlopen(file_or_url))
+            # Some websites aren't nice to bots.
+            fake_headers = {"User-Agent": "Mozilla/5.0"}
+            resp = cm.enter_context(
+                urlopen(Request(file_or_url, headers=fake_headers))
+            )
             content_type = resp.info().get_content_type()
             if content_type == OPENSEARCH_DESC_MIME:
                 os_desc = OpenSearchDescription(resp)
@@ -399,7 +403,9 @@ def _retrieve_opensearch_description(
                 )
                 os_desc = OpenSearchDescription(
                     # Assuming that the page resolves to an OpenSearch document (what site wouldn't?)
-                    cm.enter_context(urlopen(url))
+                    cm.enter_context(
+                        urlopen(Request(url, headers=fake_headers))
+                    )
                 )
             else:
                 log.critical(
