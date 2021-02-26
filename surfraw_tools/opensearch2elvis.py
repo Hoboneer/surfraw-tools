@@ -1,4 +1,7 @@
-"""Main module for `opensearch2elvis` command-line program."""
+"""Generate a surfraw elvis for an OpenSearch-enabled website (v1.1, Draft 6).
+
+Exit codes are taken from the `sysexits.h` file.
+"""
 
 from __future__ import annotations
 
@@ -48,7 +51,8 @@ PROGRAM_NAME: Final = "opensearch2elvis"
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         PROGRAM_NAME,
-        description="generate an elvis for an OpenSearch-enabled website (v1.1, Draft 6)",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[BASE_PARSER],
     )
     parser.add_argument("name", help="name for the elvis")
@@ -576,7 +580,8 @@ def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
 
 @_convert_system_exit_to_return
 def main(argv: Optional[List[str]] = None) -> int:
-    """Generate a surfraw elvis for an OpenSearch-enabled website."""
+    # Docstring is copied from the module.
+    # noqa: D103
     ctx, log = setup_cli(
         PROGRAM_NAME, argv, _get_parser(), _OpenSearchContext()
     )
@@ -648,3 +653,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.critical(f"{e}")
         return EX_OSERR
     return EX_OK
+
+
+main.__doc__ = __doc__

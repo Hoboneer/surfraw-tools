@@ -2,7 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Main module for `mkelvis` command-line program."""
+"""Generate a surfraw elvis.
+
+Exit codes are taken from the `sysexits.h` file.
+"""
 
 from __future__ import annotations
 
@@ -67,7 +70,8 @@ def _wrap_parser(func: F) -> F:
 def _get_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         PROGRAM_NAME,
-        description="generate an elvis for surfraw",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
         parents=[BASE_PARSER],
     )
     parser.add_argument(
@@ -300,11 +304,8 @@ class _Context(argparse.Namespace):
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    """Generate a single surfraw elvis.
-
-    Exit codes correspond to the distro's `sysexits.h` file, which are the
-    exit codes prefixed "EX_".
-    """
+    # Docstring is copied from the module.
+    # noqa: D103
     ctx, log = setup_cli(PROGRAM_NAME, argv, _get_parser(), _Context())
 
     # Accept URLs *with* or *without* schemes, but the schemes must match.
@@ -378,3 +379,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         log.critical(f"{e}")
         return EX_OSERR
     return EX_OK
+
+
+main.__doc__ = __doc__
