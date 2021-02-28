@@ -1,0 +1,13 @@
+site_name: surfraw-tools docs
+repo_url: https://github.com/Hoboneer/surfraw-elvis-generator
+nav:
+        - Home: index.md
+        - Advanced usage: advanced-usage.md
+        - Reference: reference.md
+        - Installation: install.md
+        - Changelog: changelog.md
+        - Contributing: contributing.md
+markdown_extensions:
+        - smarty
+        - toc:
+                permalink: True

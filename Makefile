@@ -33,13 +33,16 @@ tags: $(SOURCE_FILES)
 .PHONY: format
 format: .formatted
 
-.PHONY: lint
-lint:
-	flake8 $(CHECK_FILES)
+.PHONY: check-dev
+check-dev: typecheck lint test
 
 .PHONY: typecheck
 typecheck:
 	mypy -p surfraw_tools
+
+.PHONY: lint
+lint:
+	flake8 $(CHECK_FILES)
 
 .PHONY: test
 test:
@@ -51,8 +54,12 @@ clean:
 	-rm -fr build/
 	-rm -fr dist/
 
+.PHONY: check-copyright
+check-copyright:
+	reuse lint
+
 .PHONY: dist
-dist: format lint typecheck test
+dist: format check-dev check-copyright
 	@# No wheel because jinja2 versions at build- and runtime need to match.
 	python setup.py sdist
 	twine check dist/*

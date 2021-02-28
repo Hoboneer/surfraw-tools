@@ -9,5 +9,6 @@ include .reuse/dep5
 include README.md
 include INSTALL.md
 include CHANGELOG.md
+include CONTRIBUTING.md
 include surfraw_tools/templates/*.in
 include pyproject.toml
