@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         
-        
+        <link rel="canonical" href="https://hoboneer.github.io/surfraw-elvis-generator/contributing/">
         <link rel="shortcut icon" href="../img/favicon.ico">
         <title>Contributing - surfraw-tools docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
@@ -134,7 +134,7 @@ pip install -e .
 <pre><code class="language-sh">mkdocs serve
 </code></pre>
 <p>Open <code>http://127.0.0.1:8000/</code> in your browser to view your changes as you write
-them (it auto-reloads).</p>
+(it auto-reloads).</p>
 <h2 id="make-a-new-release">Make a new release<a class="headerlink" href="#make-a-new-release" title="Permanent link">&para;</a></h2>
 <ol>
 <li>Rename the <code>[Unreleased]</code> section in <code>CHANGELOG.md</code> to <code>[NEW_VERSION] - CURRENT_DATE_ISO</code>.</li>
@@ -159,15 +159,19 @@ them (it auto-reloads).</p>
 <li>For other files, update the header manually.</li>
 </ul>
 </li>
-<li>Run <code>make check-copyright</code> to see if some files don&rsquo;t have a licence header.</li>
+<li>Run <code>make check-copyright</code> to see if some files don&rsquo;t have a licence
+   header&ndash;go back to step (4) if some don&rsquo;t.</li>
+<li>Run <code>mkdocs serve</code> and open <code>http://127.0.0.1:8000/</code> in your browser to
+   check the docs for errors.</li>
 <li>Commit these changes.</li>
 <li>Run <code>make clean</code> to remove any build artifacts from previous builds.</li>
 <li>Run <code>make dist</code>.  This has the <code>format</code>, <code>check-dev</code>, and <code>check-copyright</code>
-rules as prerequisites, and will fail if any of them do.</li>
+   rules as prerequisites, and will fail if any of them do.</li>
 <li>Check that the resulting sdist has all that you need.</li>
 <li>Run <code>make upload</code>.</li>
 <li>Add a tag with the new version number: <code>git tag NEW_VERSION</code>.</li>
-<li>Push your changes: <code>git push --tags</code></li>
+<li>Push your changes: <code>git push --tags</code>.</li>
+<li>Run <code>mkdocs gh-deploy</code> to deploy docs to Github Pages.</li>
 </ol>
 <p>We don&rsquo;t build wheels because we pre-compile Jinja templates during
 installation for faster runtime execution.  The build-time and runtime version
