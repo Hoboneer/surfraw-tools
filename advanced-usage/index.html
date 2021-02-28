@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Advanced usage - surfraw-tools docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">surfraw-tools docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">Advanced usage</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../reference/" class="nav-link">Reference</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../install/" class="nav-link">Installation</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../changelog/" class="nav-link">Changelog</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../contributing/" class="nav-link">Contributing</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href=".." class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../reference/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/advanced-usage.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#advanced-usage" class="nav-link">Advanced usage</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#elvi-with-search-options" class="nav-link">Elvi with search options</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#making-many-elvi-at-once" class="nav-link">Making many elvi at once</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="advanced-usage">Advanced usage<a class="headerlink" href="#advanced-usage" title="Permanent link">&para;</a></h1>
+<h2 id="elvi-with-search-options">Elvi with search options<a class="headerlink" href="#elvi-with-search-options" title="Permanent link">&para;</a></h2>
+<p><code>mkelvis</code> allows you to create elvi with options like <code>-sort=</code> and
+<code>-results=NUM</code> seen in many existing elvi.</p>
+<p>We&rsquo;ll create an elvis for Reddit&ndash;starting simple and building up
+functionality.  The end-result can be found at <a href="https://github.com/Hoboneer/surfraw-elvis/blob/a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c/src/reddit.in">commit
+<code>a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c</code> from my elvi
+repo</a>.</p>
+<p>Name your file <code>reddit.in</code> and create a <code>Makefile</code> with these contents:</p>
+<pre><code class="language-mk">reddit: reddit.in
+    grep -v '^[[:space:]]*\#' &lt; $&lt; | xargs mkelvis $@
+</code></pre>
+<p>Including the elvis name in the command means that we don&rsquo;t have to include
+them in the file.  This makes expanding this to more elvi easier.  The <code>grep</code>
+call also allows line comments with <code>#</code>.</p>
+<h3 id="bookmark-like-elvis">Bookmark-like elvis<a class="headerlink" href="#bookmark-like-elvis" title="Permanent link">&para;</a></h3>
+<pre><code>www.reddit.com
+www.reddit.com/search?q=
+--description='Search Reddit'
+</code></pre>
+<p>This doesn&rsquo;t give us much more than the bookmarks that surfraw allows: a line
+of</p>
+<pre><code>reddit  https://www.reddit.com/search?q=%s
+</code></pre>
+<p>in your bookmarks file would be enough to reimplement this.</p>
+<p>The <code>--description=</code> isn&rsquo;t strictly needed since it defaults to <code>Search
+$elvisname</code>.</p>
+<h3 id="sorting-and-date-restricting">Sorting and date-restricting<a class="headerlink" href="#sorting-and-date-restricting" title="Permanent link">&para;</a></h3>
+<pre><code>www.reddit.com
+www.reddit.com/search?
+--description='Search Reddit'
+
+--enum=sort:relevance:relevance,hot,top,new,comments
+--map=sort:sort
+
+--enum=time:all-time:hour,day,week,year,all-time
+--collapse=time:all-time,all
+--map=time:t
+
+--query-parameter=q
+</code></pre>
+<p>This provides <code>-sort=</code> and <code>-time=</code> options to define how the search is sorted
+and how far back you want your results to be.  Run <code>./reddit -lh</code> and you&rsquo;ll
+see it nicely formatted for you with your options:</p>
+<pre><code>Usage: reddit [options] [search words]...
+Description:
+  Search Reddit (www.reddit.com)
+Local options:
+  -sort=SORT         An enum option for 'sort'
+        relevance  | 
+        hot        | 
+        top        | 
+        new        | 
+        comments   | 
+                     Default: relevance
+                     Environment: SURFRAW_reddit_sort
+  -time=TIME         An enum option for 'time'
+        hour       | 
+        day        | 
+        week       | 
+        year       | 
+        all-time   | 
+                     Default: all-time
+                     Environment: SURFRAW_reddit_time
+</code></pre>
+<p>We can override the descriptions and metavars of options with <code>--describe=</code> and
+<code>--metavar=</code> respectively.  We&rsquo;ll do that later.</p>
+<h4 id="-sort"><code>-sort=</code><a class="headerlink" href="#-sort" title="Permanent link">&para;</a></h4>
+<p><strong><code>--enum=sort:relevance:relevance,hot,top,new,comments</code></strong>: this defines the
+<code>-sort=</code> option, says the default value is <code>relevance</code>, and then defines all of
+the valid values: <code>relevance</code>, <code>hot</code>, <code>top</code>, <code>new</code>, and <code>comments</code>.  The
+default (<code>relevance</code>) must be included in that list of valid values.  <code>mkelvis</code>
+will exit with an error otherwise.</p>
+<p><strong><code>--map=sort:sort</code></strong>: this says that it&rsquo;s mapping the <code>sort</code> variable (defined
+above, but order doesn&rsquo;t matter) to the <code>sort</code> URL query string parameter.  In
+the URL, it will appear like <code>sort=$SURFRAW_reddit_sort</code>.</p>
+<h4 id="-time"><code>-time=</code><a class="headerlink" href="#-time" title="Permanent link">&para;</a></h4>
+<p><strong><code>--enum=time:all-time:hour,day,week,year,all-time</code></strong>: this defines the
+date-restricting option you can see on Reddit.  Like with <code>sort</code>, we can see
+that it defaults to <code>all-time</code>&ndash;out of <code>hour</code>, <code>day</code>, <code>week</code>, <code>year</code>,
+<code>all-time</code>.</p>
+<p><strong><code>--map=time:t</code></strong>: it&rsquo;s mapped to the <code>t</code> parameter.</p>
+<p><strong><code>--collapse=time:all-time,all</code></strong>: this says that if the <code>time</code> variable has
+the exact value of <code>all-time</code>, it should be replaced with <code>all</code>.  This allows
+us to define a nicer interface for our elvis&ndash;not being bound to what the
+search engine&rsquo;s parameter values actually are.</p>
+<p>In fact, each value colon-delimited (<code>:</code>) argument <em>after</em> the first one can be
+comma-delimited (<code>,</code>) lists of patterns describing these changes.  See <a href="../reference/">the
+reference</a> for more.</p>
+<p>Now, a problem with our previous version is that it would be hard for <code>mkelvis</code>
+to decide what order to append the mappings and the search terms.  The
+<code>--query-parameter/-Q</code> option solves this for us.  The <code>q=</code> suffix can now be
+removed from the search URL because this will be appended to it later.</p>
+<h3 id="keyword-search">Keyword search<a class="headerlink" href="#keyword-search" title="Permanent link">&para;</a></h3>
+<pre><code>www.reddit.com
+www.reddit.com/search?
+--description='Search Reddit'
+
+--enum=sort:relevance:relevance,hot,top,new,comments
+--map=sort:sort
+
+--enum=time:all-time:hour,day,week,year,all-time
+--collapse=time:all-time,all
+--map=time:t
+
+--yes-no=nsfw:no
+--inline=nsfw:nsfw
+--describe=nsfw:'Whether to include NSFW posts'
+
+--anything=flair:
+--inline=flair:flair
+
+--enum=self:any:any,only,none
+--collapse=self:any,:only,yes:none,no
+--inline=self:self
+--describe=self:'Whether to include text posts'
+
+--query-parameter=q
+</code></pre>
+<p>This gives us an elvis that unifies the syntax of searches with URL query
+parameters and searches with keywords like <code>site:github.com</code> in your favourite
+search engine to limit results to <code>github.com</code>.</p>
+<h4 id="-nsfw"><code>-nsfw=</code><a class="headerlink" href="#-nsfw" title="Permanent link">&para;</a></h4>
+<p><strong><code>--yes-no=nsfw:no</code></strong>: this defines a <em>boolean</em> option, corresponding to the
+values that have the surfraw functions <code>ok</code>, <code>yesno</code>, <code>ifyes</code>, and <code>ifno</code>,
+called on it.  It&rsquo;s called <code>nsfw</code>, and has a default value of <code>no</code>.  In the
+elvis, you&rsquo;d be able to use <code>-nsfw=yes</code>, <code>-nsfw=no</code>, <code>-nsfw=on</code>, <code>-nsfw=off</code>,
+<code>-nsfw=1</code>, <code>-nsfw=0</code>.  They&rsquo;re treated the same.</p>
+<p><strong><code>--inline=nsfw:nsfw</code></strong>: this places the value of <code>nsfw</code> <em>inside</em> the search
+terms in the form <code>nsfw:$SURFRAW_reddit_nsfw</code>.  This is common search syntax.</p>
+<p><strong><code>--describe=nsfw:'Whether to include NSFW posts'</code></strong>: this overrides the
+description for the <code>-nsfw=</code> option.  Run <code>./reddit -lh</code> to see it.</p>
+<h4 id="-flair"><code>-flair=</code><a class="headerlink" href="#-flair" title="Permanent link">&para;</a></h4>
+<p><strong><code>--anything=flair:</code></strong>: this defines an option that has a value that the elvis
+doesn&rsquo;t check.  This is a useful catch-all option type that works very well for
+this elvis because Reddit flairs can <em>really be anything</em>.</p>
+<p><strong><code>--inline=flair:flair</code></strong>: like <code>-nsfw=</code>, this inlines the value of <code>flair</code>
+into the search terms.  If <code>flair</code> has an empty value, it doesn&rsquo;t get inlined.</p>
+<h4 id="-self"><code>-self=</code><a class="headerlink" href="#-self" title="Permanent link">&para;</a></h4>
+<p><strong><code>--collapse=self:any,:only,yes:none,no</code></strong>: expanding on what was said
+<a href="#sorting-and-date-restricting">above</a>, <code>--collapse=</code> can have an unlimited
+number of comma-delimited arguments after the first argument (which defines the
+variable it applies to).</p>
+<p><strong><code>--inline=self:self</code></strong>: like the others, this is also inlined.</p>
+<p><strong><code>--describe=self:'Whether to include text posts'</code></strong>: this overrides the
+description for the <code>-self=</code> option.  Run <code>./reddit -lh</code> to see it.</p>
+<h3 id="subreddit-search">Subreddit search<a class="headerlink" href="#subreddit-search" title="Permanent link">&para;</a></h3>
+<pre><code>www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}
+www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&amp;
+--description='Search posts in a subreddit'
+
+--anything=subreddit:all
+--alias=search:subreddit:anything
+--describe=subreddit:'Set subreddit to search in; &quot;all&quot; is a global search'
+
+--flag=global:subreddit:all
+
+--enum=sort:relevance:relevance,hot,top,new,comments
+--map=sort:sort
+
+--enum=time:all-time:hour,day,week,year,all-time
+--collapse=time:all-time,all
+--map=time:t
+
+--yes-no=nsfw:no
+--inline=nsfw:nsfw
+--describe=nsfw:'Whether to include NSFW posts'
+
+--anything=flair:
+--inline=flair:flair
+
+--enum=self:any:any,only,none
+--collapse=self:any,:only,yes:none,no
+--inline=self:self
+--describe=self:'Whether to include text posts'
+
+--query-parameter=q
+</code></pre>
+<p>This expands our elvis from <em>only</em> searching globally to searching globally
+<em>or</em> in one subreddit, defaulting to <code>all</code> (i.e., <code>r/all</code>)&ndash;using a
+<code>-subreddit=</code> option.</p>
+<h4 id="-aliassearchsubredditanything"><code>--alias=search:subreddit:anything</code><a class="headerlink" href="#-aliassearchsubredditanything" title="Permanent link">&para;</a></h4>
+<p>This defines an alias, <code>-search=</code> (a common option for elvi), to the
+<code>-subreddit=</code> option.  The <code>anything</code> as the third argument is needed because
+aliases can target options like <code>-foo=</code> and <code>-foo</code>, which <code>mkelvis</code>
+distinguishes&ndash;one takes a value, and the other is an alias to an option that
+<em>does</em> take a value.  This <code>anything</code> argument is called a &ldquo;typename&rdquo;.  See
+<a href="../reference/">the reference</a> for the details.  These value- and
+non-value-taking versions can co-exist with the same names.</p>
+<h4 id="-flagglobalsubredditall"><code>--flag=global:subreddit:all</code><a class="headerlink" href="#-flagglobalsubredditall" title="Permanent link">&para;</a></h4>
+<p>This defines an alias to <code>-subreddit=all</code> for quick access to <code>r/all</code> (if it&rsquo;s
+needed for some reason).  You could replace this with your favourite subreddit
+and you won&rsquo;t have to type all of it all the time (when using my [currently]
+WIP tab-completions change to surfraw) or the <code>-subreddit=</code> prefix.</p>
+<h4 id="wwwredditcomrsurfraw_reddit_subreddit-all-base-url"><code>www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}</code> (base url)<a class="headerlink" href="#wwwredditcomrsurfraw_reddit_subreddit-all-base-url" title="Permanent link">&para;</a></h4>
+<p>At this point, any variables defined by the elvis will have their final values
+after validating and collapsing.  The base URL text is placed in the elvis
+inside double quotes, so parameter expansions and command substitutions are
+available.  It&rsquo;s placed like so (without escaping or validating&ndash;so be
+careful!):</p>
+<pre><code class="language-sh">w3_browse_url &quot;YOUR_BASE_URL&quot;
+</code></pre>
+<p>Note that this parameter expansion is visible in the <code>surfraw -elvi</code> output.</p>
+<p><em>(For your elvi, please stick to POSIX shell since <code>surfraw</code> is a POSIX shell
+program.  We want elvi to be usable for everywhere.)</em></p>
+<h4 id="wwwredditcomrsurfraw_reddit_subreddit-allsearchrestrict_sr1-search-url"><code>www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&amp;</code> (search url)<a class="headerlink" href="#wwwredditcomrsurfraw_reddit_subreddit-allsearchrestrict_sr1-search-url" title="Permanent link">&para;</a></h4>
+<p>Like in the base URL, any variables will have their final values at at this
+point, and the search URL text is available for interaction by the shell:</p>
+<pre><code class="language-sh">w3_browse_url &quot;YOUR_SEARCH_URL&quot;
+</code></pre>
+<p>By the time <code>w3_browse_url</code> is called, the search URL will have any mappings
+and inlines, and the search terms placed within it.</p>
+<p>Note that this search URL has an <code>&amp;</code> at the end.  This is because every search
+is restricted to the subreddit using the <code>restrict_sr</code> query parameter.
+<code>mkelvis</code> doesn&rsquo;t care if there are already query parameters in the search
+URL&ndash;it just places its own mappings after it.</p>
+<h3 id="swappable-domain">Swappable domain<a class="headerlink" href="#swappable-domain" title="Permanent link">&para;</a></h3>
+<pre><code># you can place these in quotes if you want
+# it's only needed if the urls contain whitespace--since we use `xargs`
+${SURFRAW_reddit_site}/r/${SURFRAW_reddit_subreddit:-all}
+${SURFRAW_reddit_site}/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&amp;
+--description='Search posts in a subreddit'
+
+--enum=site:reddit:reddit,oldreddit
+--collapse=site:reddit,www.reddit.com:oldreddit,old.reddit.com
+
+--anything=subreddit:all
+--alias=search:subreddit:anything
+--describe=subreddit:'Set subreddit to search in; &quot;all&quot; is a global search'
+
+--flag=global:subreddit:all
+
+--enum=sort:relevance:relevance,hot,top,new,comments
+--map=sort:sort
+
+--enum=time:all-time:hour,day,week,year,all-time
+--collapse=time:all-time,all
+--map=time:t
+
+--yes-no=nsfw:no
+--inline=nsfw:nsfw
+--describe=nsfw:'Whether to include NSFW posts'
+
+--anything=flair:
+--inline=flair:flair
+
+--enum=self:any:any,only,none
+--collapse=self:any,:only,yes:none,no
+--inline=self:self
+--describe=self:'Whether to include text posts'
+
+--num-tabs=2
+
+--query-parameter=q
+</code></pre>
+<p>Finally, this allows us to switch between the default Reddit interface at
+<code>www.reddit.com</code> to the classic interface at <code>old.reddit.com</code>&ndash;using a <code>-site=</code>
+option.</p>
+<p>Both URLs now replace their <code>www.reddit.com</code> prefix with a parameter expansion.</p>
+<p>We also use <code>--num-tabs=2</code> to align the description of the elvis with that of
+other elvi in <code>surfraw -elvi</code>.</p>
+<p>Done!  You can play around with it and its options, and read the elvis code
+(it has lots of nice comments).  Now run <code>./reddit -lh</code> and see the output of a
+nice elvis:</p>
+<pre><code>Usage: reddit [options] [search words]...
+Description:
+  Search posts in a subreddit (${SURFRAW_reddit_site}/r/${SURFRAW_reddit_subreddit:-all})
+Local options:
+  -nsfw=NSFW                                 Whether to include NSFW posts
+                                             Default: no
+                                             Environment: SURFRAW_reddit_nsfw
+  -site=SITE                                 An enum option for 'site'
+        reddit                             | 
+        oldreddit                          | 
+                                             Default: reddit
+                                             Environment: SURFRAW_reddit_site
+  -sort=SORT                                 An enum option for 'sort'
+        relevance                          | 
+        hot                                | 
+        top                                | 
+        new                                | 
+        comments                           | 
+                                             Default: relevance
+                                             Environment: SURFRAW_reddit_sort
+  -time=TIME                                 An enum option for 'time'
+        hour                               | 
+        day                                | 
+        week                               | 
+        year                               | 
+        all-time                           | 
+                                             Default: all-time
+                                             Environment: SURFRAW_reddit_time
+  -self=SELF                                 Whether to include text posts
+        any                                | 
+        only                               | 
+        none                               | 
+                                             Default: any
+                                             Environment: SURFRAW_reddit_self
+  -search=SUBREDDIT, -subreddit=SUBREDDIT    Set subreddit to search in; &quot;all&quot; is a global search
+                                             Default: all
+                                             Environment: SURFRAW_reddit_subreddit
+  -flair=FLAIR                               An unchecked option for 'flair'
+                                             Default: 
+                                             Environment: SURFRAW_reddit_flair
+  -global                                    An alias for -subreddit=all
+</code></pre>
+<p>See <a href="../reference/">the reference</a> for the details on individual options to
+<code>mkelvis</code>.</p>
+<h2 id="making-many-elvi-at-once">Making many elvi at once<a class="headerlink" href="#making-many-elvi-at-once" title="Permanent link">&para;</a></h2>
+<p><code>mkelvis</code> only generates one elvis per invocation (KISS!), leaving the user
+free to decide how they want to create many of them.  An example follows.</p>
+<p>If there are lots of simple elvi, a single text file may be sufficient. It
+shall be called <code>elvi</code> here.</p>
+<p>First, specify the elvi you want by putting the arguments to <code>mkelvis</code> for each
+elvis to generate on separate lines. The name should have no whitespace.</p>
+<p>Example <code>elvi</code> file:</p>
+<pre><code>reddit www.reddit.com www.reddit.com/search?q=
+subreddit www.reddit.com www.reddit.com/subreddits/search?q= --description='Visit a subreddit'
+</code></pre>
+<p>In GNU Make, it could then be:</p>
+<pre><code class="language-mk">.PHONY: all
+all: elvi
+elvi:
+    xargs -L 1 mkelvis &lt; $@
+</code></pre>
+<p>Note that after running <code>make</code>, the current directory will be filled with elvi.
+You could modify this so that each elvis has a suffix like <code>.elvis</code> to manage
+them easier.</p>
+<p>See <a href="https://github.com/Hoboneer/surfraw-elvis">my elvi repo</a> for more examples.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

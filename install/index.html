@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Installation - surfraw-tools docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">surfraw-tools docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../advanced-usage/" class="nav-link">Advanced usage</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../reference/" class="nav-link">Reference</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">Installation</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../changelog/" class="nav-link">Changelog</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../contributing/" class="nav-link">Contributing</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../reference/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../changelog/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/install.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#surfraw-tools" class="nav-link">surfraw-tools</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#basic-installation" class="nav-link">Basic installation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#installing-with-a-specific-version-of-jinja2" class="nav-link">Installing with a specific version of Jinja2</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#local-installation" class="nav-link">Local installation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<!--
+SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<h1 id="surfraw-tools">surfraw-tools<a class="headerlink" href="#surfraw-tools" title="Permanent link">&para;</a></h1>
+<p>See <code>README.md</code> for usage information.</p>
+<h2 id="basic-installation">Basic installation<a class="headerlink" href="#basic-installation" title="Permanent link">&para;</a></h2>
+<p>You may use <code>pip</code> to install, but <a href="https://github.com/pipxproject/pipx">pipx</a>
+is recommended.  It is available in the distro repositories.</p>
+<pre><code class="language-sh">pipx install surfraw-tools
+# or
+pip install --user surfraw-tools
+</code></pre>
+<h2 id="installing-with-a-specific-version-of-jinja2">Installing with a specific version of Jinja2<a class="headerlink" href="#installing-with-a-specific-version-of-jinja2" title="Permanent link">&para;</a></h2>
+<p>This package depends on Jinja2 to pre-compile templates for faster runtime
+execution (see <code>pyproject.toml</code>).  These are specific to each version of
+Jinja2, so the build-time version and runtime version need to match.</p>
+<p><code>pipx</code> places all dependencies in a virtual environment and should build with
+the same version of Jinja2 as at runtime&ndash;which is the latest (<code>&lt;3.0</code>).  Use
+<code>pip</code> to use a specific version.</p>
+<p>By default, <code>pip</code> builds packages in a separate environment.  If a specific
+version of Jinja2 is desired, ensure that all the packages in the <code>requires</code>
+key of <code>pyproject.toml</code> are installed.  Then:</p>
+<pre><code class="language-sh">pip install --no-build-isolation surfraw-tools
+</code></pre>
+<h2 id="local-installation">Local installation<a class="headerlink" href="#local-installation" title="Permanent link">&para;</a></h2>
+<pre><code class="language-sh">pip install .
+# or
+python setup.py install
+</code></pre>
+<p>Note that the second method doesn&rsquo;t build a wheel.  This means that&ndash;at least
+on my machine&ndash;<code>pkg_resources</code> was imported by the script for the <code>mkelvis</code>
+entry point so import time was increased by over 100 ms.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

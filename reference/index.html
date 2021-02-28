@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Reference - surfraw-tools docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/font-awesome.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+
+        <script src="../js/jquery-1.10.2.min.js" defer></script>
+        <script src="../js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">surfraw-tools docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem">
+                                <a href=".." class="nav-link">Home</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../advanced-usage/" class="nav-link">Advanced usage</a>
+                            </li>
+                            <li class="navitem active">
+                                <a href="./" class="nav-link">Reference</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../install/" class="nav-link">Installation</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../changelog/" class="nav-link">Changelog</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="../contributing/" class="nav-link">Contributing</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../advanced-usage/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../install/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/reference.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#reference" class="nav-link">Reference</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#main-elvis-options" class="nav-link">Main elvis options</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#auxiliary-elvis-options" class="nav-link">Auxiliary elvis options</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#manipulating-variables" class="nav-link">Manipulating variables</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#map-variables-to-url" class="nav-link">Map variables to URL</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#control-over-search-url" class="nav-link">Control over search URL</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#miscellaneous-options" class="nav-link">Miscellaneous options</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<h1 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h1>
+<p><code>mkelvis</code> allows you to easily create common types of options found in surfraw
+elvi.  Most these types validate their values at runtime.  They each have a
+&ldquo;typename&rdquo; which is used in some <code>mkelvis</code> options to disambiguate their target
+(e.g., <code>--alias=</code>).</p>
+<h2 id="main-elvis-options">Main elvis options<a class="headerlink" href="#main-elvis-options" title="Permanent link">&para;</a></h2>
+<p>These options create variables corresponding to their name with the pattern
+<code>SURFRAW_${yourelvisname}_${thevariable}</code>.  They can&rsquo;t conflict.</p>
+<h3 id="boolean-options-typename-bool-synonyms-yes-no">Boolean options (typename: <code>bool</code>, synonyms: <code>yes-no</code>)<a class="headerlink" href="#boolean-options-typename-bool-synonyms-yes-no" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--yes-no=VARNAME:DEFAULT</code></p>
+<p>This is one of the simplest option types, corresponding to the surfraw options
+checked with <code>yesno</code> in elvi.</p>
+<p>The valid arguments are (in elvi):</p>
+<ul>
+<li><code>yes</code>, <code>on</code>, <code>1</code>: True</li>
+<li><code>no</code>, <code>off</code>, <code>0</code>: False</li>
+</ul>
+<p>For simplicity, <code>--yes-no</code> only accepts <code>yes</code> for true and <code>no</code> for false.
+File an issue if you need the other values to be accepted.</p>
+<h3 id="enum-options-typename-enum">Enum options (typename: <code>enum</code>)<a class="headerlink" href="#enum-options-typename-enum" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--enum=VARNAME:DEFAULT:VAL1,VAL2,...</code></p>
+<p>This is a common option type where only a fixed set of values is valid.  This
+set of values must be specified for every enum.</p>
+<h3 id="anything-options-typename-anything">&ldquo;Anything&rdquo; options (typename: <code>anything</code>)<a class="headerlink" href="#anything-options-typename-anything" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--anything=VARNAME:DEFAULT</code></p>
+<p>An unchecked option: the values of this type are <em>not</em> checked by elvi.  Useful
+for websites whose search syntax is too complex or is really an option that
+<em>could</em> contain anything, like target users.</p>
+<h3 id="special-options-typename-special">Special options (typename: <code>special</code>)<a class="headerlink" href="#special-options-typename-special" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--use-results-option</code> (1), <code>--use-language-option</code> (2)</p>
+<p>Singleton options that implement behaviour common to many elvi:</p>
+<ol>
+<li>A <code>-results=NUM</code> option whose default value is taken from <code>SURFRAW_results</code></li>
+<li>A <code>-language=ISOCODE</code> option whose default value is taken from <code>SURFRAW_lang</code></li>
+</ol>
+<h3 id="list-options-typename-list">List options (typename: <code>list</code>)<a class="headerlink" href="#list-options-typename-list" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--list=VARNAME:TYPE:DEFAULT1,DEFAULT2,...[:VALID_VALUES_IF_ENUM]</code></p>
+<p>An option that specifies list-like behaviour for a variable whose elements are
+of a single type.  Generates <code>-add-$optname=</code>, <code>-remove-$optname=</code>, and
+<code>-clear-$optname</code> options for every list option.</p>
+<ul>
+<li><code>-add-$optname=VALS</code>: Append <code>VALS</code> to list variable.</li>
+<li><code>-remove-$optname=VALS</code>: Remove <em>all</em> instances of each value of <code>VALS</code> from list variable.</li>
+<li><code>-clear-$optname</code>: Clear list variable.</li>
+</ul>
+<p>The valid list types are:</p>
+<ul>
+<li><code>enum</code></li>
+<li><code>anything</code></li>
+</ul>
+<h2 id="auxiliary-elvis-options">Auxiliary elvis options<a class="headerlink" href="#auxiliary-elvis-options" title="Permanent link">&para;</a></h2>
+<p>These options help make the generated elvi quicker to use.  They don&rsquo;t create
+variables.</p>
+<h3 id="flag-options-typename-flag">Flag options (typename: <code>flag</code>)<a class="headerlink" href="#flag-options-typename-flag" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--flag=</code></p>
+<p>An alias (with a value) to one of the above options&ndash;all of which create
+variables in the generated elvis (hereafter &ldquo;variable options&rdquo;).  This is
+essentially a shorthand for specifying <code>-opt=commonval</code> as <code>-c</code>, for example.</p>
+<h3 id="alias-options-typename-alias">Alias options (typename: <code>alias</code>)<a class="headerlink" href="#alias-options-typename-alias" title="Permanent link">&para;</a></h3>
+<p>Created with: <code>--alias=</code></p>
+<p>An alias (without a value) to either a variable option or flag option.  This is
+essentially a synonym for another option.  Aliases <em>cannot</em> target other
+aliases.</p>
+<p>Since aliases can target variable options <em>and</em> flag options, they take a
+typename to disambiguate.</p>
+<p>Examples:</p>
+<ul>
+<li><code>-s</code>: Alias for <code>-sort</code> (a flag)</li>
+<li><code>-l=</code>: Alias for <code>-language=</code>.  The user would still have to specify the
+    value.</li>
+</ul>
+<h2 id="manipulating-variables">Manipulating variables<a class="headerlink" href="#manipulating-variables" title="Permanent link">&para;</a></h2>
+<p><code>mkelvis</code> provides a <code>--collapse=VARNAME:VAL1,VAL2,RESULT:...</code> option which
+corresponds to a shell case-statement.  Each argument after <code>VARNAME</code> is a list
+where the <em>last</em> value (<code>RESULT</code> in this case) is a shell snippet that the
+other values (<code>VAL1</code> and <code>VAL2</code> here) are converted to.  <code>RESULT</code> is not
+escaped so it can include parameter expansions and command substitutions
+(please stick to POSIX shell).</p>
+<p>Within <code>RESULT</code>, you can access <code>$it</code>, which is an alias for the current
+option&rsquo;s variable.  The variables for the other options are in an undefined
+state at this point&ndash;don&rsquo;t reference them here.</p>
+<p>This roughly corresponds to:</p>
+<pre><code class="language-sh">case &quot;$varname&quot; in
+    VAL1|VAL2) varname=&quot;RESULT&quot; ;;
+esac
+</code></pre>
+<h2 id="map-variables-to-url">Map variables to URL<a class="headerlink" href="#map-variables-to-url" title="Permanent link">&para;</a></h2>
+<p>Variables may each be &ldquo;mapped&rdquo; or &ldquo;inlined&rdquo; to a query parameter in the URL or
+as a keyword in the search query respectively.</p>
+<h3 id="mapping">Mapping<a class="headerlink" href="#mapping" title="Permanent link">&para;</a></h3>
+<p><code>--map=VAR:PARAM[:URL_ENCODE?]</code></p>
+<p>Map variable <code>VAR</code> to <code>PARAM</code> like so: <code>https://example.com/?PARAM=$VAR</code>.</p>
+<p>If <code>URL_ENCODE</code> is <code>yes</code> (default), then the value of <code>VAR</code> is percent-encoded;
+if <code>no</code> then <code>$VAR</code> is left as it is.</p>
+<p><code>--list-map=VAR:PARAM[:URL_ENCODE?]</code></p>
+<p>Similar to <code>--map=</code> but <code>VAR</code> is treated like a list and each value is mapped
+to a separate <code>PARAM</code> query parameter.  If the list is empty, then <code>PARAM</code> will
+have an empty value like so: <code>https://example.com/?PARAM=</code>.</p>
+<h3 id="inlining">Inlining<a class="headerlink" href="#inlining" title="Permanent link">&para;</a></h3>
+<p><code>--inline=VAR:KEYWORD</code></p>
+<p>Inline variable <code>VAR</code> to <code>KEYWORD</code> in the search query like so:
+<code>https://example.com/?q=search+arg+KEYWORD:$VAR</code>.  If <code>$VAR</code> has whitespace,
+then it will be wrapped in double quotes.  If <code>$VAR</code> is empty, then <code>VAR</code> will
+not be inlined.</p>
+<p><code>--list-inline=VAR:KEYWORD</code></p>
+<p>Similar to <code>--inline=</code> but <code>VAR</code> is treated like a list and each value is
+mapped to a separate <code>KEYWORD</code> in the search query, double-quoting if needed
+(see <code>--inline=</code>).  If the list is empty, then <code>VAR</code> will not be inlined at
+all.</p>
+<h2 id="control-over-search-url">Control over search URL<a class="headerlink" href="#control-over-search-url" title="Permanent link">&para;</a></h2>
+<p>Where the mappings and search terms (which includes the inlinings) are exactly
+placed in the URL can each be independently controlled using the
+<code>--no-append-mappings</code> and <code>--no-append-args</code> options respectively.  </p>
+<p>Like with <code>--collapse=</code>, parameter expansions and command substitutions are
+available in the search URL string (and the base URL too).  The <code>$mappings</code> and
+<code>$it</code> (search terms and inlinings) variables are available.  You have the
+responsibility of ensuring that these go into the URL correctly.</p>
+<h2 id="miscellaneous-options">Miscellaneous options<a class="headerlink" href="#miscellaneous-options" title="Permanent link">&para;</a></h2>
+<p>Here are some other useful options.  See <code>mkelvis --help</code> for any others
+missed.</p>
+<ul>
+<li><code>--description=DESCRIPTION</code>: Set the elvis description, excluding its domain
+  name.</li>
+<li><code>--query-parameter=PARAM</code>: Define the query parameter to be appended to the
+  URL (mandatory if <code>--map=</code> or <code>--list-map=</code> are used).</li>
+<li><code>--metavar=VAR:METAVAR</code>: Set the metavar of the variable option <code>VAR</code> to
+  <code>METAVAR</code> (in <code>-local-help</code>), which is capitalised automatically.</li>
+<li><code>--describe=VAR:DESCRIPTION</code>: Set the description of the variable option
+  <code>VAR</code> to <code>DESCRIPTION</code> (in <code>-local-help</code>).</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js" defer></script>
+        <script src="../search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="description" content="None">
+        
+        
+        <link rel="shortcut icon" href="img/favicon.ico">
+        <title>surfraw-tools docs</title>
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/font-awesome.min.css" rel="stylesheet">
+        <link href="css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+
+        <script src="js/jquery-1.10.2.min.js" defer></script>
+        <script src="js/bootstrap.min.js" defer></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script>hljs.initHighlightingOnLoad();</script> 
+    </head>
+
+    <body class="homepage">
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href=".">surfraw-tools docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-toggle="collapse" data-target="#navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="navitem active">
+                                <a href="." class="nav-link">Home</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="advanced-usage/" class="nav-link">Advanced usage</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="reference/" class="nav-link">Reference</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="install/" class="nav-link">Installation</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="changelog/" class="nav-link">Changelog</a>
+                            </li>
+                            <li class="navitem">
+                                <a href="contributing/" class="nav-link">Contributing</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ml-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-toggle="modal" data-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" class="nav-link disabled">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="advanced-usage/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/index.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-light navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-toggle="collapse" data-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-secondary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-level="1"><a href="#surfraw-tools" class="nav-link">surfraw-tools</a>
+              <ul class="nav flex-column">
+            <li class="nav-item" data-level="2"><a href="#installation" class="nav-link">Installation</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#quickstart" class="nav-link">Quickstart</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#features-mkelvis" class="nav-link">Features (mkelvis)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#contributing" class="nav-link">Contributing</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            <li class="nav-item" data-level="2"><a href="#copyright" class="nav-link">Copyright</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<!--
+SPDX-FileCopyrightText: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
+<h1 id="surfraw-tools">surfraw-tools<a class="headerlink" href="#surfraw-tools" title="Permanent link">&para;</a></h1>
+<p><code>surfraw-tools</code> is a suite of command-line tools to generate
+<a href="https://www.techrepublic.com/blog/linux-and-open-source/surfing-the-world-wide-web-raw-style/">surfraw</a>
+elvi easily.</p>
+<p>Hosted on <a href="https://github.com/Hoboneer/surfraw-elvis-generator">GitHub</a>.</p>
+<p>Documentation is at TODO.</p>
+<p>The following are currently provided:</p>
+<ul>
+<li><code>mkelvis</code>: generate an elvis</li>
+<li><code>opensearch2elvis</code>: generate an elvis for an OpenSearch-enabled website</li>
+</ul>
+<h2 id="installation">Installation<a class="headerlink" href="#installation" title="Permanent link">&para;</a></h2>
+<p><code>surfraw-tools</code> is available on
+<a href="https://pypi.org/project/surfraw-tools/">PyPI</a>.  Use
+<a href="https://github.com/pipxproject/pipx">pipx</a>.  It&rsquo;s available in many distro
+repositories.</p>
+<pre><code class="language-sh">pipx install surfraw-tools
+</code></pre>
+<p>See <code>INSTALL.md</code> for more details.</p>
+<h2 id="quickstart">Quickstart<a class="headerlink" href="#quickstart" title="Permanent link">&para;</a></h2>
+<h3 id="generate-a-simple-elvis">Generate a simple elvis<a class="headerlink" href="#generate-a-simple-elvis" title="Permanent link">&para;</a></h3>
+<pre><code class="language-sh"># these two are equivalent: https is the default url scheme
+mkelvis yourelvisname example.com 'example.com/search?q='
+mkelvis yourelvisname https://example.com 'https://example.com/search?q='
+
+# use http for insecure websites
+mkelvis yourelvisname --insecure example.com 'example.com/search?q='
+mkelvis yourelvisname http://example.com 'http://example.com/search?q='
+
+# with a description
+mkelvis yourelvisname --description='Search Example for bliks' https://example.com 'https://example.com/search?q='
+
+# to align in `sr-elvi`
+mkelvis yourelvisname --num-tabs=NUM https://example.com 'https://example.com/search?q='
+</code></pre>
+<p>Leave the <code>q</code> URL parameter with an empty value because the search terms will
+be appended to it when <code>yourelvisname</code> runs.  The first URL is where the elvis
+takes you when no search terms have been passed.</p>
+<h3 id="create-an-elvis-for-an-opensearch-enabled-website">Create an elvis for an <a href="https://github.com/dewitt/opensearch">OpenSearch</a>-enabled website<a class="headerlink" href="#create-an-elvis-for-an-opensearch-enabled-website" title="Permanent link">&para;</a></h3>
+<pre><code class="language-sh"># find and download the OpenSearch description file, and then generate
+opensearch2elvis yourelvisname https://example.com  # any HTML page under the domain should work
+
+# download an OpenSearch description file and then generate
+opensearch2elvis yourelvisname https://example.com/opensearch.xml
+
+# generate from a local OpenSearch description file
+opensearch2elvis yourelvisname opensearch.xml
+</code></pre>
+<p>The created elvis will be placed in the current directory with the name
+<code>yourelvisname</code>, and ready for installation (made executable, shebang added).</p>
+<p>See the advanced usage docs for more.</p>
+<h3 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h3>
+<p>The generated elvi include tab-completion code using my <em>work-in-progress</em>
+system of elvi-specific completions.  Check the merge requests in the <a href="https://gitlab.com/surfraw/Surfraw">main
+surfraw repo</a>.</p>
+<p>If you don&rsquo;t want to use the WIP completions, use the <code>--no-completions</code>
+option.  This isn&rsquo;t needed though: the elvi still work but there might be a few
+error messages.</p>
+<p>Also, <code>opensearch2elvis</code> only has minimal support for websites that specify
+POST method searches.  Currently, it just treats them as if they specified GET
+and hopes for the best.  <a href="https://github.com/Hoboneer/surfraw-elvis-generator/issues/27">I plan to support
+this</a>.</p>
+<h2 id="features-mkelvis">Features (<code>mkelvis</code>)<a class="headerlink" href="#features-mkelvis" title="Permanent link">&para;</a></h2>
+<ul>
+<li>allows <code>*</code> characters in queries without spewing out contents of directories from globbing</li>
+<li>usable, automatically-generated <code>--local-help</code> and <code>-elvi</code> output<ul>
+<li>with control over some aspects of formatting</li>
+</ul>
+</li>
+<li>readable output elvi with explanatory comments and templates</li>
+<li>elvi-specific tab-completions (<strong>NOTE: uses WIP surfraw features from my merge request on the main surfraw repo</strong>)</li>
+<li>easy-to-generate options, with <em>types</em> for different uses</li>
+<li>shortcuts to generate common surfraw options: <code>-result=NUM</code> and <code>-language=ISOCODE</code></li>
+<li>declarative option syntax with access to the shell for some options<ul>
+<li>the topic variable (<code>$it</code>) is available for some options</li>
+<li>map surfraw-option values to url parameters</li>
+<li>&ldquo;inline&rdquo; surfraw-option values to search query keywords</li>
+<li>mutate variables in shell case-statements</li>
+</ul>
+</li>
+</ul>
+<p>See the reference and advanced usage docs for more.</p>
+<h2 id="contributing">Contributing<a class="headerlink" href="#contributing" title="Permanent link">&para;</a></h2>
+<h3 id="set-up-a-development-environment">Set up a development environment<a class="headerlink" href="#set-up-a-development-environment" title="Permanent link">&para;</a></h3>
+<pre><code class="language-sh">python3 -m venv env
+. env/bin/activate
+pip install -r requirements/dev.txt
+pip install -e .
+</code></pre>
+<p>Also ensure that you have GNU Make and (Universal) Ctags.  On Debian, Ubuntu, and their derivatives:</p>
+<pre><code class="language-sh">sudo apt install make universal-ctags
+</code></pre>
+<h3 id="before-submitting-a-pull-request">Before submitting a pull request<a class="headerlink" href="#before-submitting-a-pull-request" title="Permanent link">&para;</a></h3>
+<pre><code class="language-sh">make -k format check-dev
+</code></pre>
+<p>Make sure that no new errors were introduced after your changes.</p>
+<h2 id="copyright">Copyright<a class="headerlink" href="#copyright" title="Permanent link">&para;</a></h2>
+<p>This project is licensed under the Apache License 2.0 (sic) and follows the
+<a href="https://reuse.software">REUSE licencing guidelines</a>.  Some auxiliary files
+have a different licence.  Check their file headers or <code>.reuse/dep5</code> for
+details.  Copies of the licences used in this project can be located in the
+<code>LICENSES/</code> directory, per the REUSE guidelines.</p>
+<p>Written by Gabriel Lisaca &ndash; gabriel.lisaca (replace me with at) gmail dot com</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script>
+            var base_url = ".",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="js/base.js" defer></script>
+        <script src="search/main.js" defer></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+                <p>
+                    From here you can search these documents. Enter
+                    your search terms below.
+                </p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 1.1.2
+Build Date UTC : 2021-02-28 11:37:00.840490+00:00
+-->
