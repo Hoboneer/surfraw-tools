@@ -1,5 +1,6 @@
 site_name: surfraw-tools docs
 repo_url: https://github.com/Hoboneer/surfraw-elvis-generator
+site_url: https://hoboneer.github.io/surfraw-elvis-generator/
 nav:
         - Home: index.md
         - Advanced usage: advanced-usage.md

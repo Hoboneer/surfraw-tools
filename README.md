@@ -12,7 +12,8 @@ elvi easily.
 
 Hosted on [GitHub](https://github.com/Hoboneer/surfraw-elvis-generator).
 
-Documentation is at TODO.
+Documentation is hosted on [GitHub
+Pages](https://hoboneer.github.io/surfraw-elvis-generator/).
 
 The following are currently provided:
 

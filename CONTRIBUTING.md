@@ -27,7 +27,7 @@ mkdocs serve
 ```
 
 Open `http://127.0.0.1:8000/` in your browser to view your changes as you write
-them (it auto-reloads).
+(it auto-reloads).
 
 ## Make a new release
 1. Rename the `[Unreleased]` section in `CHANGELOG.md` to `[NEW_VERSION] - CURRENT_DATE_ISO`.
@@ -44,15 +44,19 @@ them (it auto-reloads).
      - For `.md`, `.sh`, `.py`, `.toml`, `.yml`, `.cfg` files, you can run:
         - `reuse addheader --copyright="HOLDER <EMAIL>" --license=Apache-2.0 FILES`
      - For other files, update the header manually.
-5. Run `make check-copyright` to see if some files don't have a licence header.
-6. Commit these changes.
-7. Run `make clean` to remove any build artifacts from previous builds.
-8. Run `make dist`.  This has the `format`, `check-dev`, and `check-copyright`
-rules as prerequisites, and will fail if any of them do.
-9. Check that the resulting sdist has all that you need.
-10. Run `make upload`.
-11. Add a tag with the new version number: `git tag NEW_VERSION`.
-12. Push your changes: `git push --tags`
+5. Run `make check-copyright` to see if some files don't have a licence
+   header--go back to step (4) if some don't.
+6. Run `mkdocs serve` and open `http://127.0.0.1:8000/` in your browser to
+   check the docs for errors.
+7. Commit these changes.
+8. Run `make clean` to remove any build artifacts from previous builds.
+9. Run `make dist`.  This has the `format`, `check-dev`, and `check-copyright`
+   rules as prerequisites, and will fail if any of them do.
+10. Check that the resulting sdist has all that you need.
+11. Run `make upload`.
+12. Add a tag with the new version number: `git tag NEW_VERSION`.
+13. Push your changes: `git push --tags`.
+14. Run `mkdocs gh-deploy` to deploy docs to Github Pages.
 
 We don't build wheels because we pre-compile Jinja templates during
 installation for faster runtime execution.  The build-time and runtime version
