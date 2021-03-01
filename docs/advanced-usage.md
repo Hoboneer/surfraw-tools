@@ -6,7 +6,7 @@
 `-results=NUM` seen in many existing elvi.
 
 We'll create an elvis for Reddit--starting simple and building up
-functionality.  The end-result can be found at [commit
+functionality.  The end-result is based on [commit
 `a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c` from my elvi
 repo](https://github.com/Hoboneer/surfraw-elvis/blob/a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c/src/reddit.in).
 
@@ -244,8 +244,7 @@ non-value-taking versions can co-exist with the same names.
 
 This defines an alias to `-subreddit=all` for quick access to `r/all` (if it's
 needed for some reason).  You could replace this with your favourite subreddit
-and you won't have to type all of it all the time (when using my \[currently\]
-WIP tab-completions change to surfraw) or the `-subreddit=` prefix.
+and you won't have to type the `-subreddit=` prefix all the time.
 
 #### `www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}` (base url)
 
@@ -262,12 +261,12 @@ w3_browse_url "YOUR_BASE_URL"
 Note that this parameter expansion is visible in the `surfraw -elvi` output.
 
 *(For your elvi, please stick to POSIX shell since `surfraw` is a POSIX shell
-program.  We want elvi to be usable for everywhere.)*
+program.  We want elvi to be usable everywhere.)*
 
 #### `www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&` (search url)
 
-Like in the base URL, any variables will have their final values at at this
-point, and the search URL text is available for interaction by the shell:
+Like in the base URL, any variables will have their final values at this point
+and the search URL text is available for interaction by the shell:
 
 ```sh
 w3_browse_url "YOUR_SEARCH_URL"
@@ -324,8 +323,8 @@ ${SURFRAW_reddit_site}/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&
 ```
 
 Finally, this allows us to switch between the default Reddit interface at
-`www.reddit.com` to the classic interface at `old.reddit.com`--using a `-site=`
-option.
+`www.reddit.com` and the classic interface at `old.reddit.com`--using a
+`-site=` option.
 
 Both URLs now replace their `www.reddit.com` prefix with a parameter expansion.
 
@@ -388,11 +387,11 @@ See [the reference](reference.md) for the details on individual options to
 `mkelvis` only generates one elvis per invocation (KISS!), leaving the user
 free to decide how they want to create many of them.  An example follows.
 
-If there are lots of simple elvi, a single text file may be sufficient. It
-shall be called `elvi` here.
+If there are lots of simple elvi, a single text file is enough.  It will be
+called `elvi` here.
 
 First, specify the elvi you want by putting the arguments to `mkelvis` for each
-elvis to generate on separate lines. The name should have no whitespace.
+elvis on separate lines.  The name should have no whitespace.
 
 Example `elvi` file:
 
@@ -401,7 +400,7 @@ reddit www.reddit.com www.reddit.com/search?q=
 subreddit www.reddit.com www.reddit.com/subreddits/search?q= --description='Visit a subreddit'
 ```
 
-In GNU Make, it could then be:
+A possible `Makefile`:
 
 ```mk
 .PHONY: all

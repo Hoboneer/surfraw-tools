@@ -73,7 +73,7 @@ variables.
 
 ### Flag options (typename: `flag`)
 
-Created with: `--flag=`
+Created with: `--flag=NAME:TARGETVAR:VALUE`
 
 An alias (with a value) to one of the above options--all of which create
 variables in the generated elvis (hereafter "variable options").  This is
@@ -81,7 +81,7 @@ essentially a shorthand for specifying `-opt=commonval` as `-c`, for example.
 
 ### Alias options (typename: `alias`)
 
-Created with: `--alias=`
+Created with: `--alias=NAME:TARGETNAME:TARGETTYPE`
 
 An alias (without a value) to either a variable option or flag option.  This is
 essentially a synonym for another option.  Aliases *cannot* target other

@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   special things with `$_`, so this is the next best name.
 - The repo now uses the name `surfraw-tools`:
   https://github.com/Hoboneer/surfraw-tools
+- Documentation now available at https://hoboneer.github.io/surfraw-tools/
 
 ## [0.1.0] - 2020-07-03
 
