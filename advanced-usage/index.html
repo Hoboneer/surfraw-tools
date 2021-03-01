@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         
-        <link rel="canonical" href="https://hoboneer.github.io/surfraw-elvis-generator/advanced-usage/">
+        <link rel="canonical" href="https://hoboneer.github.io/surfraw-tools/advanced-usage/">
         <link rel="shortcut icon" href="../img/favicon.ico">
         <title>Advanced usage - surfraw-tools docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
@@ -70,7 +70,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/advanced-usage.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/Hoboneer/surfraw-tools/edit/master/docs/advanced-usage.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -112,7 +112,7 @@
 <p><code>mkelvis</code> allows you to create elvi with options like <code>-sort=</code> and
 <code>-results=NUM</code> seen in many existing elvi.</p>
 <p>We&rsquo;ll create an elvis for Reddit&ndash;starting simple and building up
-functionality.  The end-result can be found at <a href="https://github.com/Hoboneer/surfraw-elvis/blob/a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c/src/reddit.in">commit
+functionality.  The end-result is based on <a href="https://github.com/Hoboneer/surfraw-elvis/blob/a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c/src/reddit.in">commit
 <code>a8ec5a7833e44df9cc3d9f56dc6cf7aa69d13e8c</code> from my elvi
 repo</a>.</p>
 <p>Name your file <code>reddit.in</code> and create a <code>Makefile</code> with these contents:</p>
@@ -299,8 +299,7 @@ non-value-taking versions can co-exist with the same names.</p>
 <h4 id="-flagglobalsubredditall"><code>--flag=global:subreddit:all</code><a class="headerlink" href="#-flagglobalsubredditall" title="Permanent link">&para;</a></h4>
 <p>This defines an alias to <code>-subreddit=all</code> for quick access to <code>r/all</code> (if it&rsquo;s
 needed for some reason).  You could replace this with your favourite subreddit
-and you won&rsquo;t have to type all of it all the time (when using my [currently]
-WIP tab-completions change to surfraw) or the <code>-subreddit=</code> prefix.</p>
+and you won&rsquo;t have to type the <code>-subreddit=</code> prefix all the time.</p>
 <h4 id="wwwredditcomrsurfraw_reddit_subreddit-all-base-url"><code>www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}</code> (base url)<a class="headerlink" href="#wwwredditcomrsurfraw_reddit_subreddit-all-base-url" title="Permanent link">&para;</a></h4>
 <p>At this point, any variables defined by the elvis will have their final values
 after validating and collapsing.  The base URL text is placed in the elvis
@@ -311,10 +310,10 @@ careful!):</p>
 </code></pre>
 <p>Note that this parameter expansion is visible in the <code>surfraw -elvi</code> output.</p>
 <p><em>(For your elvi, please stick to POSIX shell since <code>surfraw</code> is a POSIX shell
-program.  We want elvi to be usable for everywhere.)</em></p>
+program.  We want elvi to be usable everywhere.)</em></p>
 <h4 id="wwwredditcomrsurfraw_reddit_subreddit-allsearchrestrict_sr1-search-url"><code>www.reddit.com/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&amp;</code> (search url)<a class="headerlink" href="#wwwredditcomrsurfraw_reddit_subreddit-allsearchrestrict_sr1-search-url" title="Permanent link">&para;</a></h4>
-<p>Like in the base URL, any variables will have their final values at at this
-point, and the search URL text is available for interaction by the shell:</p>
+<p>Like in the base URL, any variables will have their final values at this point
+and the search URL text is available for interaction by the shell:</p>
 <pre><code class="language-sh">w3_browse_url &quot;YOUR_SEARCH_URL&quot;
 </code></pre>
 <p>By the time <code>w3_browse_url</code> is called, the search URL will have any mappings
@@ -363,8 +362,8 @@ ${SURFRAW_reddit_site}/r/${SURFRAW_reddit_subreddit:-all}/search?restrict_sr=1&a
 --query-parameter=q
 </code></pre>
 <p>Finally, this allows us to switch between the default Reddit interface at
-<code>www.reddit.com</code> to the classic interface at <code>old.reddit.com</code>&ndash;using a <code>-site=</code>
-option.</p>
+<code>www.reddit.com</code> and the classic interface at <code>old.reddit.com</code>&ndash;using a
+<code>-site=</code> option.</p>
 <p>Both URLs now replace their <code>www.reddit.com</code> prefix with a parameter expansion.</p>
 <p>We also use <code>--num-tabs=2</code> to align the description of the elvis with that of
 other elvi in <code>surfraw -elvi</code>.</p>
@@ -418,15 +417,15 @@ Local options:
 <h2 id="making-many-elvi-at-once">Making many elvi at once<a class="headerlink" href="#making-many-elvi-at-once" title="Permanent link">&para;</a></h2>
 <p><code>mkelvis</code> only generates one elvis per invocation (KISS!), leaving the user
 free to decide how they want to create many of them.  An example follows.</p>
-<p>If there are lots of simple elvi, a single text file may be sufficient. It
-shall be called <code>elvi</code> here.</p>
+<p>If there are lots of simple elvi, a single text file is enough.  It will be
+called <code>elvi</code> here.</p>
 <p>First, specify the elvi you want by putting the arguments to <code>mkelvis</code> for each
-elvis to generate on separate lines. The name should have no whitespace.</p>
+elvis on separate lines.  The name should have no whitespace.</p>
 <p>Example <code>elvi</code> file:</p>
 <pre><code>reddit www.reddit.com www.reddit.com/search?q=
 subreddit www.reddit.com www.reddit.com/subreddits/search?q= --description='Visit a subreddit'
 </code></pre>
-<p>In GNU Make, it could then be:</p>
+<p>A possible <code>Makefile</code>:</p>
 <pre><code class="language-mk">.PHONY: all
 all: elvi
 elvi:

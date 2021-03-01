@@ -6,7 +6,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         
         
-        <link rel="canonical" href="https://hoboneer.github.io/surfraw-elvis-generator/reference/">
+        <link rel="canonical" href="https://hoboneer.github.io/surfraw-tools/reference/">
         <link rel="shortcut icon" href="../img/favicon.ico">
         <title>Reference - surfraw-tools docs</title>
         <link href="../css/bootstrap.min.css" rel="stylesheet">
@@ -70,7 +70,7 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a href="https://github.com/Hoboneer/surfraw-elvis-generator/edit/master/docs/reference.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
+                                <a href="https://github.com/Hoboneer/surfraw-tools/edit/master/docs/reference.md" class="nav-link"><i class="fa fa-github"></i> Edit on GitHub</a>
                             </li>
                     </ul>
                 </div>
@@ -177,12 +177,12 @@ of a single type.  Generates <code>-add-$optname=</code>, <code>-remove-$optname
 <p>These options help make the generated elvi quicker to use.  They don&rsquo;t create
 variables.</p>
 <h3 id="flag-options-typename-flag">Flag options (typename: <code>flag</code>)<a class="headerlink" href="#flag-options-typename-flag" title="Permanent link">&para;</a></h3>
-<p>Created with: <code>--flag=</code></p>
+<p>Created with: <code>--flag=NAME:TARGETVAR:VALUE</code></p>
 <p>An alias (with a value) to one of the above options&ndash;all of which create
 variables in the generated elvis (hereafter &ldquo;variable options&rdquo;).  This is
 essentially a shorthand for specifying <code>-opt=commonval</code> as <code>-c</code>, for example.</p>
 <h3 id="alias-options-typename-alias">Alias options (typename: <code>alias</code>)<a class="headerlink" href="#alias-options-typename-alias" title="Permanent link">&para;</a></h3>
-<p>Created with: <code>--alias=</code></p>
+<p>Created with: <code>--alias=NAME:TARGETNAME:TARGETTYPE</code></p>
 <p>An alias (without a value) to either a variable option or flag option.  This is
 essentially a synonym for another option.  Aliases <em>cannot</em> target other
 aliases.</p>
