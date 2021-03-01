@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The defaults are safe and the advanced user should know what they're doing.
 - Use `$it` instead of `$_` for implicit variables.  Bash and other shells do
   special things with `$_`, so this is the next best name.
+- The repo now uses the name `surfraw-tools`:
+  https://github.com/Hoboneer/surfraw-tools
 
 ## [0.1.0] - 2020-07-03
 

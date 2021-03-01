@@ -10,10 +10,10 @@ SPDX-License-Identifier: Apache-2.0
 [surfraw](https://www.techrepublic.com/blog/linux-and-open-source/surfing-the-world-wide-web-raw-style/)
 elvi easily.
 
-Hosted on [GitHub](https://github.com/Hoboneer/surfraw-elvis-generator).
+Hosted on [GitHub](https://github.com/Hoboneer/surfraw-tools).
 
 Documentation is hosted on [GitHub
-Pages](https://hoboneer.github.io/surfraw-elvis-generator/).
+Pages](https://hoboneer.github.io/surfraw-tools/).
 
 The following are currently provided:
 
@@ -86,7 +86,7 @@ error messages.
 Also, `opensearch2elvis` only has minimal support for websites that specify
 POST method searches.  Currently, it just treats them as if they specified GET
 and hopes for the best.  [I plan to support
-this](https://github.com/Hoboneer/surfraw-elvis-generator/issues/27).
+this](https://github.com/Hoboneer/surfraw-tools/issues/27).
 
 ## Features (`mkelvis`)
 
