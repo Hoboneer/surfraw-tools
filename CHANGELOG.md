@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   https://github.com/Hoboneer/surfraw-tools
 - Documentation now available at https://hoboneer.github.io/surfraw-tools/
 
+### Fixed
+- Disabled globbing when working with "list" variables in generated elvi.  This
+  caused directory contents to be exposed if a `*` character appeared in
+  `-add-LIST=`.
+
 ## [0.1.0] - 2020-07-03
 
 Initial release.

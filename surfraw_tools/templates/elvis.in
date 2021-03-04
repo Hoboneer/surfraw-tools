@@ -79,12 +79,15 @@ __mkelvis_enter_list_ctx ()
 	test -n "$__mkelvis_old_ifs" && err "tried to enter list context but are already in one"
 	__mkelvis_old_ifs="${IFS:-$__mkelvis_default_ifs}"
 	IFS=,
+	# Disable globbing to avoid accidental exposure of directory contents.
+	set -f
 }
 __mkelvis_exit_list_ctx ()
 {
 	test -z "$__mkelvis_old_ifs" && err "tried to exit list context but have not entered one"
 	IFS="$__mkelvis_old_ifs"
 	__mkelvis_old_ifs=''
+	set +f
 }
 
 __mkelvis_deflist ()
@@ -111,7 +114,7 @@ __mkelvis_removelist ()
 	__mkelvis_enter_list_ctx
 	for val in $vars; do
 		# Add back to list if not in list of values to remove.
-		if ! echo $val | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
+		if ! echo "$val" | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
 			__mkelvis_exit_list_ctx
 			__mkelvis_addlist __mkelvis_removelist__newlist "$val"
 			__mkelvis_enter_list_ctx
@@ -497,7 +500,7 @@ mappings="$mappings&{{ query_parameter|urlencode }}="
 mappings="{{ query_parameter|urlencode }}="
 {% endif %}
 {% endif %}
-## Don't expand pathnames so that '*' characters are passed to browser verbatim.
+## Disable globbing to avoid accidental exposure of directory contents.
 set -f
 {% if inlines or list_inlines %}
 escaped_args="$(w3_url_of_arg $w3_args)$inlines"
