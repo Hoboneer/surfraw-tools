@@ -106,25 +106,25 @@ __mkelvis_addlist ()
 }
 __mkelvis_removelist ()
 {
-	__mkelvis_removelist__toremove_re="$(echo "$2" | sed 's/,/\\|/g')"
-	__mkelvis_removelist__newlist=''
+	local listvar excludevals
+	listvar="$1"
+	excludevals="$2"
+	# Reset positional params.
+	set --
 
-	# Only split on ',' characters in the for-loop.
-	vars="$(eval echo \$$1)"
 	__mkelvis_enter_list_ctx
-	for val in $vars; do
-		# Add back to list if not in list of values to remove.
-		if ! echo "$val" | grep "$__mkelvis_removelist__toremove_re" >/dev/null 2>&1; then
-			__mkelvis_exit_list_ctx
-			__mkelvis_addlist __mkelvis_removelist__newlist "$val"
-			__mkelvis_enter_list_ctx
-		fi
+	# Ensure that fixed patterns are used.
+	for excludeval in $excludevals; do
+		# Don't pass the null string to fgrep (it matches *every* line).
+		[ -z "$excludeval" ] && continue
+		set -- "$@" -e "$excludeval"
 	done
 	__mkelvis_exit_list_ctx
 
-	# Replace old list with new list.
-	__mkelvis_clearlist "$1"
-	__mkelvis_deflist "$1" "$__mkelvis_removelist__newlist"
+	# Actually remove them.
+	vars="$(eval echo \"\$${listvar}\")"
+	__mkelvis_clearlist "$listvar"
+	__mkelvis_deflist "$listvar" "$(echo "$vars" | tr , '\n' | tr -s '\n' | grep -vF "$@" | tr '\n' , | sed 's/,$//')"
 }
 __mkelvis_clearlist ()
 {
