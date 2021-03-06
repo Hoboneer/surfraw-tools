@@ -22,7 +22,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Tuple,
     cast,
 )
 from urllib.error import HTTPError, URLError
@@ -80,14 +79,12 @@ class OpenSearchParameter(argparse.Namespace):
         self,
         name: str,
         optional: bool,
-        span: Optional[Tuple[int, int]] = None,
         prefix: Optional[str] = None,
         namespace: Optional[str] = None,
         param: Optional[str] = None,
     ):
         self.name: Final = name
         self.optional: Final = optional
-        self.span: Final = span
         self.prefix: Final = prefix
         self.namespace: Final = namespace or NS_OPENSEARCH_1_1
 
@@ -121,10 +118,10 @@ class OpenSearchURL(argparse.Namespace):
         rel: str = "results",
         index_offset: int = 1,
         page_offset: int = 1,
+        namespaces: Mapping[Optional[str], str],
         method: Optional[str] = None,
         enctype: Optional[str] = None,
         params: Optional[Iterable[et._Element]] = None,
-        namespaces: Optional[Mapping[Optional[str], str]] = None,
     ):
         self.raw_template: str = template
         self.extra_params: List[str] = []
@@ -141,40 +138,43 @@ class OpenSearchURL(argparse.Namespace):
         # TODO: validate according to this value?
         self.enctype = enctype or "application/x-www-form-urlencoded"
 
-        self.params: List[OpenSearchParameter]
-        if self.method == "get":
-            assert namespaces
-            self._build_get_params(namespaces)
-        elif self.method == "post":
-            assert params
-            # Just use a GET request and hope for the best
-            self._build_post_params(params)
-        else:
+        if self.method not in ("get", "post"):
             raise ValueError(
                 "only GET requests are supported, with POST requests becoming GET requests"
             )
 
-        params_map: Final = {param.name: param for param in self.params}
-        if len(self.params) != len(params_map):
-            # TODO: remove this restriction?
-            raise ValueError(
-                "parameters may only be used once per template URL"
-            )
-        elif (
-            params_map.get("searchTerms") is None
-            or params_map["searchTerms"].optional
-        ):
-            raise ValueError(
-                "the searchTerms parameter must exist and must *not* be optional"
-            )
-
-    def _build_get_params(
-        self, namespaces: Mapping[Optional[str], str]
-    ) -> None:
         # Determine whether mappings can be used
+        self.params: List[OpenSearchParameter] = []
         parts = urlparse(self.raw_template)
-        if parts.query:
-            self.params = []
+        if params:
+            if parts.query:
+                raise ValueError(
+                    "this site uses `<Param>`/`<Parameter>` elements AND embedded query parameters at the same time!  what a weird site..."
+                )
+            for param in params:
+                # `value` is what would go into the template URL
+                value = param.get("value")
+                if not value:
+                    raise ValueError(
+                        f"no value for <{et.QName(param).localname}> found"
+                    )
+
+                match = re.match(_TEMPLATE_PARAM_RE, value)
+                if not match:
+                    # The search engine is using OpenSearch weirdly.
+                    self.extra_params.append(f"{param.get('name')}={value}")
+                    continue
+                self.params.append(
+                    OpenSearchParameter(
+                        match.group("name"),
+                        bool(match.group("optional")),
+                        # Each <Param> and <Parameter> element affect the interpretations of prefix they contain.
+                        prefix=match.group("prefix"),
+                        namespace=param.nsmap.get(match.group("prefix")),
+                        param=param.get("name"),
+                    )
+                )
+        elif parts.query:
             for key, val in parse_qsl(parts.query):
                 match = re.match(_TEMPLATE_PARAM_RE, val)
                 if not match:
@@ -190,39 +190,30 @@ class OpenSearchURL(argparse.Namespace):
                     )
                 )
         else:
-            # A strange URL indeed.
+            # A strange URL indeed: one that doesn't have any query parameters.
             matches = re.finditer(_TEMPLATE_PARAM_RE, self.raw_template)
-            self.params = [
+            self.params.extend(
                 OpenSearchParameter(
                     match.group("name"),
                     bool(match.group("optional")),
-                    match.span(),
                     prefix=match.group("prefix"),
                     namespace=namespaces.get(match.group("prefix")),
                 )
                 for match in matches
-            ]
+            )
 
-    def _build_post_params(self, param_elems: Iterable[et._Element]) -> None:
-        self.params = []
-        for param in param_elems:
-            # `value` is what would go into the template URL
-            value = param.get("value")
-            if not value:
-                raise ValueError(
-                    f"no value for <{et.QName(param).localname}> found"
-                )
-
-            match = cast("re.Match[str]", re.match(_TEMPLATE_PARAM_RE, value))
-            self.params.append(
-                OpenSearchParameter(
-                    match.group("name"),
-                    bool(match.group("optional")),
-                    # Each <Param> and <Parameter> element affect the interpretations of prefix they contain.
-                    prefix=match.group("prefix"),
-                    namespace=param.nsmap.get(match.group("prefix")),
-                    param=param.get("name"),
-                )
+        params_map: Final = {param.name: param for param in self.params}
+        if len(self.params) != len(params_map):
+            # TODO: remove this restriction?
+            raise ValueError(
+                "parameters may only be used once per template URL"
+            )
+        elif (
+            params_map.get("searchTerms") is None
+            or params_map["searchTerms"].optional
+        ):
+            raise ValueError(
+                "the searchTerms parameter must exist and must *not* be optional"
             )
 
     def get_surfraw_template(
