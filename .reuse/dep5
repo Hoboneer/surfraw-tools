@@ -12,3 +12,7 @@ Source: https://github.com/Hoboneer/surfraw-elvis-generator
 Files: requirements/*
 Copyright: 2020 Gabriel Lisaca <gabriel.lisaca@gmail.com>
 License: CC0-1.0
+
+Files: tests/*
+Copyright: 2021 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+License: Apache-2.0
