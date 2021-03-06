@@ -111,7 +111,7 @@ class SurfrawOption:
 class SurfrawVarOption(SurfrawOption):
     """Superclass for options that create variables in elvi."""
 
-    __slots__ = ("flags", "_resolved_flag_values")
+    __slots__ = ("flags",)
 
     # This should only contain subclasses of `SurfrawVarOption`.
     # mypy doesn't seem to like having values of `typenames` to subclasses of this class.
@@ -124,7 +124,6 @@ class SurfrawVarOption(SurfrawOption):
 
         # Flags should be listed in the order that they were defined in the command line.
         self.flags: Final[List[SurfrawFlag]] = []
-        self._resolved_flag_values: Final[List[SurfrawFlag]] = []
 
         self.metavar = self.metavar or self.name.upper()
 
@@ -136,29 +135,19 @@ class SurfrawVarOption(SurfrawOption):
 
     def add_flag(self, flag: SurfrawFlag) -> None:
         """Add surfraw flag for this option."""
+        if flag.target is not self:
+            raise OptionResolutionError(
+                f"tried to add flag '{flag.name}' to an option it doesn't target"
+            )
+        self.resolve_flag(flag)
         self.flags.append(flag)
 
-    # Flags should be resolved *before* aliases so that aliases' targets aren't dangling.
-    def resolve_flags(self) -> None:
-        """Validate/parse flag values for this option.
-
-        Since `SurfrawOption` objects (and subtypes) are immutable, the old
-        flag objects are thrown away and new flags are made.
-        """
+    def resolve_flag(self, flag: SurfrawFlag) -> None:
+        """Check that the value of `flag` is valid for the type of its target."""
         try:
-            for flag in self.flags:
-                self._resolved_flag_values.append(
-                    self.__class__.flag_value_validator(flag.value)
-                )
+            self.__class__.flag_value_validator(flag.value)
         except OptionParseError as e:
             raise OptionResolutionError(str(e)) from None
-        self._post_resolve_flags()
-        # They're useless now.
-        self._resolved_flag_values.clear()
-
-    def _post_resolve_flags(self) -> None:
-        """Analyse flags after resolving them."""
-        pass
 
 
 class SurfrawListType(SurfrawVarOption):
@@ -190,7 +179,7 @@ class SurfrawFlag(SurfrawOption):
     ):
         super().__init__(name, **kwargs)
         self.target: Final = target
-        self.value: Final = value
+        self.value = value
         # Flags don't take arguments so a metavar would be useless.
         # For clarity, their description also can't be changed.
         if "metavar" in kwargs:
@@ -254,11 +243,16 @@ class SurfrawEnum(SurfrawListType):
             # "A enum" is incorrect.
             self.description = re.sub("^A ", "An ", self.description)
 
-    def _post_resolve_flags(self) -> None:
-        vals = set(self.values)
-        if (set(self._resolved_flag_values) | vals) > vals:
+    def resolve_flag(self, flag: SurfrawFlag) -> None:
+        """Check that the value of `flag` is valid for an enum.
+
+        In addition the default implementation, this checks that the value is
+        in `self.values`.
+        """
+        super().resolve_flag(flag)
+        if flag.value not in set(self.values):
             raise OptionResolutionError(
-                f"values of flags to enum '{self.name}' are a superset of the valid values ({self.values})'"
+                f"value of flag '{flag.name}' to enum '{self.name}' is not a valid value"
             )
 
 
@@ -270,7 +264,6 @@ class SurfrawAnything(SurfrawListType):
     typename = "anything"
     typename_plural = "anythings"
 
-    # Don't need to make new flag objects after resolving.
     flag_value_validator = no_validation
 
     def __init__(self, name: str, default: str, **kwargs: Any):
@@ -298,7 +291,7 @@ class SurfrawSpecial(SurfrawVarOption):
     def flag_value_validator(_: Any) -> NoReturn:
         """Fail every time.
 
-        This shouldn't be called directly since `resolve_flags` is overridden.
+        This shouldn't be called directly since `resolve_flag` is overridden.
         """
         raise RuntimeError(
             "don't call `flag_value_validator` of `SurfrawSpecial` directly"
@@ -310,22 +303,20 @@ class SurfrawSpecial(SurfrawVarOption):
         if self.name not in ("results", "language"):
             raise ValueError(f"'{self.name}' is an unsupported special option")
 
-    def resolve_flags(self) -> None:
+    def resolve_flag(self, flag: SurfrawFlag) -> None:
         """Resolve flags for each special option kind."""
-        for i, flag in enumerate(self.flags):
-            if flag.name == "results":
-                try:
-                    new_val = int(flag.value)
-                except ValueError:
-                    raise OptionResolutionError(
-                        "value for special 'results' option must be an integer"
-                    ) from None
-                self.flags[i] = SurfrawFlag(flag.name, flag.target, new_val)
-            # The language option needn't be checked here.  There are way too
-            # many ISO language codes to match.
+        if flag.name == "results":
+            try:
+                new_val = int(flag.value)
+            except ValueError:
+                raise OptionResolutionError(
+                    "value for special 'results' option must be an integer"
+                ) from None
+            flag.value = new_val
+        # The language option needn't be checked here.  There are way too
+        # many ISO language codes to match.
 
 
-# XXX: Should this store validators for the type it has?
 class SurfrawList(SurfrawVarOption):
     """List- or CSV-like option."""
 
@@ -334,11 +325,12 @@ class SurfrawList(SurfrawVarOption):
     typename = "list"
     typename_plural = "lists"
 
+    # This is only determinable at runtime.
     @staticmethod
     def flag_value_validator(_: Any) -> NoReturn:
         """Fail every time.
 
-        This shouldn't be called directly since `resolve_flags` is overridden.
+        This shouldn't be called directly since `resolve_flag` is overridden.
         """
         raise RuntimeError(
             "don't call `flag_value_validator` of `SurfrawList` directly"
@@ -367,21 +359,25 @@ class SurfrawList(SurfrawVarOption):
                     f"enum list option {self.name}'s defaults ('{self.defaults}') must be a subset of its valid values ('{self.values}')"
                 )
 
-    def resolve_flags(self) -> None:
-        """Resolve flags for each list option type."""
-        # Don't need to make new flag objects after resolving.
-        for flag in self.flags:
-            if issubclass(self.type, SurfrawEnum):
-                try:
-                    flag_values = list_of(validate_enum_value)(flag.value)
-                except OptionParseError as e:
-                    raise OptionResolutionError(str(e)) from None
-                if not set(flag_values) <= set(self.values):
-                    raise OptionResolutionError(
-                        f"enum list flag option {flag.name}'s value ('{flag_values}') must be a subset of its target's values ('{self.values}')"
-                    )
-            flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
-            # Don't need to check `AnythingOption`.
+    def resolve_flag(self, flag: SurfrawFlag) -> None:
+        """Check that `flag` is valid for its type.
+
+        This also ensures that `flag.value` is a list.
+        """
+        try:
+            flag_values = list_of(self.type.flag_value_validator)(flag.value)
+        except OptionParseError as e:
+            raise OptionResolutionError(str(e)) from None
+
+        if issubclass(self.type, SurfrawEnum) and set(flag_values) > set(
+            self.values
+        ):
+            raise OptionResolutionError(
+                f"enum list flag option {flag.name}'s value ('{flag_values}') must be a subset of its target's values ('{self.values}')"
+            )
+
+        flag.value = flag_values
+        flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
 
 
 class SurfrawAlias(SurfrawOption):

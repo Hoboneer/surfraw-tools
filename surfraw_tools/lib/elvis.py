@@ -60,10 +60,7 @@ from surfraw_tools.lib.options import (
     SurfrawSpecial,
     SurfrawVarOption,
 )
-from surfraw_tools.lib.validation import (
-    OptionParseError,
-    OptionResolutionError,
-)
+from surfraw_tools.lib.validation import OptionResolutionError
 
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]
 
@@ -265,7 +262,6 @@ class Elvis(argparse.Namespace):
         flags: Iterable[FlagOption],
         variable_options: Dict[str, SurfrawVarOption],
     ) -> None:
-        # Set `target` of flags to an instance of `SurfrawOption`.
         for flag in flags:
             try:
                 target = variable_options[flag.target]
@@ -276,13 +272,6 @@ class Elvis(argparse.Namespace):
             real_flag = flag.to_surfraw_opt(target)
             target.add_flag(real_flag)
             self.options.append(real_flag)
-
-        # Check if flag values are valid for their target type.
-        try:
-            for flag_target in variable_options.values():
-                flag_target.resolve_flags()
-        except OptionParseError as e:
-            raise OptionResolutionError(str(e)) from None
 
     def _resolve_aliases(
         self,
