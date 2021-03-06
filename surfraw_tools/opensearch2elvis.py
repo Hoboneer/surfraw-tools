@@ -306,11 +306,16 @@ class OpenSearchDescription(argparse.Namespace):
                 "os:Param", namespaces={"os": NS_OPENSEARCH_1_1}
             )
 
+            rel = url_elem.get("rel", "results")
+            # Can't understand any of the others, so just ignore this (the spec says this too).
+            if set(rel.split(" ")).isdisjoint({"results", "suggestions"}):
+                continue
+
             self.urls.append(
                 OpenSearchURL(
                     template=cast(str, url_elem.get("template")),
                     type=cast(str, url_elem.get("type")),
-                    rel=url_elem.get("rel", "results"),
+                    rel=rel,
                     index_offset=int(url_elem.get("indexOffset", "1")),
                     page_offset=int(url_elem.get("pageOffset", "1")),
                     # Prefer using the extension.
