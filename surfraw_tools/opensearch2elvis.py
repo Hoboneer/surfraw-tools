@@ -307,8 +307,8 @@ class OpenSearchDescription(argparse.Namespace):
             )
 
             rel = url_elem.get("rel", "results")
-            # Can't understand any of the others, so just ignore this (the spec says this too).
-            if set(rel.split(" ")).isdisjoint({"results", "suggestions"}):
+            # Can't understand any other rel values, so just ignore this URL (the spec says this too).
+            if set(rel.split(" ")) - {"results", "suggestions"}:
                 continue
 
             self.urls.append(
