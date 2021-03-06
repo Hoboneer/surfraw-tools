@@ -64,7 +64,7 @@ w3_config_hook ()
 
 	# Special options
 	{% for special in specials %}
-	def {{ special.name|ns }} {{ special.default }}
+	def {{ special.name|ns }} "{{ special.default }}"
 	{% else %}
 	## def {{ 'special'|ns }} $SURFRAW_special
 	{% endfor %}
