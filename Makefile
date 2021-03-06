@@ -12,10 +12,6 @@ CHECK_FILES := $(SOURCE_FILES) setup.py
 .PHONY: all
 all:
 
-.PHONY: init
-init:
-	pip install -r $(REQUIREMENTS_DIR)/base.txt
-
 .PHONY: requirements
 requirements:
 	cd $(REQUIREMENTS_DIR) && $(MAKE)
