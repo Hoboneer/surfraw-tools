@@ -377,7 +377,7 @@ class SurfrawList(SurfrawVarOption):
             )
 
         flag.value = flag_values
-        flag.description = f"An alias for the '{self.type.typename}' list option '{self.name}' with the values '{','.join(flag.value)}'"
+        flag.description = f"An alias for the '{self.name}' list option with the values '{','.join(flag.value)}'"
 
 
 class SurfrawAlias(SurfrawOption):
