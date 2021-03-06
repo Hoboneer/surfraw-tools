@@ -179,6 +179,7 @@ class Elvis(argparse.Namespace):
         self._have_language_option: bool = False
 
         self.env = self._init_get_env()
+        self.env.globals["_parse_option"] = self._generate_option_parse_code
 
     def namespacer(self, name: str) -> str:
         """Return a namespaced variable name for the elvis."""
@@ -543,6 +544,70 @@ class Elvis(argparse.Namespace):
                 else:
                     lines.append(prefix + f"Environment: {ns_name}")
         return "\n".join(chain.from_iterable(lines for _, lines in entries))
+
+    def _generate_option_parse_code(
+        self, opt: SurfrawOption, setopt: str = "setopt"
+    ) -> str:
+        opts = [opt, *sorted(opt.aliases, key=lambda x: x.name)]
+        # All standalone, non-flag options have args
+        # Aliases are together with their target so it doesn't matter
+        if isinstance(opt, SurfrawFlag):
+            suffix = ""
+            varname = opt.target.name
+            if isinstance(opt.target, SurfrawList):
+                optarg = ",".join(opt.value)
+            else:
+                optarg = opt.value
+        else:
+            suffix = "=*"
+            varname = opt.name
+            optarg = "$optarg"
+        # If optarg contains whitespace or is special in any way, quote it
+        if (
+            optarg == "$optarg"
+            or " " in optarg
+            or "\t" in optarg
+            or "\n" in optarg
+        ):
+            optarg = f'"{optarg}"'
+
+        subject: SurfrawOption
+        if isinstance(opt, SurfrawFlag) and isinstance(
+            opt.target, SurfrawList
+        ):
+            subject = opt.target
+        else:
+            subject = opt
+
+        if isinstance(subject, SurfrawList):
+            add_opts = []
+            clear_opts = []
+            remove_opts = []
+            for name in sorted(opt.name for opt in opts):
+                add_opts.append(f"-add-{name}{suffix}")
+                if not isinstance(opt, SurfrawFlag):
+                    clear_opts.append(f"-clear-{name}")
+                remove_opts.append(f"-remove-{name}{suffix}")
+            # Now build up the lines
+            lines = []
+            lines.append(
+                f"{'|'.join(add_opts)}) __mkelvis_addlist {self.namespacer(varname)} {optarg} ;;"
+            )
+            if not isinstance(opt, SurfrawFlag):
+                lines.append(
+                    f"{'|'.join(clear_opts)}) __mkelvis_clearlist {self.namespacer(varname)} ;;"
+                )
+            lines.append(
+                f"{'|'.join(remove_opts)}) __mkelvis_removelist {self.namespacer(varname)} {optarg} ;;"
+            )
+            # Need another line to separate list options.
+            lines.append("")
+            return "\n".join(lines)
+        else:
+            patterns = [
+                f"-{name}{suffix}" for name in sorted(opt.name for opt in opts)
+            ]
+            return f"{'|'.join(patterns)}) {setopt} {self.namespacer(varname)} {optarg} ;;"
 
     # TODO: should `outfile` be `os.PathLike`?
     def write(
