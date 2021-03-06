@@ -132,49 +132,6 @@ __mkelvis_clearlist ()
 }
 {% endif %}{# lists #}
 
-{% macro _parse_options(opts, default_optname, setopt='setopt') %}
-{% for opt in opts %}
-{{ _parse_option(opt, setopt=setopt) }}
-{% if opt.flags %}
-## Start: flags for {{ opt.name|ns }}
-{% for flag in opt.flags %}
-{{ _parse_option(flag, setopt=setopt) }}
-{% endfor %}{# opt.flags #}
-## End: flags for {{ opt.name|ns }}
-{% endif %}{# opt.flags #}
-{% else %}
-{% set suffix = "=*" %}
-{% set varname = default_optname %}
-##-{{ default_optname }}{{ suffix }}|-alias1{{ suffix }}|-alias2{{ suffix }}) {{ setopt }} {{ varname|ns }} "$optarg" ;;
-{% endfor %}{# opts #}
-{%- endmacro %}
-{% macro parse_options() %}
-{{ _parse_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
-{%- endmacro %}
-{# ============ #}
-{# List options #}
-{# ============ #}
-{% macro _parse_list_options(opts, default_optname) %}
-{% for list in opts %}
-{{ _parse_option(list) }}
-{% if list.flags %}
-## Start: flags for {{ list.name|ns }}
-{% for flag in list.flags %}
-{{ _parse_option(flag) }}
-{% endfor %}{# list.flags #}
-## End: flags for {{ list.name|ns }}
-{% endif %}{# list.flags #}
-{% else %}
-{% set varname = default_optname %}
-{# These won't actually be displayed; but just in case... #}
-##-add-{{ default_optname }}=*|-add-alias1=*|-add-alias2=*) __mkelvis_addlist {{ varname|ns }} "$optarg" ;;
-##-remove-{{ default_optname }}=*|-remove-alias1=*|-remove-alias2=*) __mkelvis_removelist {{ varname|ns }} "$optarg" ;;
-##-clear-{{ default_optname }}|-clear-alias1|-clear-alias2) __mkelvis_clearlist {{ varname|ns }} ;;
-{% endfor %}{# opts #}
-{%- endmacro %}
-{% macro parse_list_options() %}
-{{ _parse_list_options(*varargs, **kwargs)|indent(8)|replace('    ', '\t') }}
-{%- endmacro %}
 w3_parse_option_hook ()
 {
 	opt="$1"
@@ -182,16 +139,21 @@ w3_parse_option_hook ()
 	case "$opt" in
 		# Bools
 		{{ parse_options(bools, default_optname='bool', setopt='setoptyn') }}
+
 		# Enums
 		{{ parse_options(enums, default_optname='enum') }}
+
 		{% if lists %}
 		# Lists
-		{{ parse_list_options(lists, default_optname='list') }}
-		{%- endif %}
+		{{ parse_options(lists, default_optname='list') }}
+
+		{% endif %}
 		# 'Anythings'
 		{{ parse_options(anythings, default_optname='anything') }}
+
 		# Special options
 		{{ parse_options(specials, default_optname='special') }}
+
 		*) return 1 ;;
 	esac
 	return 0

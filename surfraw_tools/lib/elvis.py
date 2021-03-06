@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import sys
+import textwrap
 from itertools import chain
 from tempfile import NamedTemporaryFile
 from typing import (
@@ -179,7 +180,7 @@ class Elvis(argparse.Namespace):
         self._have_language_option: bool = False
 
         self.env = self._init_get_env()
-        self.env.globals["_parse_option"] = self._generate_option_parse_code
+        self.env.globals["parse_options"] = self._parse_many
 
     def namespacer(self, name: str) -> str:
         """Return a namespaced variable name for the elvis."""
@@ -545,9 +546,57 @@ class Elvis(argparse.Namespace):
                     lines.append(prefix + f"Environment: {ns_name}")
         return "\n".join(chain.from_iterable(lines for _, lines in entries))
 
-    def _generate_option_parse_code(
-        self, opt: SurfrawOption, setopt: str = "setopt"
+    def _parse_many(
+        self,
+        opts: Iterable[SurfrawList],
+        default_optname: str,
+        setopt: str = "setopt",
     ) -> str:
+        """Return the code to be placed in `w3_option_parse_hook` for all instances of one type of option."""
+        lines: List[str] = []
+        lists = False
+        for opt in opts:
+            if isinstance(opt, SurfrawList):
+                lists = True
+            lines.extend(self._parse_one(opt, setopt=setopt))
+            if opt.flags:
+                lines.append(
+                    f"## Start: flags for {self.namespacer(opt.name)}"
+                )
+                for flag in opt.flags:
+                    lines.extend(self._parse_one(flag, setopt=setopt))
+                # Remove extra line (don't want it if it's the last flag).
+                if lists and lines[-1] == "":
+                    lines.pop()
+                lines.append(f"## End: flags for {self.namespacer(opt.name)}")
+                if lists:
+                    lines.append("")
+        # Remove extra line (don't want it if it's the last list because it'll make the anythings section too far).
+        if lists and lines[-1] == "":
+            lines.pop()
+
+        if not lines:
+            if lists:
+                # These won't actually be displayed (because the parsing code for lists is guarded by an if block); but just in case...
+                lines.append(
+                    f'##-add-{default_optname}=*|-add-alias1=*|-add-alias2=*) __mkelvis_addlist {self.namespacer(default_optname)} "$optarg" ;;'
+                )
+                lines.append(
+                    f"##-clear-{default_optname}|-clear-alias1|-clear-alias2) __mkelvis_clearlist {self.namespacer(default_optname)} ;;"
+                )
+                lines.append(
+                    f'##-remove-{default_optname}=*|-remove-alias1=*|-remove-alias2=*) __mkelvis_removelist {self.namespacer(default_optname)} "$optarg" ;;'
+                )
+            else:
+                lines.append(
+                    f'##-{default_optname}=*|-alias1=*|-alias2=*) {setopt} {self.namespacer(default_optname)} "$optarg" ;;'
+                )
+        return textwrap.indent("\n".join(lines), "\t\t").lstrip("\t")
+
+    def _parse_one(
+        self, opt: SurfrawOption, setopt: str = "setopt"
+    ) -> List[str]:
+        """Return the code to be placed in `w3_option_parse_hook` for one option, as a list of lines."""
         opts = [opt, *sorted(opt.aliases, key=lambda x: x.name)]
         # All standalone, non-flag options have args
         # Aliases are together with their target so it doesn't matter
@@ -602,12 +651,14 @@ class Elvis(argparse.Namespace):
             )
             # Need another line to separate list options.
             lines.append("")
-            return "\n".join(lines)
+            return lines
         else:
             patterns = [
                 f"-{name}{suffix}" for name in sorted(opt.name for opt in opts)
             ]
-            return f"{'|'.join(patterns)}) {setopt} {self.namespacer(varname)} {optarg} ;;"
+            return [
+                f"{'|'.join(patterns)}) {setopt} {self.namespacer(varname)} {optarg} ;;"
+            ]
 
     # TODO: should `outfile` be `os.PathLike`?
     def write(
