@@ -273,25 +273,25 @@ class OpenSearchDescription(argparse.Namespace):
     """
 
     def __init__(self, file: IO[bytes]):
-        self._xml: Final = et.parse(file)
-        self._root: Final = self._xml.getroot()
-        root_qname = et.QName(self._root.tag)
+        _xml: Final = et.parse(file)
+        _root: Final = _xml.getroot()
+        root_qname = et.QName(_root.tag)
         if root_qname != et.QName(NS_OPENSEARCH_1_1, "OpenSearchDescription"):
             # TODO: say bare namespace of root needs to be the 1.1 namespace?
             raise ValueError(
                 "only OpenSearch version 1.1 descriptions are supported"
             )
 
-        # self.raw_shortname: Final = self._root.find(
+        # self.raw_shortname: Final = _root.find(
         #    et.QName(NS_OPENSEARCH_1_1, "ShortName")
         # ).text
         # self.shortname: Final = self.raw_shortname.replace(" ", "").lower()
-        self.description: Final = self._root.find(
+        self.description: Final = _root.find(
             et.QName(NS_OPENSEARCH_1_1, "Description")
         ).text
 
         self.urls: Final[List[OpenSearchURL]] = []
-        for url_elem in self._root.xpath(
+        for url_elem in _root.xpath(
             "os:Url[@template and @type]", namespaces={"os": NS_OPENSEARCH_1_1}
         ):
             # According to the spec, this attribute *needs* an XML prefix.
@@ -354,13 +354,13 @@ class OpenSearchDescription(argparse.Namespace):
 
         # Should they be validated?
         self.languages: List[str] = [
-            elem.text for elem in self._root.findall("Language")
+            elem.text for elem in _root.findall("Language")
         ]
         self.input_encodings: List[str] = [
-            elem.text for elem in self._root.findall("InputEncoding")
+            elem.text for elem in _root.findall("InputEncoding")
         ]
         self.output_encodings: List[str] = [
-            elem.text for elem in self._root.findall("OutputEncoding")
+            elem.text for elem in _root.findall("OutputEncoding")
         ]
 
 
