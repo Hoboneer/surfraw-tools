@@ -694,6 +694,5 @@ class Elvis(argparse.Namespace):
                 template.stream(template_vars).dump(f)
                 f.flush()
                 fd = f.fileno()
-                os.fsync(fd)
                 os.fchmod(fd, 0o755)
                 os.rename(f.name, outfile)
