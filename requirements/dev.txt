@@ -49,14 +49,6 @@ future==0.18.2
     # via lunr
 idna==2.10
     # via requests
-importlib-metadata==3.4.0
-    # via
-    #   flake8
-    #   keyring
-    #   markdown
-    #   pluggy
-    #   pytest
-    #   twine
 iniconfig==1.1.1
     # via pytest
 isort==5.7.0
@@ -80,7 +72,7 @@ livereload==2.6.3
     # via mkdocs
 lunr[languages]==0.5.8
     # via mkdocs
-lxml==4.6.2
+lxml==4.6.3
     # via -r base.txt
 markdown==3.3.4
     # via mkdocs
@@ -181,14 +173,11 @@ typed-ast==1.4.2
 typing-extensions==3.7.4.3
     # via
     #   black
-    #   importlib-metadata
     #   mypy
 urllib3==1.26.3
     # via requests
 webencodings==0.5.1
     # via bleach
-zipp==3.4.0
-    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
