@@ -39,12 +39,12 @@ cryptography==3.4.6
     # via secretstorage
 docutils==0.16
     # via readme-renderer
-flake8-docstrings==1.5.0
-    # via -r dev.in
 flake8==3.8.4
     # via
     #   -r dev.in
     #   flake8-docstrings
+flake8-docstrings==1.5.0
+    # via -r dev.in
 future==0.18.2
     # via lunr
 idna==2.10
@@ -84,12 +84,12 @@ mccabe==0.6.1
     # via flake8
 mkdocs==1.1.2
     # via -r dev.in
+mypy==0.800
+    # via -r dev.in
 mypy-extensions==0.4.3
     # via
     #   black
     #   mypy
-mypy==0.800
-    # via -r dev.in
 nltk==3.5
     # via lunr
 packaging==20.9
@@ -130,13 +130,13 @@ regex==2020.11.13
     # via
     #   black
     #   nltk
-requests-toolbelt==0.9.1
-    # via twine
 requests==2.25.1
     # via
     #   requests-toolbelt
     #   reuse
     #   twine
+requests-toolbelt==0.9.1
+    # via twine
 reuse==0.12.1
     # via -r dev.in
 rfc3986==1.4.0
@@ -174,7 +174,7 @@ typing-extensions==3.7.4.3
     # via
     #   black
     #   mypy
-urllib3==1.26.3
+urllib3==1.26.5
     # via requests
 webencodings==0.5.1
     # via bleach
