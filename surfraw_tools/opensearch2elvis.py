@@ -36,7 +36,12 @@ import lxml.html as html  # type: ignore
 from lxml import etree as et
 
 from surfraw_tools.lib.cliopts import MappingOption
-from surfraw_tools.lib.common import BASE_PARSER, _ElvisName, setup_cli
+from surfraw_tools.lib.common import (
+    BASE_PARSER,
+    ExecContext,
+    _ElvisName,
+    setup_cli,
+)
 from surfraw_tools.lib.elvis import Elvis
 from surfraw_tools.lib.options import (
     SurfrawAnything,
@@ -65,8 +70,9 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-class _OpenSearchContext(argparse.Namespace):
+class _OpenSearchContext(ExecContext):
     def __init__(self) -> None:
+        super().__init__()
         self.name: _ElvisName = _ElvisName("DEFAULT")
         self.file_or_url: str = ""
         self.user_agent: str = "Mozilla/5.0"
@@ -606,6 +612,7 @@ def main(argv: Optional[List[str]] = None) -> int:
             scheme=scheme,
             description=os_desc.description,
             append_search_args=False,
+            enable_completions=ctx.enable_completions,
             # TODO: add --num-tabs option?
             generator=PROGRAM_NAME,
         )

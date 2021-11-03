@@ -177,11 +177,27 @@ _VERSION_FORMAT_ACTION: Final = cast(
 )
 VERSION_FORMAT_STRING: Final = _VERSION_FORMAT_ACTION.version
 BASE_PARSER.add_argument(
-    "--verbose", "-v", action="count", default=0, help="show more output"
+    "--verbose", "-v", action="count", help="show more output"
 )
 BASE_PARSER.add_argument(
-    "--quiet", "-q", action="count", default=0, help="show less output"
+    "--quiet", "-q", action="count", help="show less output"
 )
+BASE_PARSER.add_argument(
+    "--no-completions",
+    "--disable-completions",
+    action="store_false",
+    dest="enable_completions",
+    help="don't include completion code in output elvis",
+)
+
+
+class ExecContext(argparse.Namespace):
+    """Data holder for global values of elvis creation."""
+
+    def __init__(self) -> None:
+        self.verbose: int = 0
+        self.quiet: int = 0
+        self.enable_completions: bool = True
 
 
 def get_logger(name: str) -> logging.Logger:

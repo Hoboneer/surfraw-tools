@@ -40,6 +40,7 @@ from surfraw_tools.lib.cliopts import (
 from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
+    ExecContext,
     _ElvisName,
     setup_cli,
 )
@@ -123,13 +124,6 @@ def _get_parser() -> argparse.ArgumentParser:
         "--num-tabs",
         type=int,
         help="define the number of tabs after the elvis name in `sr -elvi` output for alignment",
-    )
-    parser.add_argument(
-        "--no-completions",
-        "--disable-completions",
-        action="store_false",
-        dest="enable_completions",
-        help="don't include completion code in output elvis",
     )
 
     parser.add_argument(
@@ -264,10 +258,11 @@ def _get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-class _Context(argparse.Namespace):
+class _Context(ExecContext):
     """Data holder for elvis currently being generated."""
 
     def __init__(self) -> None:
+        super().__init__()
         self.name: _ElvisName = _ElvisName("DEFAULT")
         self.base_url: str = ""
         self.search_url: str = ""
@@ -275,7 +270,6 @@ class _Context(argparse.Namespace):
         self.query_parameter: Optional[str] = None
         self.append_search_args: bool = True
         self.append_mappings: bool = True
-        self.enable_completions: bool = True
 
         self.insecure: bool = False
         self.num_tabs: int = 1
