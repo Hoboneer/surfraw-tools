@@ -5,6 +5,7 @@ import argparse
 import os
 import sys
 import textwrap
+from functools import partial
 from itertools import chain
 from tempfile import NamedTemporaryFile
 from typing import (
@@ -20,16 +21,12 @@ from typing import (
     Union,
 )
 
-if TYPE_CHECKING:
-    from typing_extensions import Final
-
-from functools import partial
-
 from jinja2 import (
     ChoiceLoader,
     Environment,
     FileSystemLoader,
     ModuleLoader,
+    StrictUndefined,
     contextfilter,
 )
 from jinja2.runtime import Context as JContext
@@ -62,6 +59,10 @@ from surfraw_tools.lib.options import (
     SurfrawVarOption,
 )
 from surfraw_tools.lib.validation import OptionResolutionError
+
+if TYPE_CHECKING:
+    from typing_extensions import Final
+
 
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]
 
@@ -201,6 +202,7 @@ class Elvis(argparse.Namespace):
                     FileSystemLoader(raw_templates_dir),
                 ]
             ),
+            undefined=StrictUndefined,
             # Only one template to load.
             cache_size=1,
             trim_blocks=True,
