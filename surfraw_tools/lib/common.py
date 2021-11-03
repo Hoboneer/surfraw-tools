@@ -189,6 +189,13 @@ BASE_PARSER.add_argument(
     dest="enable_completions",
     help="don't include completion code in output elvis",
 )
+BASE_PARSER.add_argument(
+    "--output",
+    "-o",
+    dest="outfile",
+    metavar="FILE",
+    help="write elvis code to FILE instead of elvis name",
+)
 
 
 class ExecContext(argparse.Namespace):
@@ -198,6 +205,7 @@ class ExecContext(argparse.Namespace):
         self.verbose: int = 0
         self.quiet: int = 0
         self.enable_completions: bool = True
+        self.outfile: Optional[str] = None
 
 
 def get_logger(name: str) -> logging.Logger:

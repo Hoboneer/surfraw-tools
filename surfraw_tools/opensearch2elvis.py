@@ -656,7 +656,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Generate the elvis.
     try:
-        elvis.write(elvis.get_template_vars())
+        elvis.write(elvis.get_template_vars(), ctx.outfile)
     except OSError as e:
         # Don't delete tempfile to allow for inspection on write errors.
         log.critical(f"{e}")

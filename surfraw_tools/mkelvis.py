@@ -111,13 +111,6 @@ def _get_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--output",
-        "-o",
-        dest="outfile",
-        metavar="FILE",
-        help="write elvis code to FILE instead of elvis name",
-    )
-    parser.add_argument(
         "--insecure", action="store_true", help="use 'http' instead of 'https'"
     )
     parser.add_argument(
@@ -273,7 +266,6 @@ class _Context(ExecContext):
 
         self.insecure: bool = False
         self.num_tabs: int = 1
-        self.outfile: Optional[str] = None
 
         # Option containers
         self.unresolved_varopts: List[
