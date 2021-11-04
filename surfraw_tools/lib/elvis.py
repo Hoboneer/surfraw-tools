@@ -27,7 +27,6 @@ from jinja2 import (
     FileSystemLoader,
     ModuleLoader,
     StrictUndefined,
-    contextfilter,
 )
 from jinja2.runtime import Context as JContext
 
@@ -62,12 +61,17 @@ from surfraw_tools.lib.validation import OptionResolutionError
 
 if TYPE_CHECKING:
     from typing_extensions import Final
+# Among other decorators, contextfilter was deprecated in jinja v3.
+try:
+    from jinja2 import pass_context
+except ImportError:
+    from jinja2 import contextfilter as pass_context
 
 
 _HasTarget = Union[MappingOption, InlineOption, CollapseOption]
 
 
-@contextfilter
+@pass_context
 def _jinja_namespacer(ctx: JContext, basename: str) -> str:
     return f"SURFRAW_{ctx['name']}_{basename}"
 
