@@ -41,7 +41,6 @@ from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     BASE_PARSER,
     ExecContext,
-    _ElvisName,
     setup_cli,
 )
 from surfraw_tools.lib.elvis import Elvis
@@ -256,7 +255,7 @@ class _Context(ExecContext):
 
     def __init__(self) -> None:
         super().__init__()
-        self.name: _ElvisName = _ElvisName("DEFAULT")
+        self.name: str = "DEFAULT"
         self.base_url: str = ""
         self.search_url: str = ""
         self.description: Optional[str] = None

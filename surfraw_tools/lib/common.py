@@ -22,7 +22,6 @@ from typing import (
     Iterable,
     Iterator,
     List,
-    NewType,
     Optional,
     Sequence,
     Set,
@@ -152,9 +151,6 @@ class _SurfrawOptionContainer(argparse.Namespace):
                 ValuesView[Iterable[SurfrawOption]], self._nonvaropts.values()
             )
         )
-
-
-_ElvisName = NewType("_ElvisName", str)
 
 
 # Make sure that the resultant string is a grammatically-correct list.

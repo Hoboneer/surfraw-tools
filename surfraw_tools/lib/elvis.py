@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 import textwrap
 from functools import partial
@@ -46,7 +47,6 @@ from surfraw_tools.lib.cliopts import (
 from surfraw_tools.lib.common import (
     _VALID_FLAG_TYPES_STR,
     VERSION_FORMAT_STRING,
-    _ElvisName,
     _SurfrawOptionContainer,
 )
 from surfraw_tools.lib.options import (
@@ -152,10 +152,7 @@ class Elvis(argparse.Namespace):
         enable_completions: bool = True,
     ) -> None:
         self.generator: Final = generator
-        # FIXME: remove when no longer a false positive.
-        # Mypy flags this as an error.  This should be fixed in future versions.
-        # See https://github.com/python/mypy/issues/3004
-        self.name = name  # type: ignore
+        self.name = name
         self.base_url = base_url
         self.search_url = search_url
         self.description = description
@@ -347,19 +344,23 @@ class Elvis(argparse.Namespace):
                     )
 
     @property
-    def name(self) -> _ElvisName:
+    def name(self) -> str:
         """Name of elvis.
 
-        It cannot contain "/" characters.
+        It is always a valid shell variable name with:
+            - no underscores; and
+            - digits allowed at the start.
         """
         return self._name
 
     @name.setter
-    def name(self, name: Union[str, _ElvisName]) -> None:
-        dirs, _ = os.path.split(name)
-        if dirs:
-            raise ValueError("elvis names may not be paths")
-        self._name = _ElvisName(name)
+    def name(self, name: str) -> None:
+        pattern = "^[a-zA-Z0-9]+$"
+        if not re.fullmatch(pattern, name):
+            raise ValueError(
+                f"elvis names must match the regex /{pattern}/ (similar to shell variables)"
+            )
+        self._name = name
 
     @property
     def base_url(self) -> str:
