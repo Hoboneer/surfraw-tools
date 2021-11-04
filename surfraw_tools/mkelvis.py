@@ -305,10 +305,17 @@ def main(argv: Optional[List[str]] = None) -> int:
         new_base = ctx.base_url
         new_search = ctx.search_url
     else:
+        # Allow search URLs that end with "?"
+        if search_parts.query == "" and ctx.search_url.endswith("?"):
+            search_suffix = "?"
+        else:
+            search_suffix = ""
         scheme = base_parts.scheme
         # `urlunparse` is a bit dumb, so just strip the leading "//".
         new_base = urlunparse(("", *base_parts[1:])).lstrip("/")
-        new_search = urlunparse(("", *search_parts[1:])).lstrip("/")
+        new_search = (
+            urlunparse(("", *search_parts[1:])).lstrip("/") + search_suffix
+        )
 
     # TODO: handle exceptions PROPERLY
     # TODO: handle `--num-tabs` error (with nice error message): EX_USAGE
