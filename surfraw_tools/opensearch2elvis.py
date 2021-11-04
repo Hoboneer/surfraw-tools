@@ -585,9 +585,8 @@ def _convert_system_exit_to_return(main_func: _MainFunc) -> _MainFunc:
 
 
 @_convert_system_exit_to_return
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: Optional[List[str]] = None) -> int:  # noqa: D103
     # Docstring is copied from the module.
-    # noqa: D103
     ctx, log = setup_cli(
         PROGRAM_NAME, argv, _get_parser(), _OpenSearchContext()
     )
