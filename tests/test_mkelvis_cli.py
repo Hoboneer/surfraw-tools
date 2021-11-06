@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from os import EX_USAGE
 
 from surfraw_tools.mkelvis import main

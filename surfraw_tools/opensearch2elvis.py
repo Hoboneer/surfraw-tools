@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 """Generate a surfraw elvis for an OpenSearch-enabled website (v1.1, Draft 6).
 
 Exit codes are taken from the `sysexits.h` file.

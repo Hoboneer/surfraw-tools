@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2021 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # Reference
 
 `mkelvis` allows you to easily create common types of options found in surfraw

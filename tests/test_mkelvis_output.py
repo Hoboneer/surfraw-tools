@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2021 Gabriel Lisaca <gabriel.lisaca@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
 from contextlib import redirect_stdout
 from io import StringIO
 
