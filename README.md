@@ -75,13 +75,14 @@ See the advanced usage docs for more.
 
 ### Caveats
 
-The generated elvi include tab-completion code using my *work-in-progress*
-system of elvi-specific completions.  Check the merge requests in the [main
-surfraw repo](https://gitlab.com/surfraw/Surfraw).
+The generated elvi include tab-completion code using the system of
+elvi-specific completions set for release in the new version of Surfraw.  Wait
+for the new release, or build [surfraw](https://gitlab.com/surfraw/Surfraw)
+from `master` to use it.
 
-If you don't want to use the WIP completions, use the `--no-completions`
-option.  This isn't needed though: the elvi still work but there might be a few
-error messages.
+If you don't want to use the completions, use the `--no-completions` option.
+This isn't needed though: the elvi still work but there might be a few error
+messages.
 
 Also, `opensearch2elvis` only has minimal support for websites that specify
 POST method searches.  Currently, it just treats them as if they specified GET
@@ -94,7 +95,7 @@ this](https://github.com/Hoboneer/surfraw-tools/issues/27).
 * usable, automatically-generated `--local-help` and `-elvi` output
     - with control over some aspects of formatting
 * readable output elvi with explanatory comments and templates
-* elvi-specific tab-completions (**NOTE: uses WIP surfraw features from my merge request on the main surfraw repo**)
+* elvi-specific tab-completions (**NOTE: uses unreleased features of surfraw**)
 * easy-to-generate options, with *types* for different uses
 * shortcuts to generate common surfraw options: `-result=NUM` and `-language=ISOCODE`
 * declarative option syntax with access to the shell for some options
