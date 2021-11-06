@@ -26,7 +26,7 @@ execution (see `pyproject.toml`).  These are specific to each version of
 Jinja2, so the build-time version and runtime version need to match.
 
 `pipx` places all dependencies in a virtual environment and should build with
-the same version of Jinja2 as at runtime--which is the latest (`<3.0`).  Use
+the same version of Jinja2 as at runtime--which is the latest (`<4.0`).  Use
 `pip` to use a specific version.
 
 By default, `pip` builds packages in a separate environment.  If a specific
