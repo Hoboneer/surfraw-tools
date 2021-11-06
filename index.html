@@ -12,11 +12,11 @@
         <link href="css/bootstrap.min.css" rel="stylesheet">
         <link href="css/font-awesome.min.css" rel="stylesheet">
         <link href="css/base.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css">
 
         <script src="js/jquery-1.10.2.min.js" defer></script>
         <script src="js/bootstrap.min.js" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
         <script>hljs.initHighlightingOnLoad();</script> 
     </head>
 
@@ -178,12 +178,13 @@ opensearch2elvis yourelvisname opensearch.xml
 <code>yourelvisname</code>, and ready for installation (made executable, shebang added).</p>
 <p>See the advanced usage docs for more.</p>
 <h3 id="caveats">Caveats<a class="headerlink" href="#caveats" title="Permanent link">&para;</a></h3>
-<p>The generated elvi include tab-completion code using my <em>work-in-progress</em>
-system of elvi-specific completions.  Check the merge requests in the <a href="https://gitlab.com/surfraw/Surfraw">main
-surfraw repo</a>.</p>
-<p>If you don&rsquo;t want to use the WIP completions, use the <code>--no-completions</code>
-option.  This isn&rsquo;t needed though: the elvi still work but there might be a few
-error messages.</p>
+<p>The generated elvi include tab-completion code using the system of
+elvi-specific completions set for release in the new version of Surfraw.  Wait
+for the new release, or build <a href="https://gitlab.com/surfraw/Surfraw">surfraw</a>
+from <code>master</code> to use it.</p>
+<p>If you don&rsquo;t want to use the completions, use the <code>--no-completions</code> option.
+This isn&rsquo;t needed though: the elvi still work but there might be a few error
+messages.</p>
 <p>Also, <code>opensearch2elvis</code> only has minimal support for websites that specify
 POST method searches.  Currently, it just treats them as if they specified GET
 and hopes for the best.  <a href="https://github.com/Hoboneer/surfraw-tools/issues/27">I plan to support
@@ -196,7 +197,7 @@ this</a>.</p>
 </ul>
 </li>
 <li>readable output elvi with explanatory comments and templates</li>
-<li>elvi-specific tab-completions (<strong>NOTE: uses WIP surfraw features from my merge request on the main surfraw repo</strong>)</li>
+<li>elvi-specific tab-completions (<strong>NOTE: uses unreleased features of surfraw</strong>)</li>
 <li>easy-to-generate options, with <em>types</em> for different uses</li>
 <li>shortcuts to generate common surfraw options: <code>-result=NUM</code> and <code>-language=ISOCODE</code></li>
 <li>declarative option syntax with access to the shell for some options<ul>
@@ -251,16 +252,13 @@ details.  Copies of the licences used in this project can be located in the
                 <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </div>
             <div class="modal-body">
-                <p>
-                    From here you can search these documents. Enter
-                    your search terms below.
-                </p>
+                <p>From here you can search these documents. Enter your search terms below.</p>
                 <form>
                     <div class="form-group">
                         <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
                     </div>
                 </form>
-                <div id="mkdocs-search-results"></div>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
             </div>
             <div class="modal-footer">
             </div>
@@ -311,6 +309,6 @@ details.  Copies of the licences used in this project can be located in the
 </html>
 
 <!--
-MkDocs version : 1.1.2
-Build Date UTC : 2021-03-01 11:21:47.343826+00:00
+MkDocs version : 1.2.3
+Build Date UTC : 2021-11-06 22:42:05.677300+00:00
 -->

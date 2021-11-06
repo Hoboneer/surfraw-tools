@@ -12,11 +12,11 @@
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/font-awesome.min.css" rel="stylesheet">
         <link href="../css/base.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css">
 
         <script src="../js/jquery-1.10.2.min.js" defer></script>
         <script src="../js/bootstrap.min.js" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
         <script>hljs.initHighlightingOnLoad();</script> 
     </head>
 
@@ -193,11 +193,11 @@ that it defaults to <code>all-time</code>&ndash;out of <code>hour</code>, <code>
 the exact value of <code>all-time</code>, it should be replaced with <code>all</code>.  This allows
 us to define a nicer interface for our elvis&ndash;not being bound to what the
 search engine&rsquo;s parameter values actually are.</p>
-<p>In fact, each value colon-delimited (<code>:</code>) argument <em>after</em> the first one can be
+<p>In fact, each colon-delimited (<code>:</code>) argument <em>after</em> the first one can be
 comma-delimited (<code>,</code>) lists of patterns describing these changes.  See <a href="../reference/">the
 reference</a> for more.</p>
 <p>Now, a problem with our previous version is that it would be hard for <code>mkelvis</code>
-to decide what order to append the mappings and the search terms.  The
+to decide what order to append the mappings and the search terms in.  The
 <code>--query-parameter/-Q</code> option solves this for us.  The <code>q=</code> suffix can now be
 removed from the search URL because this will be appended to it later.</p>
 <h3 id="keyword-search">Keyword search<a class="headerlink" href="#keyword-search" title="Permanent link">&para;</a></h3>
@@ -227,8 +227,8 @@ www.reddit.com/search?
 --query-parameter=q
 </code></pre>
 <p>This gives us an elvis that unifies the syntax of searches with URL query
-parameters and searches with keywords like <code>site:github.com</code> in your favourite
-search engine to limit results to <code>github.com</code>.</p>
+parameters and searches with keywords such as <code>site:github.com</code> to limit
+results to <code>github.com</code>.</p>
 <h4 id="-nsfw"><code>-nsfw=</code><a class="headerlink" href="#-nsfw" title="Permanent link">&para;</a></h4>
 <p><strong><code>--yes-no=nsfw:no</code></strong>: this defines a <em>boolean</em> option, corresponding to the
 values that have the surfraw functions <code>ok</code>, <code>yesno</code>, <code>ifyes</code>, and <code>ifno</code>,
@@ -418,18 +418,18 @@ Local options:
 <p><code>mkelvis</code> only generates one elvis per invocation (KISS!), leaving the user
 free to decide how they want to create many of them.  An example follows.</p>
 <p>If there are lots of simple elvi, a single text file is enough.  It will be
-called <code>elvi</code> here.</p>
+called <code>elvi.in</code> here.</p>
 <p>First, specify the elvi you want by putting the arguments to <code>mkelvis</code> for each
 elvis on separate lines.  The name should have no whitespace.</p>
-<p>Example <code>elvi</code> file:</p>
+<p>Example <code>elvi.in</code> file:</p>
 <pre><code>reddit www.reddit.com www.reddit.com/search?q=
 subreddit www.reddit.com www.reddit.com/subreddits/search?q= --description='Visit a subreddit'
 </code></pre>
 <p>A possible <code>Makefile</code>:</p>
-<pre><code class="language-mk">.PHONY: all
+<pre><code class="language-mk">.PHONY: all elvi
 all: elvi
-elvi:
-    xargs -L 1 mkelvis &lt; $@
+elvi: elvi.in
+    xargs -L 1 mkelvis &lt; $&lt;
 </code></pre>
 <p>Note that after running <code>make</code>, the current directory will be filled with elvi.
 You could modify this so that each elvis has a suffix like <code>.elvis</code> to manage
@@ -457,16 +457,13 @@ them easier.</p>
                 <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </div>
             <div class="modal-body">
-                <p>
-                    From here you can search these documents. Enter
-                    your search terms below.
-                </p>
+                <p>From here you can search these documents. Enter your search terms below.</p>
                 <form>
                     <div class="form-group">
                         <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
                     </div>
                 </form>
-                <div id="mkdocs-search-results"></div>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
             </div>
             <div class="modal-footer">
             </div>

@@ -12,11 +12,11 @@
         <link href="../css/bootstrap.min.css" rel="stylesheet">
         <link href="../css/font-awesome.min.css" rel="stylesheet">
         <link href="../css/base.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/styles/github.min.css">
 
         <script src="../js/jquery-1.10.2.min.js" defer></script>
         <script src="../js/bootstrap.min.js" defer></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.5.0/highlight.min.js"></script>
         <script>hljs.initHighlightingOnLoad();</script> 
     </head>
 
@@ -134,6 +134,12 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
   https://github.com/Hoboneer/surfraw-tools</li>
 <li>Documentation now available at https://hoboneer.github.io/surfraw-tools/</li>
 </ul>
+<h3 id="fixed">Fixed<a class="headerlink" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Disabled globbing when working with &ldquo;list&rdquo; variables in generated elvi.  This
+  caused directory contents to be exposed if a <code>*</code> character appeared in
+  <code>-add-LIST=</code>.</li>
+</ul>
 <h2 id="010-2020-07-03">[0.1.0] - 2020-07-03<a class="headerlink" href="#010-2020-07-03" title="Permanent link">&para;</a></h2>
 <p>Initial release.</p></div>
             </div>
@@ -158,16 +164,13 @@ and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semant
                 <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
             </div>
             <div class="modal-body">
-                <p>
-                    From here you can search these documents. Enter
-                    your search terms below.
-                </p>
+                <p>From here you can search these documents. Enter your search terms below.</p>
                 <form>
                     <div class="form-group">
                         <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
                     </div>
                 </form>
-                <div id="mkdocs-search-results"></div>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
             </div>
             <div class="modal-footer">
             </div>
