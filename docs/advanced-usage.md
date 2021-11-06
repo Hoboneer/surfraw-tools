@@ -114,12 +114,12 @@ the exact value of `all-time`, it should be replaced with `all`.  This allows
 us to define a nicer interface for our elvis--not being bound to what the
 search engine's parameter values actually are.
 
-In fact, each value colon-delimited (`:`) argument *after* the first one can be
+In fact, each colon-delimited (`:`) argument *after* the first one can be
 comma-delimited (`,`) lists of patterns describing these changes.  See [the
 reference](reference.md) for more.
 
 Now, a problem with our previous version is that it would be hard for `mkelvis`
-to decide what order to append the mappings and the search terms.  The
+to decide what order to append the mappings and the search terms in.  The
 `--query-parameter/-Q` option solves this for us.  The `q=` suffix can now be
 removed from the search URL because this will be appended to it later.
 
@@ -153,8 +153,8 @@ www.reddit.com/search?
 ```
 
 This gives us an elvis that unifies the syntax of searches with URL query
-parameters and searches with keywords like `site:github.com` in your favourite
-search engine to limit results to `github.com`.
+parameters and searches with keywords such as `site:github.com` to limit
+results to `github.com`.
 
 #### `-nsfw=`
 
@@ -388,12 +388,12 @@ See [the reference](reference.md) for the details on individual options to
 free to decide how they want to create many of them.  An example follows.
 
 If there are lots of simple elvi, a single text file is enough.  It will be
-called `elvi` here.
+called `elvi.in` here.
 
 First, specify the elvi you want by putting the arguments to `mkelvis` for each
 elvis on separate lines.  The name should have no whitespace.
 
-Example `elvi` file:
+Example `elvi.in` file:
 
 ```
 reddit www.reddit.com www.reddit.com/search?q=
@@ -403,10 +403,10 @@ subreddit www.reddit.com www.reddit.com/subreddits/search?q= --description='Visi
 A possible `Makefile`:
 
 ```mk
-.PHONY: all
+.PHONY: all elvi
 all: elvi
-elvi:
-	xargs -L 1 mkelvis < $@
+elvi: elvi.in
+	xargs -L 1 mkelvis < $<
 ```
 
 Note that after running `make`, the current directory will be filled with elvi.
