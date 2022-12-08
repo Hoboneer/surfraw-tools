@@ -12,11 +12,11 @@ black==21.10b0
     # via -r dev.in
 bleach==4.1.0
     # via readme-renderer
-boolean.py==3.8
+boolean-py==3.8
     # via
     #   license-expression
     #   reuse
-certifi==2021.10.8
+certifi==2022.12.7
     # via requests
 cffi==1.15.0
     # via cryptography
@@ -49,14 +49,8 @@ idna==3.3
     # via requests
 importlib-metadata==4.2.0
     # via
-    #   click
-    #   flake8
     #   keyring
-    #   markdown
     #   mkdocs
-    #   pep517
-    #   pluggy
-    #   pytest
     #   twine
 iniconfig==1.1.1
     # via pytest
@@ -173,14 +167,9 @@ tqdm==4.62.3
     # via twine
 twine==3.4.2
     # via -r dev.in
-typed-ast==1.4.3
-    # via
-    #   black
-    #   mypy
 typing-extensions==3.10.0.2
     # via
     #   black
-    #   importlib-metadata
     #   mypy
 urllib3==1.26.7
     # via requests
@@ -191,9 +180,7 @@ webencodings==0.5.1
 wheel==0.37.0
     # via pip-tools
 zipp==3.6.0
-    # via
-    #   importlib-metadata
-    #   pep517
+    # via importlib-metadata
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
